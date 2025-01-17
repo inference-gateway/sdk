@@ -1,2 +1,3 @@
-# inference-gateway-go-sdk
-An SDK written in Go for the Inference Gateway
+# Inference Gateway Go SDK
+
+An SDK written in Go for the Inference Gateway.
