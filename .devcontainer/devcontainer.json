@@ -1,0 +1,45 @@
+{
+  "name": "Debian with Go",
+  "dockerFile": "Dockerfile",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:latest": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.vscode-yaml",
+        "streetsidesoftware.code-spell-checker",
+        "esbenp.prettier-vscode",
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "yzhang.markdown-all-in-one",
+        "golang.go",
+        "ms-vscode.go"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "editor.renderWhitespace": "all",
+        "cSpell.enabled": true,
+        "cSpell.files": ["**/*.md"],
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[go]": {
+          "editor.defaultFormatter": "golang.go"
+        },
+        "git.enableCommitSigning": true,
+        "dev.containers.copyGitConfig": true,
+        "githubPullRequests.experimental.chat": true,
+        "githubPullRequests.experimental.notificationsView": true
+      }
+    }
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/setup-git.sh,target=/home/vscode/setup-git.sh,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder}/.devcontainer/.zshrc,target=/home/vscode/.zshrc,type=bind,consistency=cached",
+    "source=${localWorkspaceFolder}/.devcontainer/launch.json,target=/workspaces/inference-gateway-go-sdk/.vscode/launch.json,type=bind,consistency=cached"
+  ],
+  "postCreateCommand": "/home/vscode/setup-git.sh",
+  "remoteEnv": {
+    "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
+  }
+}
