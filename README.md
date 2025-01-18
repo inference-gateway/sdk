@@ -35,7 +35,7 @@ import (
 )
 
 func main() {
-    client := sdk.NewClient("https://api.inference-gateway.com")
+    client := sdk.NewClient("https://api.inference-gateway.local")
 
     // List models
     models, err := client.ListModels()
