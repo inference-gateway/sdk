@@ -1,6 +1,6 @@
 # Inference Gateway Go SDK
 
-An SDK written in Go for the Inference Gateway.
+An SDK written in Go for the [Inference Gateway](https://github.com/edenreich/inference-gateway).
 
 - [Inference Gateway Go SDK](#inference-gateway-go-sdk)
   - [Installation](#installation)
