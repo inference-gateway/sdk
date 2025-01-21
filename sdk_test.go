@@ -99,7 +99,7 @@ func TestGenerateContent(t *testing.T) {
 			model:    "llama2",
 			messages: []Message{
 				{
-					Role:    "user",
+					Role:    RoleUser,
 					Content: "What is Go?",
 				},
 			},
@@ -112,7 +112,7 @@ func TestGenerateContent(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, "llama2", req.Model)
 				assert.Equal(t, "What is Go?", req.Messages[0].Content)
-				assert.Equal(t, "user", req.Messages[0].Role)
+				assert.Equal(t, RoleUser, req.Messages[0].Role)
 
 				w.Header().Set("Content-Type", "application/json")
 				resp := &GenerateResponse{

@@ -58,7 +58,11 @@ func main() {
         "llama2",
         []sdk.Message{
             {
-                Role:    "user",
+                Role:    RoleSystem,
+                Content: "You are an helpful assistant.",
+            },
+            {
+                Role:    RoleUser,
                 Content: "What is Go?",
             },
         },
@@ -89,12 +93,20 @@ fmt.Println("Available models:", models)
 To generate content using a model, use the GenerateContent method:
 
 ```go
-response, err := client.GenerateContent(sdk.ProviderOllama, "llama2", []sdk.Message{
-    {
-        Role:    "user",
-        Content: "What is Go?",
-    },
-})
+response, err := client.GenerateContent(
+    sdk.ProviderOllama,
+    "llama2",
+    []sdk.Message{
+        {
+            Role:    sdk.RoleSystem,
+            Content: "You are an helpful assistant.",
+        },
+        {
+            Role:    sdk.RoleUser,
+            Content: "What is Go?",
+        },
+    }
+)
 if err != nil {
     log.Fatalf("Error generating content: %v", err)
 }

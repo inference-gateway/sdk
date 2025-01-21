@@ -33,9 +33,18 @@ type ProviderModels struct {
 	Models   []Model  `json:"models"`
 }
 
+// Role represents supported message roles
+type Role string
+
+const (
+	RoleSystem    Role = "system"
+	RoleUser      Role = "user"
+	RoleAssistant Role = "assistant"
+)
+
 // Message represents a chat message
 type Message struct {
-	Role    string `json:"role"`
+	Role    Role   `json:"role"`
 	Content string `json:"content"`
 }
 
