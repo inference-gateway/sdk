@@ -34,7 +34,7 @@ import (
     "fmt"
     "log"
 
-    sdk "github.com/inference-gateway/inference-gateway-go-sdk"
+    sdk "github.com/inference-gateway/go-sdk"
 )
 
 func main() {
@@ -52,11 +52,22 @@ func main() {
     }
     fmt.Println("Available models:", models)
 
-    // Generate content using Ollama's llama2 model
-    response, err := client.GenerateContent(sdk.ProviderOllama, "llama2", "What is Go?")
+    // Generate content using the llama2 model
+    response, err := client.GenerateContent(
+        sdk.ProviderOllama,
+        "llama2",
+        []sdk.Message{
+            {
+                Role:    "user",
+                Content: "What is Go?",
+            },
+        },
+    )
     if err != nil {
-        log.Fatalf("Error generating content: %v", err)
+        log.Printf("Error generating content: %v", err)
+        return
     }
+
     fmt.Println("Generated content:", response.Response.Content)
 }
 ```
@@ -78,7 +89,12 @@ fmt.Println("Available models:", models)
 To generate content using a model, use the GenerateContent method:
 
 ```go
-response, err := client.GenerateContent(sdk.ProviderOllama, "llama2", "What is Go?")
+response, err := client.GenerateContent(sdk.ProviderOllama, "llama2", []sdk.Message{
+    {
+        Role:    "user",
+        Content: "What is Go?",
+    },
+})
 if err != nil {
     log.Fatalf("Error generating content: %v", err)
 }
@@ -100,12 +116,12 @@ if err != nil {
 
 The SDK supports the following LLM providers:
 
-- Ollama (sdk.ProviderOllama)
-- Groq (sdk.ProviderGroq)
-- OpenAI (sdk.ProviderOpenAI)
-- Google (sdk.ProviderGoogle)
-- Cloudflare (sdk.ProviderCloudflare)
-- Cohere (sdk.ProviderCohere)
+-   Ollama (sdk.ProviderOllama)
+-   Groq (sdk.ProviderGroq)
+-   OpenAI (sdk.ProviderOpenAI)
+-   Google (sdk.ProviderGoogle)
+-   Cloudflare (sdk.ProviderCloudflare)
+-   Cohere (sdk.ProviderCohere)
 
 ## Contributing
 

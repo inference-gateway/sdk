@@ -97,15 +97,14 @@ func (c *Client) ListModels() ([]ProviderModels, error) {
 }
 
 // GenerateContent generates content using the specified provider and model
-func (c *Client) GenerateContent(provider Provider, model string, prompt string) (*GenerateResponse, error) {
+func (c *Client) GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error) {
+	if len(messages) == 0 {
+		return nil, fmt.Errorf("at least one message is required")
+	}
+
 	req := GenerateRequest{
-		Model: model,
-		Messages: []Message{
-			{
-				Role:    "user",
-				Content: prompt,
-			},
-		},
+		Model:    model,
+		Messages: messages,
 	}
 
 	var result GenerateResponse

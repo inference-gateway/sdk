@@ -88,7 +88,7 @@ func TestGenerateContent(t *testing.T) {
 		name          string
 		provider      Provider
 		model         string
-		prompt        string
+		messages      []Message
 		serverHandler func(w http.ResponseWriter, r *http.Request)
 		expectedError string
 		expectedResp  *GenerateResponse
@@ -97,7 +97,12 @@ func TestGenerateContent(t *testing.T) {
 			name:     "successful generation",
 			provider: ProviderOllama,
 			model:    "llama2",
-			prompt:   "What is Go?",
+			messages: []Message{
+				{
+					Role:    "user",
+					Content: "What is Go?",
+				},
+			},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, http.MethodPost, r.Method)
 				assert.Equal(t, "/llms/ollama/generate", r.URL.Path)
@@ -107,6 +112,7 @@ func TestGenerateContent(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, "llama2", req.Model)
 				assert.Equal(t, "What is Go?", req.Messages[0].Content)
+				assert.Equal(t, "user", req.Messages[0].Role)
 
 				w.Header().Set("Content-Type", "application/json")
 				resp := &GenerateResponse{
@@ -141,7 +147,12 @@ func TestGenerateContent(t *testing.T) {
 			name:     "server error",
 			provider: ProviderOllama,
 			model:    "llama2",
-			prompt:   "What is Go?",
+			messages: []Message{
+				{
+					Role:    "user",
+					Content: "What is Go?",
+				},
+			},
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
@@ -157,7 +168,7 @@ func TestGenerateContent(t *testing.T) {
 			defer server.Close()
 
 			client := NewClient(server.URL)
-			resp, err := client.GenerateContent(tt.provider, tt.model, tt.prompt)
+			resp, err := client.GenerateContent(tt.provider, tt.model, tt.messages)
 
 			if tt.expectedError != "" {
 				assert.EqualError(t, err, tt.expectedError)
