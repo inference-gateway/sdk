@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/inference-gateway/go-sdk/compare/v1.0.3...v1.1.0) (2025-01-21)
+
+### ✨ Features
+
+* Update message roles to use typed constants and improve README examples ([a9107d2](https://github.com/inference-gateway/go-sdk/commit/a9107d27004a46f6b681aadd0a491b40aa5bf005))
+
 ## [1.0.3](https://github.com/inference-gateway/go-sdk/compare/v1.0.2...v1.0.3) (2025-01-21)
 
 ### ♻️ Improvements
