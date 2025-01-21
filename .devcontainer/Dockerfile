@@ -29,3 +29,5 @@ RUN npm install -g semantic-release @semantic-release/changelog @semantic-releas
 RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k
 
 USER vscode
+
+RUN go install golang.org/x/tools/cmd/godoc@latest
