@@ -1,3 +1,13 @@
+## [1.0.2](https://github.com/inference-gateway/go-sdk/compare/v1.0.1...v1.0.2) (2025-01-21)
+
+### 🐛 Bug Fixes
+
+* Update go.mod ([338036a](https://github.com/inference-gateway/go-sdk/commit/338036a8dd3fd8136a8d79c77169561e4defb5e7))
+
+### 🔧 Miscellaneous
+
+* Add .editorconfig for consistent coding styles across files ([0a4083f](https://github.com/inference-gateway/go-sdk/commit/0a4083f4800b1a0ab3a367fe3dbb6ddd16c828b3))
+
 ## [1.0.1](https://github.com/inference-gateway/go-sdk/compare/v1.0.0...v1.0.1) (2025-01-21)
 
 ### 📚 Documentation
