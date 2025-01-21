@@ -1,0 +1,143 @@
+---
+openapi: 3.1.0
+info:
+  title: Inference Gateway API
+  description: API for interacting with various language models through the Inference Gateway.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /llms:
+    get:
+      summary: List all language models
+      responses:
+        "200":
+          description: A list of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderModels"
+  /llms/{provider}/generate:
+    post:
+      summary: Generate content with a specific provider's LLM
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Providers"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum:
+                          - system
+                          - user
+                          - assistant
+                      content:
+                        type: string
+    responses:
+      "200":
+        description: Generated content
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                response:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                    model:
+                      type: string
+                    content:
+                      type: string
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Health check successful
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Authentication is available but disabled by default.
+        To enable authentication, Set ENABLE_AUTH to true.
+  schemas:
+    Model:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        owned_by:
+          type: string
+        created:
+          type: integer
+    ProviderModels:
+      type: object
+      properties:
+        provider:
+          $ref: "#/components/schemas/Providers"
+        models:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              object:
+                type: string
+              owned_by:
+                type: string
+              created:
+                type: integer
+    Providers:
+      type: string
+      enum:
+        - ollama
+        - groq
+        - openai
+        - google
+        - cloudflare
+        - cohere
