@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/inference-gateway/sdk/compare/v1.2.0...v1.2.1) (2025-01-21)
+
+### 🐛 Bug Fixes
+
+* Update repository references in configuration files and documentation ([39d0041](https://github.com/inference-gateway/sdk/commit/39d0041a7a2cdbac77083a40f086bf0c8a9cc5d8))
+
 ## [1.2.0](https://github.com/inference-gateway/go-sdk/compare/v1.1.0...v1.2.0) (2025-01-21)
 
 ### ✨ Features
