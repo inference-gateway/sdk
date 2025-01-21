@@ -4,6 +4,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "task.vscode-task",
         "redhat.vscode-yaml",
         "streetsidesoftware.code-spell-checker",
         "esbenp.prettier-vscode",
