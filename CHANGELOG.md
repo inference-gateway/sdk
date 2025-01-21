@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/inference-gateway/go-sdk/compare/v1.0.2...v1.0.3) (2025-01-21)
+
+### ♻️ Improvements
+
+* Update GenerateContent method to accept messages slice instead of prompt string ([b9e6e03](https://github.com/inference-gateway/go-sdk/commit/b9e6e03f3cc300c648f343e43d7ac847b65c63a9))
+
 ## [1.0.2](https://github.com/inference-gateway/go-sdk/compare/v1.0.1...v1.0.2) (2025-01-21)
 
 ### 🐛 Bug Fixes
