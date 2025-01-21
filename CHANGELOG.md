@@ -1,3 +1,13 @@
+## [1.2.3](https://github.com/inference-gateway/sdk/compare/v1.2.2...v1.2.3) (2025-01-21)
+
+### ♻️ Improvements
+
+* Change Client type to interface and implement clientImpl for SDK client methods ([003b660](https://github.com/inference-gateway/sdk/commit/003b66053fdd069ddb5ee1435c211aa9b53362c2))
+
+### 🔧 Miscellaneous
+
+* Change semantic-release configurations build prefix to be listed under Improvements ([0ab0d02](https://github.com/inference-gateway/sdk/commit/0ab0d02c2011dfef1292ab4541ac8e5df206dd93))
+
 ## [1.2.2](https://github.com/inference-gateway/sdk/compare/v1.2.1...v1.2.2) (2025-01-21)
 
 ### 📦 Miscellaneous
