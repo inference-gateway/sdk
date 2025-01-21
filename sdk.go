@@ -72,8 +72,15 @@ type ErrorResponse struct {
 	Error string `json:"error"` // Error message from the API
 }
 
-// Client represents the SDK client
-type Client struct {
+// Client represents the SDK client interface
+type Client interface {
+	ListModels() ([]ProviderModels, error)
+	GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error)
+	HealthCheck() error
+}
+
+// clientImpl represents the concrete implementation of the SDK client
+type clientImpl struct {
 	baseURL string        // Base URL of the Inference Gateway API
 	http    *resty.Client // HTTP client for making requests
 }
@@ -83,8 +90,8 @@ type Client struct {
 // Example:
 //
 //	client := sdk.NewClient("http://localhost:8080")
-func NewClient(baseURL string) *Client {
-	return &Client{
+func NewClient(baseURL string) Client {
+	return &clientImpl{
 		baseURL: baseURL,
 		http:    resty.New(),
 	}
@@ -99,7 +106,7 @@ func NewClient(baseURL string) *Client {
 //	    log.Fatalf("Error listing models: %v", err)
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
-func (c *Client) ListModels() ([]ProviderModels, error) {
+func (c *clientImpl) ListModels() ([]ProviderModels, error) {
 	var models []ProviderModels
 	resp, err := c.http.R().
 		SetResult(&models).
@@ -142,7 +149,7 @@ func (c *Client) ListModels() ([]ProviderModels, error) {
 //	    log.Fatalf("Error generating content: %v", err)
 //	}
 //	fmt.Printf("Generated content: %s\n", response.Response.Content)
-func (c *Client) GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error) {
+func (c *clientImpl) GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error) {
 	if len(messages) == 0 {
 		return nil, fmt.Errorf("at least one message is required")
 	}
@@ -181,7 +188,7 @@ func (c *Client) GenerateContent(provider Provider, model string, messages []Mes
 //	if err != nil {
 //	    log.Fatalf("Health check failed: %v", err)
 //	}
-func (c *Client) HealthCheck() error {
+func (c *clientImpl) HealthCheck() error {
 	resp, err := c.http.R().
 		Get(fmt.Sprintf("%s/health", c.baseURL))
 
