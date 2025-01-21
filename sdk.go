@@ -54,14 +54,17 @@ type GenerateRequest struct {
 	Messages []Message `json:"messages"`
 }
 
+// GenerateResponseTokens represents the response tokens from content generation
+type GenerateResponseTokens struct {
+	Role    Role   `json:"role"`
+	Model   string `json:"model"`
+	Content string `json:"content"`
+}
+
 // GenerateResponse represents the response from content generation
 type GenerateResponse struct {
-	Provider Provider `json:"provider"`
-	Response struct {
-		Role    string `json:"role"`
-		Model   string `json:"model"`
-		Content string `json:"content"`
-	} `json:"response"`
+	Provider Provider               `json:"provider"`
+	Response GenerateResponseTokens `json:"response"`
 }
 
 // ErrorResponse represents an error response from the API

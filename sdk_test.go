@@ -99,6 +99,10 @@ func TestGenerateContent(t *testing.T) {
 			model:    "llama2",
 			messages: []Message{
 				{
+					Role:    RoleSystem,
+					Content: "You are a helpful assistant.",
+				},
+				{
 					Role:    RoleUser,
 					Content: "What is Go?",
 				},
@@ -111,18 +115,18 @@ func TestGenerateContent(t *testing.T) {
 				err := json.NewDecoder(r.Body).Decode(&req)
 				assert.NoError(t, err)
 				assert.Equal(t, "llama2", req.Model)
-				assert.Equal(t, "What is Go?", req.Messages[0].Content)
-				assert.Equal(t, RoleUser, req.Messages[0].Role)
+
+				assert.Equal(t, 2, len(req.Messages))
+				assert.Equal(t, RoleSystem, req.Messages[0].Role)
+				assert.Equal(t, "You are a helpful assistant.", req.Messages[0].Content)
+				assert.Equal(t, RoleUser, req.Messages[1].Role)
+				assert.Equal(t, "What is Go?", req.Messages[1].Content)
 
 				w.Header().Set("Content-Type", "application/json")
 				resp := &GenerateResponse{
 					Provider: ProviderOllama,
-					Response: struct {
-						Role    string `json:"role"`
-						Model   string `json:"model"`
-						Content string `json:"content"`
-					}{
-						Role:    "assistant",
+					Response: GenerateResponseTokens{
+						Role:    RoleAssistant,
 						Model:   "llama2",
 						Content: "Go is a programming language.",
 					},
@@ -132,12 +136,8 @@ func TestGenerateContent(t *testing.T) {
 			},
 			expectedResp: &GenerateResponse{
 				Provider: ProviderOllama,
-				Response: struct {
-					Role    string `json:"role"`
-					Model   string `json:"model"`
-					Content string `json:"content"`
-				}{
-					Role:    "assistant",
+				Response: GenerateResponseTokens{
+					Role:    RoleAssistant,
 					Model:   "llama2",
 					Content: "Go is a programming language.",
 				},
@@ -149,7 +149,11 @@ func TestGenerateContent(t *testing.T) {
 			model:    "llama2",
 			messages: []Message{
 				{
-					Role:    "user",
+					Role:    RoleSystem,
+					Content: "You are a helpful assistant.",
+				},
+				{
+					Role:    RoleUser,
 					Content: "What is Go?",
 				},
 			},

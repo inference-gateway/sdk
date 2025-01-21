@@ -59,7 +59,7 @@ func main() {
         []sdk.Message{
             {
                 Role:    RoleSystem,
-                Content: "You are an helpful assistant.",
+                Content: "You are a helpful assistant.",
             },
             {
                 Role:    RoleUser,
@@ -99,7 +99,7 @@ response, err := client.GenerateContent(
     []sdk.Message{
         {
             Role:    sdk.RoleSystem,
-            Content: "You are an helpful assistant.",
+            Content: "You are a helpful assistant.",
         },
         {
             Role:    sdk.RoleUser,
