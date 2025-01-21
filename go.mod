@@ -1,4 +1,4 @@
-module github.com/inference-gateway/go-sdk
+module github.com/inference-gateway/sdk
 
 go 1.23.4
 

@@ -10,6 +10,7 @@ An SDK written in Go for the [Inference Gateway](https://github.com/inference-ga
     - [Generating Content](#generating-content)
     - [Health Check](#health-check)
   - [Supported Providers](#supported-providers)
+  - [Documentation](#documentation)
   - [Contributing](#contributing)
   - [License](#license)
 
@@ -18,7 +19,7 @@ An SDK written in Go for the [Inference Gateway](https://github.com/inference-ga
 To install the SDK, use `go get`:
 
 ```sh
-go get github.com/inference-gateway/go-sdk
+go get github.com/inference-gateway/sdk
 ```
 
 ## Usage
@@ -34,7 +35,7 @@ import (
     "fmt"
     "log"
 
-    sdk "github.com/inference-gateway/go-sdk"
+    sdk "github.com/inference-gateway/sdk"
 )
 
 func main() {
@@ -134,6 +135,11 @@ The SDK supports the following LLM providers:
 -   Google (sdk.ProviderGoogle)
 -   Cloudflare (sdk.ProviderCloudflare)
 -   Cohere (sdk.ProviderCohere)
+
+## Documentation
+
+1. Run: `task docs`
+2. Open: `http://localhost:6060/pkg/github.com/inference-gateway/sdk`
 
 ## Contributing
 
