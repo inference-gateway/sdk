@@ -55,4 +55,4 @@ plugins:
       },
     ]
   - ["@semantic-release/git", { "assets": ["CHANGELOG.md"] }]
-repositoryUrl: "https://github.com/inference-gateway/go-sdk"
+repositoryUrl: "https://github.com/inference-gateway/sdk"

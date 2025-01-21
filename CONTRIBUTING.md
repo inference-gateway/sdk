@@ -16,13 +16,13 @@ Thank you for your interest in contributing to the [Inference Gateway Go SDK](sd
 
 1. Prerequisites:
 
-- docker
+-   docker
 
 2. Clone and setup:
 
 ```sh
-git clone https://github.com/inference-gateway/go-sdk
-code go-sdk
+git clone https://github.com/inference-gateway/sdk
+code sdk
 ```
 
 3. Click on the `Reopen in Container` button in the bottom right corner of the window.
@@ -60,22 +60,22 @@ git commit -m "Add my feature"
 
 Types:
 
-- feat: new feature
-- fix: bug fix
-- refactor: code change that neither fixes a bug nor adds a feature
-- docs: documentation
-- style: formatting, missing semi colons, etc; no code change
-- test: adding missing tests
-- chore: updating build tasks, package manager configs, etc; no production code change
-- ci: changes to CI configuration files and scripts
-- perf: code change that improves performance
+-   feat: new feature
+-   fix: bug fix
+-   refactor: code change that neither fixes a bug nor adds a feature
+-   docs: documentation
+-   style: formatting, missing semi colons, etc; no code change
+-   test: adding missing tests
+-   chore: updating build tasks, package manager configs, etc; no production code change
+-   ci: changes to CI configuration files and scripts
+-   perf: code change that improves performance
 
 2. Ensure your PR:
 
-- Passes all tests
-- Updates documentation as needed
-- Includes tests for new features
-- Has a clear description of changes
+-   Passes all tests
+-   Updates documentation as needed
+-   Includes tests for new features
+-   Has a clear description of changes
 
 ## Release Process
 
@@ -86,5 +86,5 @@ Types:
 
 ## Getting Help
 
-- File an issue in [GitHub Issues](https://github.com/inference-gateway/go-sdk/issues)
-- For questions about the API, consult the [openapi.yaml](openapi.yaml) specification
+-   File an issue in [GitHub Issues](https://github.com/inference-gateway/sdk/issues)
+-   For questions about the API, consult the [openapi.yaml](openapi.yaml) specification

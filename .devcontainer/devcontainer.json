@@ -33,7 +33,7 @@
   },
   "mounts": [
     "source=${localWorkspaceFolder}/.devcontainer/.zshrc,target=/home/vscode/.zshrc,type=bind,consistency=cached",
-    "source=${localWorkspaceFolder}/.devcontainer/launch.json,target=/workspaces/inference-gateway/go-sdk/.vscode/launch.json,type=bind,consistency=cached"
+    "source=${localWorkspaceFolder}/.devcontainer/launch.json,target=/workspaces/inference-gateway/sdk/.vscode/launch.json,type=bind,consistency=cached"
   ],
   "remoteEnv": {
     "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
