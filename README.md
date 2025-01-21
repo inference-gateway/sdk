@@ -1,6 +1,6 @@
 # Inference Gateway Go SDK
 
-An SDK written in Go for the [Inference Gateway](https://github.com/edenreich/inference-gateway).
+An SDK written in Go for the [Inference Gateway](https://github.com/inference-gateway/inference-gateway).
 
 - [Inference Gateway Go SDK](#inference-gateway-go-sdk)
   - [Installation](#installation)
@@ -8,6 +8,9 @@ An SDK written in Go for the [Inference Gateway](https://github.com/edenreich/in
     - [Creating a Client](#creating-a-client)
     - [Listing Models](#listing-models)
     - [Generating Content](#generating-content)
+    - [Health Check](#health-check)
+  - [Supported Providers](#supported-providers)
+  - [Contributing](#contributing)
   - [License](#license)
 
 ## Installation
@@ -15,7 +18,7 @@ An SDK written in Go for the [Inference Gateway](https://github.com/edenreich/in
 To install the SDK, use `go get`:
 
 ```sh
-go get github.com/edenreich/inference-gateway-go-sdk
+go get github.com/inference-gateway/go-sdk
 ```
 
 ## Usage
@@ -31,11 +34,16 @@ import (
     "fmt"
     "log"
 
-    "github.com/edenreich/inference-gateway-go-sdk"
+    sdk "github.com/inference-gateway/inference-gateway-go-sdk"
 )
 
 func main() {
     client := sdk.NewClient("http://localhost:8080")
+
+    // Health check
+    if err := client.HealthCheck(); err != nil {
+        log.Fatalf("Health check failed: %v", err)
+    }
 
     // List models
     models, err := client.ListModels()
@@ -44,8 +52,8 @@ func main() {
     }
     fmt.Println("Available models:", models)
 
-    // Generate content
-    response, err := client.GenerateContent("providerName", "modelName", "your prompt here")
+    // Generate content using Ollama's llama2 model
+    response, err := client.GenerateContent(sdk.ProviderOllama, "llama2", "What is Go?")
     if err != nil {
         log.Fatalf("Error generating content: %v", err)
     }
@@ -70,12 +78,38 @@ fmt.Println("Available models:", models)
 To generate content using a model, use the GenerateContent method:
 
 ```go
-response, err := client.GenerateContent("providerName", "modelName", "your prompt here")
+response, err := client.GenerateContent(sdk.ProviderOllama, "llama2", "What is Go?")
 if err != nil {
     log.Fatalf("Error generating content: %v", err)
 }
 fmt.Println("Generated content:", response.Response.Content)
 ```
+
+### Health Check
+
+To check if the API is healthy:
+
+```go
+err := client.HealthCheck()
+if err != nil {
+    log.Fatalf("Health check failed: %v", err)
+}
+```
+
+## Supported Providers
+
+The SDK supports the following LLM providers:
+
+- Ollama (sdk.ProviderOllama)
+- Groq (sdk.ProviderGroq)
+- OpenAI (sdk.ProviderOpenAI)
+- Google (sdk.ProviderGoogle)
+- Cloudflare (sdk.ProviderCloudflare)
+- Cohere (sdk.ProviderCohere)
+
+## Contributing
+
+Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information about how to get involved. We welcome issues, questions, and pull requests.
 
 ## License
 
