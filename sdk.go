@@ -1,82 +1,146 @@
 package sdk
 
 import (
+	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/go-resty/resty/v2"
 )
 
-type Client interface {
-	ListModels() ([]ProviderModels, error)
-	GenerateContent(provider, model, prompt string) (GenerateResponse, error)
+// Provider represents supported LLM providers
+type Provider string
+
+const (
+	ProviderOllama     Provider = "ollama"
+	ProviderGroq       Provider = "groq"
+	ProviderOpenAI     Provider = "openai"
+	ProviderGoogle     Provider = "google"
+	ProviderCloudflare Provider = "cloudflare"
+	ProviderCohere     Provider = "cohere"
+)
+
+// Model represents an LLM model
+type Model struct {
+	ID      string `json:"id"`
+	Object  string `json:"object"`
+	OwnedBy string `json:"owned_by"`
+	Created int64  `json:"created"`
 }
 
-type ClientImpl struct {
-	baseURL    string
-	httpClient *resty.Client
-}
-
+// ProviderModels represents models available for a provider
 type ProviderModels struct {
-	Provider string        `json:"provider"`
-	Models   []interface{} `json:"models"`
+	Provider Provider `json:"provider"`
+	Models   []Model  `json:"models"`
 }
 
-type GenerateRequest struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
-}
-
-type ResponseTokens struct {
+// Message represents a chat message
+type Message struct {
 	Role    string `json:"role"`
-	Model   string `json:"model"`
 	Content string `json:"content"`
 }
 
-type GenerateResponse struct {
-	Provider string         `json:"provider"`
-	Response ResponseTokens `json:"response"`
+// GenerateRequest represents the request for content generation
+type GenerateRequest struct {
+	Model    string    `json:"model"`
+	Messages []Message `json:"messages"`
 }
 
-func NewClient(baseURL string) Client {
-	return &ClientImpl{
-		baseURL:    baseURL,
-		httpClient: resty.New(),
+// GenerateResponse represents the response from content generation
+type GenerateResponse struct {
+	Provider Provider `json:"provider"`
+	Response struct {
+		Role    string `json:"role"`
+		Model   string `json:"model"`
+		Content string `json:"content"`
+	} `json:"response"`
+}
+
+// ErrorResponse represents an error response from the API
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// Client represents the SDK client
+type Client struct {
+	baseURL string
+	http    *resty.Client
+}
+
+// NewClient creates a new SDK client
+func NewClient(baseURL string) *Client {
+	return &Client{
+		baseURL: baseURL,
+		http:    resty.New(),
 	}
 }
 
-func (c *ClientImpl) ListModels() ([]ProviderModels, error) {
-	resp, err := c.httpClient.R().
-		SetResult([]ProviderModels{}).
+// ListModels returns all available language models
+func (c *Client) ListModels() ([]ProviderModels, error) {
+	var models []ProviderModels
+	resp, err := c.http.R().
+		SetResult(&models).
 		Get(fmt.Sprintf("%s/llms", c.baseURL))
+
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode() != http.StatusOK {
-		return nil, fmt.Errorf("failed to list models: %s", resp.Status())
+	if resp.IsError() {
+		var errResp ErrorResponse
+		if err := json.Unmarshal(resp.Body(), &errResp); err != nil {
+			return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode())
+		}
+		return nil, fmt.Errorf("API error: %s", errResp.Error)
 	}
 
-	return *resp.Result().(*[]ProviderModels), nil
+	return models, nil
 }
 
-func (c *ClientImpl) GenerateContent(provider, model, prompt string) (GenerateResponse, error) {
-	request := GenerateRequest{
-		Model:  model,
-		Prompt: prompt,
+// GenerateContent generates content using the specified provider and model
+func (c *Client) GenerateContent(provider Provider, model string, prompt string) (*GenerateResponse, error) {
+	req := GenerateRequest{
+		Model: model,
+		Messages: []Message{
+			{
+				Role:    "user",
+				Content: prompt,
+			},
+		},
 	}
 
-	resp, err := c.httpClient.R().
-		SetBody(request).
-		SetResult(GenerateResponse{}).
+	var result GenerateResponse
+	resp, err := c.http.R().
+		SetBody(req).
+		SetResult(&result).
 		Post(fmt.Sprintf("%s/llms/%s/generate", c.baseURL, provider))
+
 	if err != nil {
-		return GenerateResponse{}, err
+		return nil, err
 	}
 
-	if resp.StatusCode() != http.StatusOK {
-		return GenerateResponse{}, fmt.Errorf("failed to generate content: %s", resp.Status())
+	if resp.IsError() {
+		var errResp ErrorResponse
+		if err := json.Unmarshal(resp.Body(), &errResp); err != nil {
+			return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode())
+		}
+		return nil, fmt.Errorf("API error: %s", errResp.Error)
 	}
 
-	return *resp.Result().(*GenerateResponse), nil
+	return &result, nil
+}
+
+// HealthCheck performs a health check request
+func (c *Client) HealthCheck() error {
+	resp, err := c.http.R().
+		Get(fmt.Sprintf("%s/health", c.baseURL))
+
+	if err != nil {
+		return err
+	}
+
+	if resp.IsError() {
+		return fmt.Errorf("health check failed with status: %d", resp.StatusCode())
+	}
+
+	return nil
 }
