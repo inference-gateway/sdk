@@ -107,3 +107,5 @@ DISABLE_UPDATE_PROMPT=true
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true
+
+eval "$(task --completion zsh)"
