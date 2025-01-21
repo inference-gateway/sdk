@@ -1,3 +1,21 @@
+## [1.2.0](https://github.com/inference-gateway/go-sdk/compare/v1.1.0...v1.2.0) (2025-01-21)
+
+### ✨ Features
+
+* Add Go tools installation and enhance Taskfile with tidy, test, and docs tasks ([9c27a1d](https://github.com/inference-gateway/go-sdk/commit/9c27a1d8db4aff95da3b03a56b4ed0e911ffe1bd))
+
+### ♻️ Improvements
+
+* Update module name and README for improved clarity and documentation ([59ef21a](https://github.com/inference-gateway/go-sdk/commit/59ef21ae2d652707dd5b3d5a526cc8f2bcbdd355))
+
+### 🐛 Bug Fixes
+
+* Correct spelling of "helpful" in README and update tests to reflect changes ([ba7a423](https://github.com/inference-gateway/go-sdk/commit/ba7a4237a9f523d5e6a0421cab62eaf56e59c258))
+
+### 📚 Documentation
+
+* Enhance SDK documentation with detailed comments and examples for clarity ([1727352](https://github.com/inference-gateway/go-sdk/commit/17273529263efce5bac34473b8bec2fdde0d3760))
+
 ## [1.1.0](https://github.com/inference-gateway/go-sdk/compare/v1.0.3...v1.1.0) (2025-01-21)
 
 ### ✨ Features
