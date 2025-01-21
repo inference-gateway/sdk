@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/inference-gateway/go-sdk/compare/v1.0.0...v1.0.1) (2025-01-21)
+
+### 📚 Documentation
+
+* Add CONTRIBUTING.md with guidelines for contributing to the SDK ([e890b5d](https://github.com/inference-gateway/go-sdk/commit/e890b5ddc9b81a8a776bc1067e32de4677f0f4c6))
+
 ## 1.0.0 (2025-01-21)
 
 ### ♻️ Improvements
