@@ -11,74 +11,78 @@ import (
 type Provider string
 
 const (
-	ProviderOllama     Provider = "ollama"
-	ProviderGroq       Provider = "groq"
-	ProviderOpenAI     Provider = "openai"
-	ProviderGoogle     Provider = "google"
-	ProviderCloudflare Provider = "cloudflare"
-	ProviderCohere     Provider = "cohere"
+	ProviderOllama     Provider = "ollama"     // Ollama LLM provider
+	ProviderGroq       Provider = "groq"       // Groq LLM provider
+	ProviderOpenAI     Provider = "openai"     // OpenAI LLM provider
+	ProviderGoogle     Provider = "google"     // Google LLM provider
+	ProviderCloudflare Provider = "cloudflare" // Cloudflare LLM provider
+	ProviderCohere     Provider = "cohere"     // Cohere LLM provider
 )
 
 // Model represents an LLM model
 type Model struct {
-	ID      string `json:"id"`
-	Object  string `json:"object"`
-	OwnedBy string `json:"owned_by"`
-	Created int64  `json:"created"`
+	ID      string `json:"id"`       // Unique identifier for the model
+	Object  string `json:"object"`   // Type of object (always "model")
+	OwnedBy string `json:"owned_by"` // Organization that owns the model
+	Created int64  `json:"created"`  // Unix timestamp of when the model was created
 }
 
 // ProviderModels represents models available for a provider
 type ProviderModels struct {
-	Provider Provider `json:"provider"`
-	Models   []Model  `json:"models"`
+	Provider Provider `json:"provider"` // The LLM provider (e.g., "ollama")
+	Models   []Model  `json:"models"`   // List of available models for the provider
 }
 
 // Role represents supported message roles
 type Role string
 
 const (
-	RoleSystem    Role = "system"
-	RoleUser      Role = "user"
-	RoleAssistant Role = "assistant"
+	RoleSystem    Role = "system"    // System message role
+	RoleUser      Role = "user"      // User message role
+	RoleAssistant Role = "assistant" // Assistant message role
 )
 
 // Message represents a chat message
 type Message struct {
-	Role    Role   `json:"role"`
-	Content string `json:"content"`
+	Role    Role   `json:"role"`    // Role of the message sender
+	Content string `json:"content"` // Content of the message
 }
 
 // GenerateRequest represents the request for content generation
 type GenerateRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
+	Model    string    `json:"model"`    // Name of the model to use
+	Messages []Message `json:"messages"` // List of messages in the conversation
 }
 
 // GenerateResponseTokens represents the response tokens from content generation
 type GenerateResponseTokens struct {
-	Role    Role   `json:"role"`
-	Model   string `json:"model"`
-	Content string `json:"content"`
+	Role    Role   `json:"role"`    // Role of the response (usually "assistant")
+	Model   string `json:"model"`   // Model that generated the response
+	Content string `json:"content"` // Generated content
 }
 
 // GenerateResponse represents the response from content generation
 type GenerateResponse struct {
-	Provider Provider               `json:"provider"`
-	Response GenerateResponseTokens `json:"response"`
+	Provider Provider               `json:"provider"` // Provider that generated the response
+	Response GenerateResponseTokens `json:"response"` // The generated response
 }
 
 // ErrorResponse represents an error response from the API
 type ErrorResponse struct {
-	Error string `json:"error"`
+	Error string `json:"error"` // Error message from the API
 }
 
 // Client represents the SDK client
 type Client struct {
-	baseURL string
-	http    *resty.Client
+	baseURL string        // Base URL of the Inference Gateway API
+	http    *resty.Client // HTTP client for making requests
 }
 
-// NewClient creates a new SDK client
+// NewClient creates a new SDK client with the specified base URL.
+//
+// Example:
+//
+//	client := sdk.NewClient("http://localhost:8080")
 func NewClient(baseURL string) *Client {
 	return &Client{
 		baseURL: baseURL,
@@ -86,7 +90,15 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-// ListModels returns all available language models
+// ListModels returns all available language models from all providers.
+//
+// Example:
+//
+//	models, err := client.ListModels()
+//	if err != nil {
+//	    log.Fatalf("Error listing models: %v", err)
+//	}
+//	fmt.Printf("Available models: %+v\n", models)
 func (c *Client) ListModels() ([]ProviderModels, error) {
 	var models []ProviderModels
 	resp, err := c.http.R().
@@ -108,7 +120,28 @@ func (c *Client) ListModels() ([]ProviderModels, error) {
 	return models, nil
 }
 
-// GenerateContent generates content using the specified provider and model
+// GenerateContent generates content using the specified provider and model.
+//
+// Example:
+//
+//	response, err := client.GenerateContent(
+//	    sdk.ProviderOllama,
+//	    "llama2",
+//	    []sdk.Message{
+//	        {
+//	            Role:    sdk.RoleSystem,
+//	            Content: "You are a helpful assistant.",
+//	        },
+//	        {
+//	            Role:    sdk.RoleUser,
+//	            Content: "What is Go?",
+//	        },
+//	    },
+//	)
+//	if err != nil {
+//	    log.Fatalf("Error generating content: %v", err)
+//	}
+//	fmt.Printf("Generated content: %s\n", response.Response.Content)
 func (c *Client) GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error) {
 	if len(messages) == 0 {
 		return nil, fmt.Errorf("at least one message is required")
@@ -140,7 +173,14 @@ func (c *Client) GenerateContent(provider Provider, model string, messages []Mes
 	return &result, nil
 }
 
-// HealthCheck performs a health check request
+// HealthCheck performs a health check request to verify API availability.
+//
+// Example:
+//
+//	err := client.HealthCheck()
+//	if err != nil {
+//	    log.Fatalf("Health check failed: %v", err)
+//	}
 func (c *Client) HealthCheck() error {
 	resp, err := c.http.R().
 		Get(fmt.Sprintf("%s/health", c.baseURL))
