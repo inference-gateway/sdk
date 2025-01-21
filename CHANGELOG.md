@@ -1,3 +1,9 @@
+## [1.2.2](https://github.com/inference-gateway/sdk/compare/v1.2.1...v1.2.2) (2025-01-21)
+
+### 📦 Miscellaneous
+
+* Add VSCode task extension to development container configuration for easy execution of tasks ([3592065](https://github.com/inference-gateway/sdk/commit/35920650d54122d29716d489efbc35025c13eebf))
+
 ## [1.2.1](https://github.com/inference-gateway/sdk/compare/v1.2.0...v1.2.1) (2025-01-21)
 
 ### 🐛 Bug Fixes
