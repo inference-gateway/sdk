@@ -2,7 +2,8 @@
 openapi: 3.1.0
 info:
   title: Inference Gateway API
-  description: API for interacting with various language models through the Inference Gateway.
+  description: |
+    API for interacting with various language models through the Inference Gateway.
   version: 1.0.0
 servers:
   - url: http://localhost:8080
@@ -10,83 +11,164 @@ paths:
   /llms:
     get:
       summary: List all language models
+      operationId: listModels
+      security:
+        - bearerAuth: []
       responses:
         "200":
-          description: A list of models
+          description: A list of models by provider
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ProviderModels"
-  /llms/{provider}/generate:
-    post:
-      summary: Generate content with a specific provider's LLM
+                  $ref: "#/components/schemas/ListModelsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /llms/{provider}:
+    get:
+      summary: List all models for a specific provider
+      operationId: listModelsByProvider
       parameters:
         - name: provider
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Providers"
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: A list of models
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListModelsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /llms/{provider}/generate:
+    post:
+      summary: Generate content with a specific provider's LLM
+      operationId: generateContent
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Providers"
+      security:
+        - bearerAuth: []
       requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateRequest"
+      responses:
+        "200":
+          description: Generated content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /proxy/{provider}/{path}:
+    parameters:
+      - name: provider
+        in: path
         required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                model:
-                  type: string
-                messages:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      role:
-                        type: string
-                        enum:
-                          - system
-                          - user
-                          - assistant
-                      content:
-                        type: string
-    responses:
-      "200":
-        description: Generated content
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                provider:
-                  type: string
-                response:
-                  type: object
-                  properties:
-                    role:
-                      type: string
-                    model:
-                      type: string
-                    content:
-                      type: string
-      "400":
-        description: Bad request
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                error:
-                  type: string
-      "500":
-        description: Internal server error
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                error:
-                  type: string
+        schema:
+          $ref: "#/components/schemas/Providers"
+      - name: path
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        description: The remaining path to proxy to the provider
+    get:
+      summary: Proxy GET request to provider
+      operationId: proxyGet
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    post:
+      summary: Proxy POST request to provider
+      operationId: proxyPost
+      requestBody:
+        $ref: "#/components/requestBodies/ProviderRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    put:
+      summary: Proxy PUT request to provider
+      operationId: proxyPut
+      requestBody:
+        $ref: "#/components/requestBodies/ProviderRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Proxy DELETE request to provider
+      operationId: proxyDelete
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Proxy PATCH request to provider
+      operationId: proxyPatch
+      requestBody:
+        $ref: "#/components/requestBodies/ProviderRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
   /health:
     get:
       summary: Health check
@@ -94,44 +176,143 @@ paths:
         "200":
           description: Health check successful
 components:
+  requestBodies:
+    ProviderRequest:
+      required: true
+      description: |
+        ProviderRequest depends on the specific provider and endpoint being called
+        If you decide to use this approach, please follow the provider-specific documentations.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              model:
+                type: string
+              messages:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                    content:
+                      type: string
+              temperature:
+                type: number
+                format: float64
+                default: 0.7
+            examples:
+              - openai:
+                  summary: OpenAI chat completion request
+                  value:
+                    model: "gpt-3.5-turbo"
+                    messages:
+                      - role: "user"
+                        content: "Hello! How can I assist you today?"
+                    temperature: 0.7
+              - google:
+                  summary: Google Gemini request
+                  value:
+                    model: "gemini-1.0-pro"
+                    messages:
+                      - role: "user"
+                        content: "What is machine learning?"
+                    temperature: 0.3
+              - anthropic:
+                  summary: Anthropic Claude request
+                  value:
+                    model: "claude-3-opus-20240229"
+                    messages:
+                      - role: "user"
+                        content: "Explain quantum computing"
+                    temperature: 0.5
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    ProviderResponse:
+      description: |
+        ProviderResponse depends on the specific provider and endpoint being called
+        If you decide to use this approach, please follow the provider-specific documentations.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProviderSpecificResponse"
+          examples:
+            openai:
+              summary: OpenAI API response
+              value:
+                {
+                  "id": "chatcmpl-123",
+                  "object": "chat.completion",
+                  "created": 1677652288,
+                  "model": "gpt-3.5-turbo",
+                  "choices":
+                    [
+                      {
+                        "index": 0,
+                        "message":
+                          {
+                            "role": "assistant",
+                            "content": "Hello! How can I help you today?",
+                          },
+                        "finish_reason": "stop",
+                      },
+                    ],
+                }
+            google:
+              summary: Google API response
+              value:
+                {
+                  "candidates":
+                    [
+                      {
+                        "content":
+                          {
+                            "parts":
+                              [
+                                {
+                                  "text": "Hello! How can I assist you today?",
+                                },
+                              ],
+                          },
+                        "finishReason": "STOP",
+                        "safetyRatings":
+                          [
+                            {
+                              "category": "HARM_CATEGORY_HARASSMENT",
+                              "probability": "NEGLIGIBLE",
+                            },
+                          ],
+                      },
+                    ],
+                }
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
       description: |
-        Authentication is available but disabled by default.
-        To enable authentication, Set ENABLE_AUTH to true.
+        Authentication is optional by default.
+        To enable authentication, set ENABLE_AUTH to true.
+        When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
-    Model:
-      type: object
-      properties:
-        id:
-          type: string
-        object:
-          type: string
-        owned_by:
-          type: string
-        created:
-          type: integer
-    ProviderModels:
-      type: object
-      properties:
-        provider:
-          $ref: "#/components/schemas/Providers"
-        models:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              object:
-                type: string
-              owned_by:
-                type: string
-              created:
-                type: integer
     Providers:
       type: string
       enum:
@@ -141,3 +322,766 @@ components:
         - google
         - cloudflare
         - cohere
+        - anthropic
+    ProviderSpecificResponse:
+      type: object
+      description: |
+        Provider-specific response format. Examples:
+
+        OpenAI GET /v1/models response:
+        ```json
+        {
+          "data": [
+            {
+              "id": "gpt-4",
+              "object": "model",
+              "created": 1687882410
+            }
+          ]
+        }
+        ```
+
+        Google GET /v1beta/models response:
+        ```json
+        {
+          "models": [
+            {
+              "name": "models/gemini-1.0-pro",
+              "version": "001",
+              "displayName": "Gemini 1.0 Pro",
+              "description": "The best model for scaling across a wide range of tasks"
+            }
+          ]
+        }
+        ```
+
+        Anthropic GET /v1/models response:
+        ```json
+        {
+          "models": [
+            {
+              "name": "claude-3-opus-20240229",
+              "description": "Most capable model for highly complex tasks"
+            }
+          ]
+        }
+        ```
+      additionalProperties: true
+    ProviderAuthType:
+      type: string
+      description: Authentication type for providers
+      enum:
+        - bearer
+        - xheader
+        - query
+        - none
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+    MessageRole:
+      type: string
+      description: Role of the message sender
+      enum:
+        - system
+        - user
+        - assistant
+    Message:
+      type: object
+      description: Message structure for provider requests
+      properties:
+        role:
+          $ref: "#/components/schemas/MessageRole"
+        content:
+          type: string
+    Model:
+      type: object
+      description: Common model information
+      properties:
+        name:
+          type: string
+    ListModelsResponse:
+      type: object
+      description: Response structure for listing models
+      properties:
+        provider:
+          $ref: "#/components/schemas/Providers"
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/Model"
+    GenerateRequest:
+      type: object
+      description: Request structure for token generation
+      required:
+        - model
+        - messages
+      properties:
+        model:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+    ResponseTokens:
+      type: object
+      description: Token response structure
+      properties:
+        role:
+          type: string
+        model:
+          type: string
+        content:
+          type: string
+    GenerateResponse:
+      type: object
+      description: Response structure for token generation
+      properties:
+        provider:
+          type: string
+        response:
+          $ref: "#/components/schemas/ResponseTokens"
+    Config:
+      x-config:
+        sections:
+          - general:
+              title: "General settings"
+              settings:
+                - application_name:
+                    env: "APPLICATION_NAME"
+                    default: "inference-gateway"
+                    description: "The name of the application"
+                - environment:
+                    env: "ENVIRONMENT"
+                    default: "production"
+                    description: "The environment"
+                - enable_telemetry:
+                    env: "ENABLE_TELEMETRY"
+                    default: "false"
+                    description: "Enable telemetry"
+                - enable_auth:
+                    env: "ENABLE_AUTH"
+                    default: "false"
+                    description: "Enable authentication"
+          - oidc:
+              title: "OpenID Connect"
+              settings:
+                - issuer_url:
+                    env: "OIDC_ISSUER_URL"
+                    default: "http://keycloak:8080/realms/inference-gateway-realm"
+                    description: "OIDC issuer URL"
+                - client_id:
+                    env: "OIDC_CLIENT_ID"
+                    default: "inference-gateway-client"
+                    description: "OIDC client ID"
+                    secret: true
+                - client_secret:
+                    env: "OIDC_CLIENT_SECRET"
+                    description: "OIDC client secret"
+                    secret: true
+          - server:
+              title: "Server settings"
+              settings:
+                - host:
+                    env: "SERVER_HOST"
+                    default: "0.0.0.0"
+                    description: "Server host"
+                - port:
+                    env: "SERVER_PORT"
+                    default: "8080"
+                    description: "Server port"
+                - read_timeout:
+                    env: "SERVER_READ_TIMEOUT"
+                    default: "30s"
+                    description: "Read timeout"
+                - write_timeout:
+                    env: "SERVER_WRITE_TIMEOUT"
+                    default: "30s"
+                    description: "Write timeout"
+                - idle_timeout:
+                    env: "SERVER_IDLE_TIMEOUT"
+                    default: "120s"
+                    description: "Idle timeout"
+                - tls_cert_path:
+                    env: "SERVER_TLS_CERT_PATH"
+                    description: "TLS certificate path"
+                - tls_key_path:
+                    env: "SERVER_TLS_KEY_PATH"
+                    description: "TLS key path"
+          - providers:
+              title: "Providers"
+              settings:
+                - url:
+                    env: "{key}_API_URL"
+                    description: "The provider API URL"
+                - token:
+                    env: "{key}_API_KEY"
+                    description: "The provider API key"
+                    secret: true
+      x-provider-configs:
+        ollama:
+          id: "ollama"
+          url: "http://ollama:8080"
+          auth_type: "none"
+          endpoints:
+            list:
+              endpoint: "/api/tags"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          modified_at:
+                            type: string
+                          size:
+                            type: integer
+                          digest:
+                            type: string
+                          details:
+                            type: object
+                            properties:
+                              format:
+                                type: string
+                              family:
+                                type: string
+                              families:
+                                type: array
+                                items:
+                                  type: string
+                              parameter_size:
+                                type: string
+            generate:
+              endpoint: "/api/generate"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    prompt:
+                      type: string
+                    stream:
+                      type: boolean
+                    system:
+                      type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
+                response:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                    response:
+                      type: object
+                      properties:
+                        role:
+                          type: string
+                        model:
+                          type: string
+                        content:
+                          type: string
+        openai:
+          id: "openai"
+          url: "https://api.openai.com"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    object:
+                      type: string
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          object:
+                            type: string
+                          created:
+                            type: integer
+                            format: int64
+                          owned_by:
+                            type: string
+                          permission:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                object:
+                                  type: string
+                                created:
+                                  type: integer
+                                  format: int64
+                                allow_create_engine:
+                                  type: boolean
+                                allow_sampling:
+                                  type: boolean
+                                allow_logprobs:
+                                  type: boolean
+                                allow_search_indices:
+                                  type: boolean
+                                allow_view:
+                                  type: boolean
+                                allow_fine_tuning:
+                                  type: boolean
+                          root:
+                            type: string
+                          parent:
+                            type: string
+            generate:
+              endpoint: "/v1/chat/completions"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          role:
+                            type: string
+                          content:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
+                response:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    choices:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          message:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                              content:
+                                type: string
+        groq:
+          id: "groq"
+          url: "https://api.groq.com"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/openai/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    object:
+                      type: string
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          object:
+                            type: string
+                          created:
+                            type: integer
+                            format: int64
+                          owned_by:
+                            type: string
+                          active:
+                            type: boolean
+                          context_window:
+                            type: integer
+                          public_apps:
+                            type: object
+            generate:
+              endpoint: "/openai/v1/chat/completions"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          role:
+                            type: string
+                          content:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
+                response:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    choices:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          message:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                              content:
+                                type: string
+        google:
+          id: "google"
+          url: "https://generativelanguage.googleapis.com"
+          auth_type: "query"
+          endpoints:
+            list:
+              endpoint: "/v1beta/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          baseModelId:
+                            type: string
+                          version:
+                            type: string
+                          displayName:
+                            type: string
+                          description:
+                            type: string
+                          inputTokenLimit:
+                            type: integer
+                          outputTokenLimit:
+                            type: integer
+                          supportedGenerationMethods:
+                            type: array
+                            items:
+                              type: string
+                          temperature:
+                            type: number
+                            format: float64
+                          maxTemperature:
+                            type: number
+                            format: float64
+                          topP:
+                            type: number
+                            format: float64
+                          topK:
+                            type: integer
+            generate:
+              endpoint: "/v1beta/models/{model}:generateContent"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    contents:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          parts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                text:
+                                  type: string
+                          role:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
+                response:
+                  type: object
+                  properties:
+                    candidates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          content:
+                            type: object
+                            properties:
+                              parts:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    text:
+                                      type: string
+                          finishReason:
+                            type: string
+                          safetyRatings:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                category:
+                                  type: string
+                                probability:
+                                  type: string
+                    promptFeedback:
+                      type: object
+                      properties:
+                        safetyRatings:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              category:
+                                type: string
+                              probability:
+                                type: string
+                        blockReason:
+                          type: string
+                    usageMetadata:
+                      type: object
+                      properties:
+                        promptTokenCount:
+                          type: integer
+                        candidatesTokenCount:
+                          type: integer
+                        totalTokenCount:
+                          type: integer
+                    modelVersion:
+                      type: string
+        cloudflare:
+          id: "cloudflare"
+          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/ai/finetunes/public"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    result:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          description:
+                            type: string
+                          created_at:
+                            type: string
+                          modified_at:
+                            type: string
+                          public:
+                            type: integer
+                          model:
+                            type: string
+            generate:
+              endpoint: "/v1/chat/completions"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    prompt:
+                      type: string
+                    model:
+                      type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
+                response:
+                  type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        response:
+                          type: string
+        cohere:
+          id: "cohere"
+          url: "https://api.cohere.com"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          endpoints:
+                            type: array
+                            items:
+                              type: string
+                          finetuned:
+                            type: boolean
+                          context_length:
+                            type: number
+                            format: float64
+                          tokenizer_url:
+                            type: string
+                          default_endpoints:
+                            type: array
+                            items:
+                              type: string
+                    next_page_token:
+                      type: string
+            generate:
+              endpoint: "/v2/chat"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          role:
+                            type: string
+                          content:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
+                response:
+                  type: object
+                  properties:
+                    message:
+                      type: object
+                      properties:
+                        role:
+                          type: string
+                        content:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                              text:
+                                type: string
+        anthropic:
+          id: "anthropic"
+          url: "https://api.anthropic.com"
+          auth_type: "xheader"
+          extra_headers:
+            anthropic-version: "2023-06-01"
+          endpoints:
+            list:
+              endpoint: "/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                          id:
+                            type: string
+                          display_name:
+                            type: string
+                          created_at:
+                            type: string
+                    has_more:
+                      type: boolean
+                    first_id:
+                      type: string
+                    last_id:
+                      type: string
+            generate:
+              endpoint: "/v1/messages"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          role:
+                            type: string
+                          content:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
+                response:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    choices:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          message:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                              content:
+                                type: string
