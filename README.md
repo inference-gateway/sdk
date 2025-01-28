@@ -51,7 +51,7 @@ func main() {
     if err != nil {
         log.Fatalf("Error listing models: %v", err)
     }
-    fmt.Println("Available models:", models)
+    fmt.Printf("Available models: %+v\n", models)
 
     // Generate content using the llama2 model
     response, err := client.GenerateContent(
@@ -59,21 +59,20 @@ func main() {
         "llama2",
         []sdk.Message{
             {
-                Role:    RoleSystem,
+                Role:    sdk.RoleSystem,
                 Content: "You are a helpful assistant.",
             },
             {
-                Role:    RoleUser,
+                Role:    sdk.RoleUser,
                 Content: "What is Go?",
             },
         },
     )
     if err != nil {
-        log.Printf("Error generating content: %v", err)
-        return
+        log.Fatalf("Error generating content: %v", err)
     }
 
-    fmt.Println("Generated content:", response.Response.Content)
+    fmt.Printf("Generated content: %s\n", response.Response.Content)
 }
 ```
 
@@ -82,11 +81,19 @@ func main() {
 To list available models, use the ListModels method:
 
 ```go
+// List all models from all providers
 models, err := client.ListModels()
 if err != nil {
     log.Fatalf("Error listing models: %v", err)
 }
-fmt.Println("Available models:", models)
+fmt.Printf("All available models: %+v\n", models)
+
+// List models for a specific provider
+providerModels, err := client.ListProviderModels(sdk.ProviderGroq)
+if err != nil {
+    log.Fatalf("Error listing provider models: %v", err)
+}
+fmt.Printf("Available Groq models: %+v\n", providerModels)
 ```
 
 ### Generating Content

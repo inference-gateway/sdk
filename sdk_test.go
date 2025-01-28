@@ -14,7 +14,7 @@ func TestListModels(t *testing.T) {
 		name          string
 		serverHandler func(w http.ResponseWriter, r *http.Request)
 		expectedError string
-		expectedResp  []ProviderModels
+		expectedResp  []ListModelsResponse
 	}{
 		{
 			name: "successful list models",
@@ -23,15 +23,12 @@ func TestListModels(t *testing.T) {
 				assert.Equal(t, "/llms", r.URL.Path)
 
 				w.Header().Set("Content-Type", "application/json")
-				models := []ProviderModels{
+				models := []ListModelsResponse{
 					{
 						Provider: ProviderOllama,
 						Models: []Model{
 							{
-								ID:      "llama2",
-								Object:  "model",
-								OwnedBy: "ollama",
-								Created: 1631318400,
+								Name: "llama2",
 							},
 						},
 					},
@@ -39,15 +36,12 @@ func TestListModels(t *testing.T) {
 				err := json.NewEncoder(w).Encode(models)
 				assert.NoError(t, err)
 			},
-			expectedResp: []ProviderModels{
+			expectedResp: []ListModelsResponse{
 				{
 					Provider: ProviderOllama,
 					Models: []Model{
 						{
-							ID:      "llama2",
-							Object:  "model",
-							OwnedBy: "ollama",
-							Created: 1631318400,
+							Name: "llama2",
 						},
 					},
 				},
@@ -58,7 +52,8 @@ func TestListModels(t *testing.T) {
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(ErrorResponse{Error: "internal error"})
+				err := json.NewEncoder(w).Encode(ErrorResponse{Error: "internal error"})
+				assert.NoError(t, err)
 			},
 			expectedError: "API error: internal error",
 		},
@@ -78,6 +73,78 @@ func TestListModels(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.expectedResp, resp)
+			}
+		})
+	}
+}
+
+func TestListProviderModels(t *testing.T) {
+	tests := []struct {
+		name          string
+		provider      Provider
+		serverHandler func(w http.ResponseWriter, r *http.Request)
+		expectedError string
+		expectedResp  ListModelsResponse // Changed from *ListModelsResponse
+	}{
+		{
+			name:     "successful list provider models",
+			provider: ProviderGroq,
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, "/llms/groq", r.URL.Path)
+
+				w.Header().Set("Content-Type", "application/json")
+				response := ListModelsResponse{
+					Provider: ProviderGroq,
+					Models: []Model{
+						{Name: "llama-3.3-70b-versatile"},
+						{Name: "llama-3.2-3b-preview"},
+						{Name: "llama-3.2-1b-preview"},
+						{Name: "llama-3.3-70b-specdec"},
+						{Name: "llama3-8b-8192"},
+					},
+				}
+				err := json.NewEncoder(w).Encode(response)
+				assert.NoError(t, err)
+			},
+			expectedResp: ListModelsResponse{
+				Provider: ProviderGroq,
+				Models: []Model{
+					{Name: "llama-3.3-70b-versatile"},
+					{Name: "llama-3.2-3b-preview"},
+					{Name: "llama-3.2-1b-preview"},
+					{Name: "llama-3.3-70b-specdec"},
+					{Name: "llama3-8b-8192"},
+				},
+			},
+		},
+		{
+			name:     "server error",
+			provider: ProviderGroq,
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				err := json.NewEncoder(w).Encode(ErrorResponse{Error: "internal error"})
+				assert.NoError(t, err)
+			},
+			expectedError: "API error: internal error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(tt.serverHandler))
+			defer server.Close()
+
+			client := NewClient(server.URL)
+			resp, err := client.ListProviderModels(tt.provider)
+
+			if tt.expectedError != "" {
+				assert.EqualError(t, err, tt.expectedError)
+				assert.Nil(t, resp)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedResp.Models, resp)
 			}
 		})
 	}
@@ -160,7 +227,8 @@ func TestGenerateContent(t *testing.T) {
 			serverHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(ErrorResponse{Error: "model not found"})
+				err := json.NewEncoder(w).Encode(ErrorResponse{Error: "model not found"})
+				assert.NoError(t, err)
 			},
 			expectedError: "API error: model not found",
 		},

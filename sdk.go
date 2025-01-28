@@ -21,15 +21,11 @@ const (
 
 // Model represents an LLM model
 type Model struct {
-	ID      string `json:"id"`       // Unique identifier for the model
-	Object  string `json:"object"`   // Type of object (always "model")
-	OwnedBy string `json:"owned_by"` // Organization that owns the model
-	Created int64  `json:"created"`  // Unix timestamp of when the model was created
+	Name string `json:"name"` // Unique identifier for the model
 }
 
-// ProviderModels represents models available for a provider
-type ProviderModels struct {
-	Provider Provider `json:"provider"` // The LLM provider (e.g., "ollama")
+type ListModelsResponse struct {
+	Provider Provider `json:"provider"` // The LLM provider (e.g., "Ollama")
 	Models   []Model  `json:"models"`   // List of available models for the provider
 }
 
@@ -74,7 +70,8 @@ type ErrorResponse struct {
 
 // Client represents the SDK client interface
 type Client interface {
-	ListModels() ([]ProviderModels, error)
+	ListModels() ([]ListModelsResponse, error)
+	ListProviderModels(provider Provider) ([]Model, error)
 	GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error)
 	HealthCheck() error
 }
@@ -106,8 +103,8 @@ func NewClient(baseURL string) Client {
 //	    log.Fatalf("Error listing models: %v", err)
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
-func (c *clientImpl) ListModels() ([]ProviderModels, error) {
-	var models []ProviderModels
+func (c *clientImpl) ListModels() ([]ListModelsResponse, error) {
+	var models []ListModelsResponse
 	resp, err := c.http.R().
 		SetResult(&models).
 		Get(fmt.Sprintf("%s/llms", c.baseURL))
@@ -125,6 +122,36 @@ func (c *clientImpl) ListModels() ([]ProviderModels, error) {
 	}
 
 	return models, nil
+}
+
+// ListProviderModels returns all available language models for a specific provider.
+//
+// Example:
+//
+//	models, err := client.ListProviderModels(sdk.ProviderOllama)
+//	if err != nil {
+//	    log.Fatalf("Error listing models: %v", err)
+//	}
+//	fmt.Printf("Available models: %+v\n", models)
+func (c *clientImpl) ListProviderModels(provider Provider) ([]Model, error) {
+	var response ListModelsResponse
+	resp, err := c.http.R().
+		SetResult(&response).
+		Get(fmt.Sprintf("%s/llms/%s", c.baseURL, provider))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		var errResp ErrorResponse
+		if err := json.Unmarshal(resp.Body(), &errResp); err != nil {
+			return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode())
+		}
+		return nil, fmt.Errorf("API error: %s", errResp.Error)
+	}
+
+	return response.Models, nil
 }
 
 // GenerateContent generates content using the specified provider and model.
