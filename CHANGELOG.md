@@ -1,3 +1,18 @@
+## [1.3.0](https://github.com/inference-gateway/sdk/compare/v1.2.3...v1.3.0) (2025-01-28)
+
+### ✨ Features
+
+* Add ListProviderModels to list a specific providers models ([1cf86fb](https://github.com/inference-gateway/sdk/commit/1cf86fb0debf58b54d3f5d76575fce3672c43f9e))
+* Add support for Anthropic LLM provider in SDK ([fa5772a](https://github.com/inference-gateway/sdk/commit/fa5772a23e9e8d358081b48479460a24aceb2653))
+
+### 📦 Improvements
+
+* Add lint task to run golangci-lint in Taskfile ([60403f1](https://github.com/inference-gateway/sdk/commit/60403f1a746fb481fc04d7980025aeef91666f2c))
+
+### 📚 Documentation
+
+* **openapi:** Update OpenAPI spec - download the latest one from inference-gateway ([2056147](https://github.com/inference-gateway/sdk/commit/205614711a886998e7179fe4b50d16b2eacd65d7))
+
 ## [1.2.3](https://github.com/inference-gateway/sdk/compare/v1.2.2...v1.2.3) (2025-01-21)
 
 ### ♻️ Improvements
