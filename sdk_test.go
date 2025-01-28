@@ -84,7 +84,7 @@ func TestListProviderModels(t *testing.T) {
 		provider      Provider
 		serverHandler func(w http.ResponseWriter, r *http.Request)
 		expectedError string
-		expectedResp  ListModelsResponse // Changed from *ListModelsResponse
+		expectedResp  ListModelsResponse
 	}{
 		{
 			name:     "successful list provider models",
