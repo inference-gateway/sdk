@@ -17,6 +17,7 @@ const (
 	ProviderGoogle     Provider = "google"     // Google LLM provider
 	ProviderCloudflare Provider = "cloudflare" // Cloudflare LLM provider
 	ProviderCohere     Provider = "cohere"     // Cohere LLM provider
+	ProviderAnthropic  Provider = "anthropic"  // Anthropic LLM provider
 )
 
 // Model represents an LLM model
