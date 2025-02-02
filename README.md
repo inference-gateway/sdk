@@ -41,14 +41,15 @@ import (
 
 func main() {
     client := sdk.NewClient("http://localhost:8080")
+    ctx := context.Background()
 
     // Health check
-    if err := client.HealthCheck(); err != nil {
+    if err := client.HealthCheck(ctx); err != nil {
         log.Fatalf("Health check failed: %v", err)
     }
 
     // List models
-    models, err := client.ListModels()
+    models, err := client.ListModels(ctx)
     if err != nil {
         log.Fatalf("Error listing models: %v", err)
     }
@@ -56,6 +57,7 @@ func main() {
 
     // Generate content using the llama2 model
     response, err := client.GenerateContent(
+        ctx,
         sdk.ProviderOllama,
         "llama2",
         []sdk.Message{
@@ -82,15 +84,17 @@ func main() {
 To list available models, use the ListModels method:
 
 ```go
+ctx := context.Background()
+
 // List all models from all providers
-models, err := client.ListModels()
+models, err := client.ListModels(ctx)
 if err != nil {
     log.Fatalf("Error listing models: %v", err)
 }
 fmt.Printf("All available models: %+v\n", models)
 
 // List models for a specific provider
-providerModels, err := client.ListProviderModels(sdk.ProviderGroq)
+providerModels, err := client.ListProviderModels(ctx, sdk.ProviderGroq)
 if err != nil {
     log.Fatalf("Error listing provider models: %v", err)
 }
@@ -102,7 +106,9 @@ fmt.Printf("Available Groq models: %+v\n", providerModels)
 To generate content using a model, use the GenerateContent method:
 
 ```go
+ctx := context.Background()
 response, err := client.GenerateContent(
+    ctx,
     sdk.ProviderOllama,
     "llama2",
     []sdk.Message{
