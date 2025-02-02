@@ -142,7 +142,7 @@ The SDK supports the following LLM providers:
 -   Google (sdk.ProviderGoogle)
 -   Cloudflare (sdk.ProviderCloudflare)
 -   Cohere (sdk.ProviderCohere)
--   Anthropic (sdk.ProviderAnthropic
+-   Anthropic (sdk.ProviderAnthropic)
 
 ## Documentation
 
