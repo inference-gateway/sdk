@@ -14,7 +14,6 @@ const (
 	ProviderOllama     Provider = "ollama"     // Ollama LLM provider
 	ProviderGroq       Provider = "groq"       // Groq LLM provider
 	ProviderOpenAI     Provider = "openai"     // OpenAI LLM provider
-	ProviderGoogle     Provider = "google"     // Google LLM provider
 	ProviderCloudflare Provider = "cloudflare" // Cloudflare LLM provider
 	ProviderCohere     Provider = "cohere"     // Cohere LLM provider
 	ProviderAnthropic  Provider = "anthropic"  // Anthropic LLM provider

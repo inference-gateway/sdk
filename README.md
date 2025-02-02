@@ -139,7 +139,6 @@ The SDK supports the following LLM providers:
 -   Ollama (sdk.ProviderOllama)
 -   Groq (sdk.ProviderGroq)
 -   OpenAI (sdk.ProviderOpenAI)
--   Google (sdk.ProviderGoogle)
 -   Cloudflare (sdk.ProviderCloudflare)
 -   Cohere (sdk.ProviderCohere)
 -   Anthropic (sdk.ProviderAnthropic)
