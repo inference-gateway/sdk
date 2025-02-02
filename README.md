@@ -60,11 +60,11 @@ func main() {
         "llama2",
         []sdk.Message{
             {
-                Role:    sdk.RoleSystem,
+                Role:    sdk.MessageRoleSystem,
                 Content: "You are a helpful assistant.",
             },
             {
-                Role:    sdk.RoleUser,
+                Role:    sdk.MessageRoleUser,
                 Content: "What is Go?",
             },
         },
@@ -107,11 +107,11 @@ response, err := client.GenerateContent(
     "llama2",
     []sdk.Message{
         {
-            Role:    sdk.RoleSystem,
+            Role:    sdk.MessageRoleSystem,
             Content: "You are a helpful assistant.",
         },
         {
-            Role:    sdk.RoleUser,
+            Role:    sdk.MessageRoleUser,
             Content: "What is Go?",
         },
     }
@@ -145,11 +145,11 @@ events, err := client.GenerateContentStream(
     "llama2",
     []sdk.Message{
         {
-            Role:    sdk.RoleSystem,
+            Role:    sdk.MessageRoleSystem,
             Content: "You are a helpful assistant.",
         },
         {
-            Role:    sdk.RoleUser,
+            Role:    sdk.MessageRoleUser,
             Content: "What is Go?",
         },
     },

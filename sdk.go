@@ -37,9 +37,9 @@ type ListModelsResponse struct {
 type Role string
 
 const (
-	RoleSystem    Role = "system"    // System message role
-	RoleUser      Role = "user"      // User message role
-	RoleAssistant Role = "assistant" // Assistant message role
+	MessageRoleSystem    Role = "system"    // System message role
+	MessageRoleUser      Role = "user"      // User message role
+	MessageRoleAssistant Role = "assistant" // Assistant message role
 )
 
 // Message represents a chat message
@@ -211,11 +211,11 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //	    "llama2",
 //	    []sdk.Message{
 //	        {
-//	            Role:    sdk.RoleSystem,
+//	            Role:    sdk.MessageRoleSystem,
 //	            Content: "You are a helpful assistant.",
 //	        },
 //	        {
-//	            Role:    sdk.RoleUser,
+//	            Role:    sdk.MessageRoleUser,
 //	            Content: "What is Go?",
 //	        },
 //	    },
@@ -266,8 +266,8 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //		sdk.ProviderOllama,
 //		"llama2",
 //		[]sdk.Message{
-//			{Role: sdk.RoleSystem, Content: "You are a helpful assistant."},
-//			{Role: sdk.RoleUser, Content: "What is Go?"},
+//			{Role: sdk.MessageRoleSystem, Content: "You are a helpful assistant."},
+//			{Role: sdk.MessageRoleUser, Content: "What is Go?"},
 //		},
 //	)
 //	if err != nil {
