@@ -1,3 +1,9 @@
+## [1.4.1](https://github.com/inference-gateway/sdk/compare/v1.4.0...v1.4.1) (2025-02-02)
+
+### 📚 Documentation
+
+* Update README with the correct examples ([6b8268d](https://github.com/inference-gateway/sdk/commit/6b8268de350580fec09d2c36a92ad131929c2518))
+
 ## [1.4.0](https://github.com/inference-gateway/sdk/compare/v1.3.0...v1.4.0) (2025-02-02)
 
 ### ✨ Features
