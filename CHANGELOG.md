@@ -1,3 +1,25 @@
+## [1.4.0](https://github.com/inference-gateway/sdk/compare/v1.3.0...v1.4.0) (2025-02-02)
+
+### ✨ Features
+
+* Add streaming content generation support to SDK ([6f4b4a0](https://github.com/inference-gateway/sdk/commit/6f4b4a046dbd011d3c7f04f0d28b6f5e96bcd73c))
+
+### ♻️ Improvements
+
+* Add context parameter to SDK client methods for improved context management ([cac2f4e](https://github.com/inference-gateway/sdk/commit/cac2f4edd8494b84bd7007a7a1dd67646baabdf0))
+* Rename role constants for clarity in SDK message handling ([2782890](https://github.com/inference-gateway/sdk/commit/278289059f998d372c387dc85cb237b981253855))
+
+### 📚 Documentation
+
+* Correct typo in Anthropic provider listing in README ([0195de7](https://github.com/inference-gateway/sdk/commit/0195de724f119eacaac8412dcf3b0a5fc92822bb))
+* Improve docs by having a docblocks with examples ([19f105d](https://github.com/inference-gateway/sdk/commit/19f105d528de3aa0950d48d473c222d66c0f9701))
+* Remove Google LLM provider from SDK and documentation ([8ba8ec0](https://github.com/inference-gateway/sdk/commit/8ba8ec0c1b5e6c8183f74a05a3ffffb3dbd5eaf0))
+
+### 🔧 Miscellaneous
+
+* Cleanup ([f6547a8](https://github.com/inference-gateway/sdk/commit/f6547a8d4abb39540dcd4d3f34ef9556ad3a3d47))
+* **openapi:** Update documentation for SDK usage ([f84968d](https://github.com/inference-gateway/sdk/commit/f84968d694cc3b8b805670bef020b3a417520fdc))
+
 ## [1.3.0](https://github.com/inference-gateway/sdk/compare/v1.2.3...v1.3.0) (2025-01-28)
 
 ### ✨ Features
