@@ -211,14 +211,6 @@ components:
                       - role: "user"
                         content: "Hello! How can I assist you today?"
                     temperature: 0.7
-              - google:
-                  summary: Google Gemini request
-                  value:
-                    model: "gemini-1.0-pro"
-                    messages:
-                      - role: "user"
-                        content: "What is machine learning?"
-                    temperature: 0.3
               - anthropic:
                   summary: Anthropic Claude request
                   value:
@@ -276,33 +268,6 @@ components:
                       },
                     ],
                 }
-            google:
-              summary: Google API response
-              value:
-                {
-                  "candidates":
-                    [
-                      {
-                        "content":
-                          {
-                            "parts":
-                              [
-                                {
-                                  "text": "Hello! How can I assist you today?",
-                                },
-                              ],
-                          },
-                        "finishReason": "STOP",
-                        "safetyRatings":
-                          [
-                            {
-                              "category": "HARM_CATEGORY_HARASSMENT",
-                              "probability": "NEGLIGIBLE",
-                            },
-                          ],
-                      },
-                    ],
-                }
   securitySchemes:
     bearerAuth:
       type: http
@@ -319,7 +284,6 @@ components:
         - ollama
         - groq
         - openai
-        - google
         - cloudflare
         - cohere
         - anthropic
@@ -336,20 +300,6 @@ components:
               "id": "gpt-4",
               "object": "model",
               "created": 1687882410
-            }
-          ]
-        }
-        ```
-
-        Google GET /v1beta/models response:
-        ```json
-        {
-          "models": [
-            {
-              "name": "models/gemini-1.0-pro",
-              "version": "001",
-              "displayName": "Gemini 1.0 Pro",
-              "description": "The best model for scaling across a wide range of tasks"
             }
           ]
         }
@@ -424,6 +374,25 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Message"
+        stream:
+          type: boolean
+          default: false
+          description: Whether to stream tokens as they are generated in raw json
+        ssevents:
+          type: boolean
+          default: false
+          description: |
+            Whether to use Server-Sent Events for token generation.
+            When enabled, the response will be streamed as SSE with the following event types:
+              - message-start: Initial message event with assistant role
+              - stream-start: Stream initialization
+              - content-start: Content beginning
+              - content-delta: Content update with new tokens
+              - content-end: Content completion
+              - message-end: Message completion
+              - stream-end: Stream completion
+
+              **Note:** Depending on the provider, some events may not be present.
     ResponseTokens:
       type: object
       description: Token response structure
@@ -448,77 +417,172 @@ components:
           - general:
               title: "General settings"
               settings:
-                - application_name:
-                    env: "APPLICATION_NAME"
-                    default: "inference-gateway"
-                    description: "The name of the application"
-                - environment:
-                    env: "ENVIRONMENT"
-                    default: "production"
-                    description: "The environment"
-                - enable_telemetry:
-                    env: "ENABLE_TELEMETRY"
-                    default: "false"
-                    description: "Enable telemetry"
-                - enable_auth:
-                    env: "ENABLE_AUTH"
-                    default: "false"
-                    description: "Enable authentication"
+                - name: application_name
+                  env: "APPLICATION_NAME"
+                  type: string
+                  default: "inference-gateway"
+                  description: "The name of the application"
+                - name: environment
+                  env: "ENVIRONMENT"
+                  type: string
+                  default: "production"
+                  description: "The environment"
+                - name: enable_telemetry
+                  env: "ENABLE_TELEMETRY"
+                  type: bool
+                  default: "false"
+                  description: "Enable telemetry"
+                - name: enable_auth
+                  env: "ENABLE_AUTH"
+                  type: bool
+                  default: "false"
+                  description: "Enable authentication"
           - oidc:
               title: "OpenID Connect"
               settings:
-                - issuer_url:
-                    env: "OIDC_ISSUER_URL"
-                    default: "http://keycloak:8080/realms/inference-gateway-realm"
-                    description: "OIDC issuer URL"
-                - client_id:
-                    env: "OIDC_CLIENT_ID"
-                    default: "inference-gateway-client"
-                    description: "OIDC client ID"
-                    secret: true
-                - client_secret:
-                    env: "OIDC_CLIENT_SECRET"
-                    description: "OIDC client secret"
-                    secret: true
+                - name: issuer_url
+                  env: "OIDC_ISSUER_URL"
+                  type: string
+                  default: "http://keycloak:8080/realms/inference-gateway-realm"
+                  description: "OIDC issuer URL"
+                - name: client_id
+                  env: "OIDC_CLIENT_ID"
+                  type: string
+                  default: "inference-gateway-client"
+                  description: "OIDC client ID"
+                  secret: true
+                - name: client_secret
+                  env: "OIDC_CLIENT_SECRET"
+                  type: string
+                  description: "OIDC client secret"
+                  secret: true
           - server:
               title: "Server settings"
               settings:
-                - host:
-                    env: "SERVER_HOST"
-                    default: "0.0.0.0"
-                    description: "Server host"
-                - port:
-                    env: "SERVER_PORT"
-                    default: "8080"
-                    description: "Server port"
-                - read_timeout:
-                    env: "SERVER_READ_TIMEOUT"
-                    default: "30s"
-                    description: "Read timeout"
-                - write_timeout:
-                    env: "SERVER_WRITE_TIMEOUT"
-                    default: "30s"
-                    description: "Write timeout"
-                - idle_timeout:
-                    env: "SERVER_IDLE_TIMEOUT"
-                    default: "120s"
-                    description: "Idle timeout"
-                - tls_cert_path:
-                    env: "SERVER_TLS_CERT_PATH"
-                    description: "TLS certificate path"
-                - tls_key_path:
-                    env: "SERVER_TLS_KEY_PATH"
-                    description: "TLS key path"
+                - name: host
+                  env: "SERVER_HOST"
+                  type: string
+                  default: "0.0.0.0"
+                  description: "Server host"
+                - name: port
+                  env: "SERVER_PORT"
+                  type: string
+                  default: "8080"
+                  description: "Server port"
+                - name: read_timeout
+                  env: "SERVER_READ_TIMEOUT"
+                  type: time.Duration
+                  default: "30s"
+                  description: "Read timeout"
+                - name: write_timeout
+                  env: "SERVER_WRITE_TIMEOUT"
+                  type: time.Duration
+                  default: "30s"
+                  description: "Write timeout"
+                - name: idle_timeout
+                  env: "SERVER_IDLE_TIMEOUT"
+                  type: time.Duration
+                  default: "120s"
+                  description: "Idle timeout"
+                - name: tls_cert_path
+                  env: "SERVER_TLS_CERT_PATH"
+                  type: string
+                  description: "TLS certificate path"
+                - name: tls_key_path
+                  env: "SERVER_TLS_KEY_PATH"
+                  type: string
+                  description: "TLS key path"
+          - client:
+              title: "Client settings"
+              settings:
+                - name: timeout
+                  env: "CLIENT_TIMEOUT"
+                  type: time.Duration
+                  default: "30s"
+                  description: "Client timeout"
+                - name: max_idle_conns
+                  env: "CLIENT_MAX_IDLE_CONNS"
+                  type: int
+                  default: "20"
+                  description: "Maximum idle connections"
+                - name: max_idle_conns_per_host
+                  env: "CLIENT_MAX_IDLE_CONNS_PER_HOST"
+                  type: int
+                  default: "20"
+                  description: "Maximum idle connections per host"
+                - name: idle_conn_timeout
+                  env: "CLIENT_IDLE_CONN_TIMEOUT"
+                  type: time.Duration
+                  default: "30s"
+                  description: "Idle connection timeout"
+                - name: tls_min_version
+                  env: "CLIENT_TLS_MIN_VERSION"
+                  type: string
+                  default: "TLS12"
+                  description: "Minimum TLS version"
           - providers:
               title: "Providers"
               settings:
-                - url:
-                    env: "{key}_API_URL"
-                    description: "The provider API URL"
-                - token:
-                    env: "{key}_API_KEY"
-                    description: "The provider API key"
-                    secret: true
+                - name: anthropic_api_url
+                  env: "ANTHROPIC_API_URL"
+                  type: string
+                  default: "https://api.anthropic.com"
+                  description: "Anthropic API URL"
+                - name: anthropic_api_key
+                  env: "ANTHROPIC_API_KEY"
+                  type: string
+                  description: "Anthropic API Key"
+                  secret: true
+                - name: cloudflare_api_url
+                  env: "CLOUDFLARE_API_URL"
+                  type: string
+                  default: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+                  description: "Cloudflare API URL"
+                - name: cloudflare_api_key
+                  env: "CLOUDFLARE_API_KEY"
+                  type: string
+                  description: "Cloudflare API Key"
+                  secret: true
+                - name: cohere_api_url
+                  env: "COHERE_API_URL"
+                  type: string
+                  default: "https://api.cohere.com"
+                  description: "Cohere API URL"
+                - name: cohere_api_key
+                  env: "COHERE_API_KEY"
+                  type: string
+                  description: "Cohere API Key"
+                  secret: true
+                - name: groq_api_url
+                  env: "GROQ_API_URL"
+                  type: string
+                  default: "https://api.groq.com"
+                  description: "Groq API URL"
+                - name: groq_api_key
+                  env: "GROQ_API_KEY"
+                  type: string
+                  description: "Groq API Key"
+                  secret: true
+                - name: ollama_api_url
+                  env: "OLLAMA_API_URL"
+                  type: string
+                  default: "http://ollama:8080"
+                  description: "Ollama API URL"
+                - name: ollama_api_key
+                  env: "OLLAMA_API_KEY"
+                  type: string
+                  description: "Ollama API Key"
+                  secret: true
+                - name: openai_api_url
+                  env: "OPENAI_API_URL"
+                  type: string
+                  default: "https://api.openai.com"
+                  description: "OpenAI API URL"
+                - name: openai_api_key
+                  env: "OPENAI_API_KEY"
+                  type: string
+                  description: "OpenAI API Key"
+                  secret: true
       x-provider-configs:
         ollama:
           id: "ollama"
@@ -759,131 +823,6 @@ components:
                                 type: string
                               content:
                                 type: string
-        google:
-          id: "google"
-          url: "https://generativelanguage.googleapis.com"
-          auth_type: "query"
-          endpoints:
-            list:
-              endpoint: "/v1beta/models"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    models:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          baseModelId:
-                            type: string
-                          version:
-                            type: string
-                          displayName:
-                            type: string
-                          description:
-                            type: string
-                          inputTokenLimit:
-                            type: integer
-                          outputTokenLimit:
-                            type: integer
-                          supportedGenerationMethods:
-                            type: array
-                            items:
-                              type: string
-                          temperature:
-                            type: number
-                            format: float64
-                          maxTemperature:
-                            type: number
-                            format: float64
-                          topP:
-                            type: number
-                            format: float64
-                          topK:
-                            type: integer
-            generate:
-              endpoint: "/v1beta/models/{model}:generateContent"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    contents:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          parts:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                text:
-                                  type: string
-                          role:
-                            type: string
-                    temperature:
-                      type: number
-                      format: float64
-                      default: 0.7
-                response:
-                  type: object
-                  properties:
-                    candidates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          content:
-                            type: object
-                            properties:
-                              parts:
-                                type: array
-                                items:
-                                  type: object
-                                  properties:
-                                    text:
-                                      type: string
-                          finishReason:
-                            type: string
-                          safetyRatings:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                category:
-                                  type: string
-                                probability:
-                                  type: string
-                    promptFeedback:
-                      type: object
-                      properties:
-                        safetyRatings:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              category:
-                                type: string
-                              probability:
-                                type: string
-                        blockReason:
-                          type: string
-                    usageMetadata:
-                      type: object
-                      properties:
-                        promptTokenCount:
-                          type: integer
-                        candidatesTokenCount:
-                          type: integer
-                        totalTokenCount:
-                          type: integer
-                    modelVersion:
-                      type: string
         cloudflare:
           id: "cloudflare"
           url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
