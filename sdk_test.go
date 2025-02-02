@@ -68,7 +68,8 @@ func TestListModels(t *testing.T) {
 			defer server.Close()
 
 			client := NewClient(server.URL)
-			resp, err := client.ListModels()
+			ctx := context.Background()
+			resp, err := client.ListModels(ctx)
 
 			if tt.expectedError != "" {
 				assert.EqualError(t, err, tt.expectedError)
@@ -140,7 +141,8 @@ func TestListProviderModels(t *testing.T) {
 			defer server.Close()
 
 			client := NewClient(server.URL)
-			resp, err := client.ListProviderModels(tt.provider)
+			ctx := context.Background()
+			resp, err := client.ListProviderModels(ctx, tt.provider)
 
 			if tt.expectedError != "" {
 				assert.EqualError(t, err, tt.expectedError)
@@ -243,7 +245,8 @@ func TestGenerateContent(t *testing.T) {
 			defer server.Close()
 
 			client := NewClient(server.URL)
-			resp, err := client.GenerateContent(tt.provider, tt.model, tt.messages)
+			ctx := context.Background()
+			resp, err := client.GenerateContent(ctx, tt.provider, tt.model, tt.messages)
 
 			if tt.expectedError != "" {
 				assert.EqualError(t, err, tt.expectedError)
@@ -285,7 +288,8 @@ func TestHealthCheck(t *testing.T) {
 			defer server.Close()
 
 			client := NewClient(server.URL)
-			err := client.HealthCheck()
+			ctx := context.Background()
+			err := client.HealthCheck(ctx)
 
 			if tt.expectedError != "" {
 				assert.EqualError(t, err, tt.expectedError)

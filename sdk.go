@@ -108,11 +108,11 @@ type ErrorResponse struct {
 
 // Client represents the SDK client interface
 type Client interface {
-	ListModels() ([]ListModelsResponse, error)
-	ListProviderModels(provider Provider) ([]Model, error)
-	GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error)
+	ListModels(ctx context.Context) ([]ListModelsResponse, error)
+	ListProviderModels(ctx context.Context, provider Provider) ([]Model, error)
+	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*GenerateResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
-	HealthCheck() error
+	HealthCheck(ctx context.Context) error
 }
 
 // clientImpl represents the concrete implementation of the SDK client
@@ -137,14 +137,16 @@ func NewClient(baseURL string) Client {
 //
 // Example:
 //
-//	models, err := client.ListModels()
+//	ctx := context.Background()
+//	models, err := client.ListModels(ctx)
 //	if err != nil {
 //	    log.Fatalf("Error listing models: %v", err)
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
-func (c *clientImpl) ListModels() ([]ListModelsResponse, error) {
+func (c *clientImpl) ListModels(ctx context.Context) ([]ListModelsResponse, error) {
 	var models []ListModelsResponse
 	resp, err := c.http.R().
+		SetContext(ctx).
 		SetResult(&models).
 		Get(fmt.Sprintf("%s/llms", c.baseURL))
 
@@ -167,14 +169,16 @@ func (c *clientImpl) ListModels() ([]ListModelsResponse, error) {
 //
 // Example:
 //
+//	ctx := context.Background()
 //	models, err := client.ListProviderModels(sdk.ProviderOllama)
 //	if err != nil {
 //	    log.Fatalf("Error listing models: %v", err)
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
-func (c *clientImpl) ListProviderModels(provider Provider) ([]Model, error) {
+func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) ([]Model, error) {
 	var response ListModelsResponse
 	resp, err := c.http.R().
+		SetContext(ctx).
 		SetResult(&response).
 		Get(fmt.Sprintf("%s/llms/%s", c.baseURL, provider))
 
@@ -197,7 +201,12 @@ func (c *clientImpl) ListProviderModels(provider Provider) ([]Model, error) {
 //
 // Example:
 //
+//	ctx := context.Background()
+//	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+//	defer cancel()
+//
 //	response, err := client.GenerateContent(
+//	    ctx,
 //	    sdk.ProviderOllama,
 //	    "llama2",
 //	    []sdk.Message{
@@ -215,7 +224,7 @@ func (c *clientImpl) ListProviderModels(provider Provider) ([]Model, error) {
 //	    log.Fatalf("Error generating content: %v", err)
 //	}
 //	fmt.Printf("Generated content: %s\n", response.Response.Content)
-func (c *clientImpl) GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error) {
+func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*GenerateResponse, error) {
 	if len(messages) == 0 {
 		return nil, fmt.Errorf("at least one message is required")
 	}
@@ -227,6 +236,7 @@ func (c *clientImpl) GenerateContent(provider Provider, model string, messages [
 
 	var result GenerateResponse
 	resp, err := c.http.R().
+		SetContext(ctx).
 		SetBody(req).
 		SetResult(&result).
 		Post(fmt.Sprintf("%s/llms/%s/generate", c.baseURL, provider))
@@ -299,6 +309,7 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 	}
 
 	resp, err := c.http.R().
+		SetContext(ctx).
 		SetDoNotParseResponse(true).
 		SetBody(req).
 		Post(fmt.Sprintf("%s/llms/%s/generate", c.baseURL, provider))
@@ -359,12 +370,14 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 //
 // Example:
 //
-//	err := client.HealthCheck()
+//	ctx := context.Background()
+//	err := client.HealthCheck(ctx)
 //	if err != nil {
 //	    log.Fatalf("Health check failed: %v", err)
 //	}
-func (c *clientImpl) HealthCheck() error {
+func (c *clientImpl) HealthCheck(ctx context.Context) error {
 	resp, err := c.http.R().
+		SetContext(ctx).
 		Get(fmt.Sprintf("%s/health", c.baseURL))
 
 	if err != nil {
