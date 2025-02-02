@@ -9,6 +9,7 @@ An SDK written in Go for the [Inference Gateway](https://github.com/inference-ga
     - [Listing Models](#listing-models)
     - [Generating Content](#generating-content)
     - [Health Check](#health-check)
+    - [Streaming Content](#streaming-content)
   - [Supported Providers](#supported-providers)
   - [Documentation](#documentation)
   - [Contributing](#contributing)
@@ -129,6 +130,66 @@ To check if the API is healthy:
 err := client.HealthCheck()
 if err != nil {
     log.Fatalf("Health check failed: %v", err)
+}
+```
+
+### Streaming Content
+
+To generate content using streaming mode, use the GenerateContentStream method:
+
+```go
+ctx := context.Background()
+events, err := client.GenerateContentStream(
+    ctx,
+    sdk.ProviderOllama,
+    "llama2",
+    []sdk.Message{
+        {
+            Role:    sdk.RoleSystem,
+            Content: "You are a helpful assistant.",
+        },
+        {
+            Role:    sdk.RoleUser,
+            Content: "What is Go?",
+        },
+    },
+)
+if err != nil {
+    log.Fatalf("Error generating content stream: %v", err)
+}
+// Read events from the stream / channel
+for event := range events {
+    switch event.Event {
+    case sdk.StreamEventContentDelta:
+        // Option 1: Use anonymous struct for simple cases
+        var delta struct {
+            Content string `json:"content"`
+        }
+        if err := json.Unmarshal(event.Data, &delta); err != nil {
+            log.Printf("Error parsing delta: %v", err)
+            continue
+        }
+        fmt.Print(delta.Content)
+
+        // Option 2: Use GenerateResponseTokens for full response structure
+        var tokens sdk.GenerateResponseTokens
+        if err := json.Unmarshal(event.Data, &tokens); err != nil {
+            log.Printf("Error parsing tokens: %v", err)
+            continue
+        }
+        fmt.Printf("Model: %s, Role: %s, Content: %s\n",
+            tokens.Model, tokens.Role, tokens.Content)
+
+    case sdk.StreamEventMessageError:
+        var errResp struct {
+            Error string `json:"error"`
+        }
+        if err := json.Unmarshal(event.Data, &errResp); err != nil {
+            log.Printf("Error parsing error: %v", err)
+            continue
+        }
+        log.Printf("Error: %s", errResp.Error)
+    }
 }
 ```
 

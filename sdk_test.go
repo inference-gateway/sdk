@@ -1,10 +1,13 @@
 package sdk
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -288,6 +291,190 @@ func TestHealthCheck(t *testing.T) {
 				assert.EqualError(t, err, tt.expectedError)
 			} else {
 				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestGenerateContentStream(t *testing.T) {
+	tests := []struct {
+		name          string
+		provider      Provider
+		model         string
+		messages      []Message
+		serverHandler func(w http.ResponseWriter, r *http.Request)
+		expectedError string
+		validate      func(*testing.T, <-chan SSEvent)
+	}{
+		{
+			name:     "successful stream",
+			provider: ProviderOllama,
+			model:    "llama2",
+			messages: []Message{
+				{Role: RoleSystem, Content: "You are helpful."},
+				{Role: RoleUser, Content: "Hi"},
+			},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, "/llms/ollama/generate", r.URL.Path)
+
+				var req GenerateRequest
+				err := json.NewDecoder(r.Body).Decode(&req)
+				assert.NoError(t, err)
+				assert.True(t, req.Stream)
+				assert.True(t, req.SSEvents)
+
+				w.Header().Set("Content-Type", "text/event-stream")
+				w.WriteHeader(http.StatusOK)
+
+				events := []SSEvent{
+					{Event: StreamEventMessageStart, Data: json.RawMessage(`{"role":"assistant"}`)},
+					{Event: StreamEventStreamStart, Data: json.RawMessage(`{}`)},
+					{Event: StreamEventContentStart, Data: json.RawMessage(`{}`)},
+					{Event: StreamEventContentDelta, Data: json.RawMessage(`{"content":"Hello"}`)},
+					{Event: StreamEventContentDelta, Data: json.RawMessage(`{"content":" there"}`)},
+					{Event: StreamEventContentDelta, Data: json.RawMessage(`{"content":"!"}`)},
+					{Event: StreamEventContentEnd, Data: json.RawMessage(`{}`)},
+					{Event: StreamEventMessageEnd, Data: json.RawMessage(`{}`)},
+					{Event: StreamEventStreamEnd, Data: json.RawMessage(`{}`)},
+				}
+
+				for _, evt := range events {
+					data, err := evt.Data.MarshalJSON()
+					assert.NoError(t, err)
+					_, err = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", evt.Event, data)
+					assert.NoError(t, err)
+					w.(http.Flusher).Flush()
+				}
+			},
+			validate: func(t *testing.T, events <-chan SSEvent) {
+				expected := []SSEvent{
+					{Event: StreamEventMessageStart, Data: []byte(`{"role":"assistant"}`)},
+					{Event: StreamEventStreamStart, Data: []byte(`{}`)},
+					{Event: StreamEventContentStart, Data: []byte(`{}`)},
+					{Event: StreamEventContentDelta, Data: []byte(`{"content":"Hello"}`)},
+					{Event: StreamEventContentDelta, Data: []byte(`{"content":" there"}`)},
+					{Event: StreamEventContentDelta, Data: []byte(`{"content":"!"}`)},
+					{Event: StreamEventContentEnd, Data: []byte(`{}`)},
+					{Event: StreamEventMessageEnd, Data: []byte(`{}`)},
+					{Event: StreamEventStreamEnd, Data: []byte(`{}`)},
+				}
+
+				for _, expectedEvent := range expected {
+					event := <-events
+					assert.Equal(t, expectedEvent.Event, event.Event)
+					assert.JSONEq(t, string(expectedEvent.Data), string(event.Data))
+				}
+
+				_, more := <-events
+				assert.False(t, more, "channel should be closed")
+			},
+		},
+		{
+			name:     "server error",
+			provider: ProviderOllama,
+			model:    "llama2",
+			messages: []Message{
+				{Role: RoleUser, Content: "Hi"},
+			},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/event-stream")
+				w.WriteHeader(http.StatusOK)
+
+				events := []SSEvent{
+					{Event: StreamEventMessageStart, Data: json.RawMessage(`{"role":"assistant"}`)},
+					{Event: StreamEventMessageError, Data: json.RawMessage(`{"error":"error event captured"}`)},
+					{Event: StreamEventStreamEnd, Data: json.RawMessage(`{}`)},
+				}
+
+				for _, evt := range events {
+					data, err := evt.Data.MarshalJSON()
+					assert.NoError(t, err)
+					_, err = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", evt.Event, data)
+					assert.NoError(t, err)
+					w.(http.Flusher).Flush()
+				}
+			},
+			validate: func(t *testing.T, events <-chan SSEvent) {
+				expected := []SSEvent{
+					{Event: StreamEventMessageStart, Data: json.RawMessage(`{"role":"assistant"}`)},
+					{Event: StreamEventMessageError, Data: json.RawMessage(`{"error":"error event captured"}`)},
+					{Event: StreamEventStreamEnd, Data: json.RawMessage(`{}`)},
+				}
+
+				for _, expectedEvent := range expected {
+					event := <-events
+					t.Logf("Received event: %+v with data: %s", event.Event, string(event.Data))
+					assert.Equal(t, expectedEvent.Event, event.Event)
+					assert.JSONEq(t, string(expectedEvent.Data), string(event.Data))
+				}
+
+				_, more := <-events
+				assert.False(t, more, "channel should be closed")
+			},
+		},
+		{
+			name:     "context canceled",
+			provider: ProviderOllama,
+			model:    "llama2",
+			messages: []Message{
+				{Role: RoleUser, Content: "Hi"},
+			},
+			serverHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/event-stream")
+				w.WriteHeader(http.StatusOK)
+
+				event := SSEvent{
+					Event: StreamEventMessageStart,
+					Data:  json.RawMessage(`{"role":"assistant"}`),
+				}
+
+				_, err := fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event.Event, event.Data)
+				assert.NoError(t, err)
+				w.(http.Flusher).Flush()
+
+				time.Sleep(100 * time.Millisecond)
+			},
+			validate: func(t *testing.T, events <-chan SSEvent) {
+				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+				defer cancel()
+
+				expected := SSEvent{
+					Event: StreamEventMessageStart,
+					Data:  json.RawMessage(`{"role":"assistant"}`),
+				}
+
+				select {
+				case event := <-events:
+					assert.Equal(t, expected.Event, event.Event)
+					assert.JSONEq(t, string(expected.Data), string(event.Data))
+				case <-ctx.Done():
+					t.Fatal("timeout waiting for first event")
+				}
+
+				<-ctx.Done()
+				_, more := <-events
+				assert.False(t, more, "channel should be closed after context cancellation")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(tt.serverHandler))
+			defer server.Close()
+
+			client := NewClient(server.URL)
+			ctx := context.Background()
+			events, err := client.GenerateContentStream(ctx, tt.provider, tt.model, tt.messages)
+
+			if tt.expectedError != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedError)
+				assert.Nil(t, events)
+			} else {
+				assert.NoError(t, err)
+				tt.validate(t, events)
 			}
 		})
 	}

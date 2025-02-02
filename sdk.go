@@ -1,8 +1,12 @@
 package sdk
 
 import (
+	"bufio"
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -48,6 +52,19 @@ type Message struct {
 type GenerateRequest struct {
 	Model    string    `json:"model"`    // Name of the model to use
 	Messages []Message `json:"messages"` // List of messages in the conversation
+	Stream   bool      `json:"stream"`   // Enable streaming mode
+	SSEvents bool      `json:"ssevents"` // Enable SSE events
+}
+
+// SSEvent represents a Server-Sent Event from the content generation stream
+type SSEvent struct {
+	Event StreamEvent     `json:"event,omitempty"` // The type of the SSE event
+	Data  json.RawMessage `json:"data,omitempty"`  // The content payload of the event
+}
+
+// ResponseError represents an error response from the API
+type ResponseError struct {
+	Error string `json:"error"`
 }
 
 // GenerateResponseTokens represents the response tokens from content generation
@@ -73,6 +90,7 @@ type Client interface {
 	ListModels() ([]ListModelsResponse, error)
 	ListProviderModels(provider Provider) ([]Model, error)
 	GenerateContent(provider Provider, model string, messages []Message) (*GenerateResponse, error)
+	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
 	HealthCheck() error
 }
 
@@ -205,6 +223,157 @@ func (c *clientImpl) GenerateContent(provider Provider, model string, messages [
 	}
 
 	return &result, nil
+}
+
+type StreamEvent string
+
+const (
+	// StreamEventMessageError represents an error message
+	StreamEventMessageError StreamEvent = "error"
+	// StreamEventMessageStart represents the start of a new message
+	StreamEventMessageStart StreamEvent = "message-start"
+	// StreamEventStreamStart represents the start of the stream
+	StreamEventStreamStart StreamEvent = "stream-start"
+	// StreamEventContentStart represents the start of the content
+	StreamEventContentStart StreamEvent = "content-start"
+	// StreamEventContentDelta represents a content delta
+	StreamEventContentDelta StreamEvent = "content-delta"
+	// StreamEventContentEnd represents the end of the content
+	StreamEventContentEnd StreamEvent = "content-end"
+	// StreamEventMessageEnd represents the end of a message
+	StreamEventMessageEnd StreamEvent = "message-end"
+	// StreamEventStreamEnd represents the end of the stream
+	StreamEventStreamEnd StreamEvent = "stream-end"
+)
+
+// ParseSSEvents parses a Server-Sent Event from a byte slice
+func ParseSSEvents(line []byte) (*SSEvent, error) {
+	if len(bytes.TrimSpace(line)) == 0 {
+		return nil, fmt.Errorf("empty line")
+	}
+
+	lines := bytes.Split(line, []byte("\n"))
+	event := &SSEvent{}
+	for _, line := range lines {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
+		parts := bytes.SplitN(line, []byte(":"), 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		field := string(bytes.TrimSpace(parts[0]))
+		value := bytes.TrimSpace(parts[1])
+
+		switch field {
+		case "data":
+			event.Data = value
+		case "event":
+			event.Event = StreamEvent(string(value))
+		}
+	}
+
+	return event, nil
+}
+
+// GenerateContentStream generates content using streaming mode and returns a channel of events
+func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error) {
+	if len(messages) == 0 {
+		return nil, fmt.Errorf("at least one message is required")
+	}
+
+	req := GenerateRequest{
+		Model:    model,
+		Messages: messages,
+		Stream:   true,
+		SSEvents: true,
+	}
+
+	resp, err := c.http.R().
+		SetDoNotParseResponse(true).
+		SetBody(req).
+		Post(fmt.Sprintf("%s/llms/%s/generate", c.baseURL, provider))
+
+	if err != nil {
+		return nil, err
+	}
+
+	eventChan := make(chan SSEvent)
+	reader := bufio.NewReader(resp.RawBody())
+
+	go func() {
+		defer close(eventChan)
+		defer resp.RawBody().Close()
+
+		for {
+			select {
+			case <-ctx.Done():
+				eventChan <- SSEvent{
+					Event: "error",
+					Data:  []byte("context canceled"),
+				}
+				return
+			default:
+				chunk, err := readSSEventsChunk(reader)
+				if err != nil {
+					if err != io.EOF {
+						eventChan <- SSEvent{
+							Event: "error",
+							Data:  []byte("error reading stream chunk"),
+						}
+					}
+					return
+				}
+
+				event, err := ParseSSEvents(chunk)
+				if err != nil {
+					eventChan <- SSEvent{
+						Event: "error",
+						Data:  []byte("error parsing stream event"),
+					}
+					return
+				}
+
+				eventChan <- *event
+
+				if event.Event == StreamEventStreamEnd {
+					return
+				}
+			}
+		}
+	}()
+
+	return eventChan, nil
+}
+
+// readSSEventsChunk reads a chunk of Server-Sent Events from a buffered reader
+func readSSEventsChunk(reader *bufio.Reader) ([]byte, error) {
+	var buffer []byte
+
+	for {
+		line, err := reader.ReadBytes('\n')
+
+		if err != nil {
+			if err == io.EOF {
+				if len(buffer) > 0 {
+					return buffer, nil
+				}
+				return nil, err
+			}
+			return nil, err
+		}
+
+		buffer = append(buffer, line...)
+
+		if len(buffer) > 2 {
+			if bytes.HasSuffix(buffer, []byte("\n\n")) {
+				return buffer, nil
+			}
+		}
+	}
 }
 
 // HealthCheck performs a health check request to verify API availability.
