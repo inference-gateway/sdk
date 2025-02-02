@@ -62,6 +62,27 @@ type SSEvent struct {
 	Data  json.RawMessage `json:"data,omitempty"`  // The content payload of the event
 }
 
+type StreamEvent string
+
+const (
+	// StreamEventMessageError represents an error message
+	StreamEventMessageError StreamEvent = "error"
+	// StreamEventMessageStart represents the start of a new message
+	StreamEventMessageStart StreamEvent = "message-start"
+	// StreamEventStreamStart represents the start of the stream
+	StreamEventStreamStart StreamEvent = "stream-start"
+	// StreamEventContentStart represents the start of the content
+	StreamEventContentStart StreamEvent = "content-start"
+	// StreamEventContentDelta represents a content delta
+	StreamEventContentDelta StreamEvent = "content-delta"
+	// StreamEventContentEnd represents the end of the content
+	StreamEventContentEnd StreamEvent = "content-end"
+	// StreamEventMessageEnd represents the end of a message
+	StreamEventMessageEnd StreamEvent = "message-end"
+	// StreamEventStreamEnd represents the end of the stream
+	StreamEventStreamEnd StreamEvent = "stream-end"
+)
+
 // ResponseError represents an error response from the API
 type ResponseError struct {
 	Error string `json:"error"`
@@ -225,61 +246,46 @@ func (c *clientImpl) GenerateContent(provider Provider, model string, messages [
 	return &result, nil
 }
 
-type StreamEvent string
-
-const (
-	// StreamEventMessageError represents an error message
-	StreamEventMessageError StreamEvent = "error"
-	// StreamEventMessageStart represents the start of a new message
-	StreamEventMessageStart StreamEvent = "message-start"
-	// StreamEventStreamStart represents the start of the stream
-	StreamEventStreamStart StreamEvent = "stream-start"
-	// StreamEventContentStart represents the start of the content
-	StreamEventContentStart StreamEvent = "content-start"
-	// StreamEventContentDelta represents a content delta
-	StreamEventContentDelta StreamEvent = "content-delta"
-	// StreamEventContentEnd represents the end of the content
-	StreamEventContentEnd StreamEvent = "content-end"
-	// StreamEventMessageEnd represents the end of a message
-	StreamEventMessageEnd StreamEvent = "message-end"
-	// StreamEventStreamEnd represents the end of the stream
-	StreamEventStreamEnd StreamEvent = "stream-end"
-)
-
-// ParseSSEvents parses a Server-Sent Event from a byte slice
-func ParseSSEvents(line []byte) (*SSEvent, error) {
-	if len(bytes.TrimSpace(line)) == 0 {
-		return nil, fmt.Errorf("empty line")
-	}
-
-	lines := bytes.Split(line, []byte("\n"))
-	event := &SSEvent{}
-	for _, line := range lines {
-		line = bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
-
-		parts := bytes.SplitN(line, []byte(":"), 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		field := string(bytes.TrimSpace(parts[0]))
-		value := bytes.TrimSpace(parts[1])
-
-		switch field {
-		case "data":
-			event.Data = value
-		case "event":
-			event.Event = StreamEvent(string(value))
-		}
-	}
-
-	return event, nil
-}
-
-// GenerateContentStream generates content using streaming mode and returns a channel of events
+// GenerateContentStream generates content using streaming mode and returns a channel of events.
+//
+// Example:
+//
+//	ctx := context.Background()
+//	events, err := client.GenerateContentStream(
+//		ctx,
+//		sdk.ProviderOllama,
+//		"llama2",
+//		[]sdk.Message{
+//			{Role: sdk.RoleSystem, Content: "You are a helpful assistant."},
+//			{Role: sdk.RoleUser, Content: "What is Go?"},
+//		},
+//	)
+//	if err != nil {
+//		log.Fatalf("Error: %v", err)
+//	}
+//
+//	for event := range events {
+//		switch event.Event {
+//		case sdk.StreamEventContentDelta:
+//			var delta struct {
+//				Content string `json:"content"`
+//			}
+//			if err := json.Unmarshal(event.Data, &delta); err != nil {
+//				log.Printf("Error parsing delta: %v", err)
+//				continue
+//			}
+//			fmt.Print(delta.Content)
+//		case sdk.StreamEventMessageError:
+//			var errResp struct {
+//				Error string `json:"error"`
+//			}
+//			if err := json.Unmarshal(event.Data, &errResp); err != nil {
+//				log.Printf("Error parsing error: %v", err)
+//				continue
+//			}
+//			log.Printf("Error: %s", errResp.Error)
+//		}
+//	}
 func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error) {
 	if len(messages) == 0 {
 		return nil, fmt.Errorf("at least one message is required")
@@ -328,7 +334,7 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 					return
 				}
 
-				event, err := ParseSSEvents(chunk)
+				event, err := parseSSEvents(chunk)
 				if err != nil {
 					eventChan <- SSEvent{
 						Event: "error",
@@ -347,6 +353,29 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 	}()
 
 	return eventChan, nil
+}
+
+// HealthCheck performs a health check request to verify API availability.
+//
+// Example:
+//
+//	err := client.HealthCheck()
+//	if err != nil {
+//	    log.Fatalf("Health check failed: %v", err)
+//	}
+func (c *clientImpl) HealthCheck() error {
+	resp, err := c.http.R().
+		Get(fmt.Sprintf("%s/health", c.baseURL))
+
+	if err != nil {
+		return err
+	}
+
+	if resp.IsError() {
+		return fmt.Errorf("health check failed with status: %d", resp.StatusCode())
+	}
+
+	return nil
 }
 
 // readSSEventsChunk reads a chunk of Server-Sent Events from a buffered reader
@@ -376,25 +405,35 @@ func readSSEventsChunk(reader *bufio.Reader) ([]byte, error) {
 	}
 }
 
-// HealthCheck performs a health check request to verify API availability.
-//
-// Example:
-//
-//	err := client.HealthCheck()
-//	if err != nil {
-//	    log.Fatalf("Health check failed: %v", err)
-//	}
-func (c *clientImpl) HealthCheck() error {
-	resp, err := c.http.R().
-		Get(fmt.Sprintf("%s/health", c.baseURL))
-
-	if err != nil {
-		return err
+// ParseSSEvents parses a Server-Sent Event from a byte slice
+func parseSSEvents(line []byte) (*SSEvent, error) {
+	if len(bytes.TrimSpace(line)) == 0 {
+		return nil, fmt.Errorf("empty line")
 	}
 
-	if resp.IsError() {
-		return fmt.Errorf("health check failed with status: %d", resp.StatusCode())
+	lines := bytes.Split(line, []byte("\n"))
+	event := &SSEvent{}
+	for _, line := range lines {
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
+		parts := bytes.SplitN(line, []byte(":"), 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		field := string(bytes.TrimSpace(parts[0]))
+		value := bytes.TrimSpace(parts[1])
+
+		switch field {
+		case "data":
+			event.Data = value
+		case "event":
+			event.Event = StreamEvent(string(value))
+		}
 	}
 
-	return nil
+	return event, nil
 }
