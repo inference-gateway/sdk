@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/go-resty/resty/v2"
@@ -9,8 +10,8 @@ import (
 
 // Client represents the SDK client interface
 type Client interface {
-	ListModels(ctx context.Context) ([]ListModelsResponse, error)
-	ListProviderModels(ctx context.Context, provider Provider) ([]Model, error)
+	ListModels(ctx context.Context) (*ListModelsResponse, error)
+	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
 	HealthCheck(ctx context.Context) error
@@ -44,26 +45,26 @@ func NewClient(baseURL string) Client {
 //	    log.Fatalf("Error listing models: %v", err)
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
-func (c *clientImpl) ListModels(ctx context.Context) (ListModelsResponse, error) {
+func (c *clientImpl) ListModels(ctx context.Context) (*ListModelsResponse, error) {
 	resp, err := c.http.R().
 		SetContext(ctx).
 		SetResult(&ListModelsResponse{}).
 		Get(fmt.Sprintf("%s/models", c.baseURL))
 
 	if err != nil {
-		return ListModelsResponse{}, err
+		return &ListModelsResponse{}, err
 	}
 
 	if resp.IsError() {
-		return ListModelsResponse{}, fmt.Errorf("failed to list models, status code: %d", resp.StatusCode())
+		return &ListModelsResponse{}, fmt.Errorf("failed to list models, status code: %d", resp.StatusCode())
 	}
 
 	result, ok := resp.Result().(*ListModelsResponse)
 	if !ok || result == nil {
-		return ListModelsResponse{}, fmt.Errorf("failed to parse response")
+		return &ListModelsResponse{}, fmt.Errorf("failed to parse response")
 	}
 
-	return *result, nil
+	return result, nil
 }
 
 // ListProviderModels returns all available language models for a specific provider.
@@ -71,12 +72,13 @@ func (c *clientImpl) ListModels(ctx context.Context) (ListModelsResponse, error)
 // Example:
 //
 //	ctx := context.Background()
-//	models, err := client.ListProviderModels(sdk.ProviderOllama)
+//	resp, err := client.ListProviderModels(sdk.Ollama)
 //	if err != nil {
-//	    log.Fatalf("Error listing models: %v", err)
+//	    log.Fatalf("Error listing models: %v", resp)
 //	}
-//	fmt.Printf("Available models: %+v\n", models)
-func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) ([]Model, error) {
+//	fmt.Printf("Provider: %s", resp.Provider)
+//	fmt.Printf("Available models: %+v\n", resp.Data)
+func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error) {
 	resp, err := c.http.R().
 		SetContext(ctx).
 		SetResult(&ListModelsResponse{}).
@@ -87,7 +89,11 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 	}
 
 	if resp.IsError() {
-		return nil, fmt.Errorf("failed to list models for provider %s, status code: %d", provider, resp.StatusCode())
+		var errorResp Error
+		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil {
+			return nil, fmt.Errorf("API error: %s", errorResp.Error)
+		}
+		return nil, fmt.Errorf("failed to list provider models, status code: %d", resp.StatusCode())
 	}
 
 	result, ok := resp.Result().(*ListModelsResponse)
@@ -95,11 +101,7 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 		return nil, fmt.Errorf("failed to parse response")
 	}
 
-	if result.Data == nil {
-		return []Model{}, nil
-	}
-
-	return *result.Data, nil
+	return result, nil
 }
 
 // GenerateContent generates content using the specified provider and model.
@@ -112,7 +114,7 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //
 //	response, err := client.GenerateContent(
 //	    ctx,
-//	    sdk.ProviderOllama,
+//	    sdk.Ollama,
 //	    "llama2",
 //	    []sdk.Message{
 //	        {
@@ -131,8 +133,6 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //	fmt.Printf("Generated content: %s\n", response.Response.Content)
 func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error) {
 	// TODO - implement it properly
-
-	// return &result, nil
 }
 
 // GenerateContentStream generates content using streaming mode and returns a channel of events.
@@ -142,7 +142,7 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //	ctx := context.Background()
 //	events, err := client.GenerateContentStream(
 //		ctx,
-//		sdk.ProviderOllama,
+//		sdk.Ollama,
 //		"llama2",
 //		[]sdk.Message{
 //			{Role: sdk.MessageRoleSystem, Content: "You are a helpful assistant."},
