@@ -180,7 +180,7 @@ paths:
                         type: integer
             text/event-stream:
               schema:
-                type: string
+                $ref: "#/components/schemas/SSEvent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -322,7 +322,7 @@ components:
                       type: string
               temperature:
                 type: number
-                format: float64
+                format: float
                 default: 0.7
           examples:
             openai:
@@ -409,6 +409,41 @@ components:
         To enable authentication, set ENABLE_AUTH to true.
         When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
+    SSEvent:
+      type: object
+      properties:
+        event:
+          type: string
+          enum:
+            - message-start
+            - stream-start
+            - content-start
+            - content-delta
+            - content-end
+            - message-end
+            - stream-end
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            choices:
+              type: array
+              items:
+                $ref: "#/components/schemas/ChatCompletionChoice"
+            created:
+              type: integer
+              format: int64
+            model:
+              type: string
+            object:
+              type: string
+            usage:
+              $ref: "#/components/schemas/CompletionUsage"
+        retry:
+          type: integer
+        id:
+          type: string
     Endpoints:
       type: object
       properties:
