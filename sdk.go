@@ -4,107 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 
 	"github.com/go-resty/resty/v2"
 )
-
-// Provider represents supported LLM providers
-type Provider string
-
-const (
-	ProviderOllama     Provider = "ollama"     // Ollama LLM provider
-	ProviderGroq       Provider = "groq"       // Groq LLM provider
-	ProviderOpenAI     Provider = "openai"     // OpenAI LLM provider
-	ProviderCloudflare Provider = "cloudflare" // Cloudflare LLM provider
-	ProviderCohere     Provider = "cohere"     // Cohere LLM provider
-	ProviderAnthropic  Provider = "anthropic"  // Anthropic LLM provider
-)
-
-// Model represents an LLM model
-type Model struct {
-	Name string `json:"name"` // Unique identifier for the model
-}
-
-type ListModelsResponse struct {
-	Provider Provider `json:"provider"` // The LLM provider (e.g., "Ollama")
-	Models   []Model  `json:"models"`   // List of available models for the provider
-}
-
-// Role represents supported message roles
-type Role string
-
-const (
-	MessageRoleSystem    Role = "system"    // System message role
-	MessageRoleUser      Role = "user"      // User message role
-	MessageRoleAssistant Role = "assistant" // Assistant message role
-)
-
-// Message represents a chat message
-type Message struct {
-	Role    Role   `json:"role"`    // Role of the message sender
-	Content string `json:"content"` // Content of the message
-}
-
-// GenerateRequest represents the request for content generation
-type GenerateRequest struct {
-	Model    string    `json:"model"`    // Name of the model to use
-	Messages []Message `json:"messages"` // List of messages in the conversation
-	Stream   bool      `json:"stream"`   // Enable streaming mode
-	SSEvents bool      `json:"ssevents"` // Enable SSE events
-}
-
-// SSEvent represents a Server-Sent Event from the content generation stream
-type SSEvent struct {
-	Event StreamEvent     `json:"event,omitempty"` // The type of the SSE event
-	Data  json.RawMessage `json:"data,omitempty"`  // The content payload of the event
-}
-
-type StreamEvent string
-
-const (
-	// StreamEventMessageError represents an error message
-	StreamEventMessageError StreamEvent = "error"
-	// StreamEventMessageStart represents the start of a new message
-	StreamEventMessageStart StreamEvent = "message-start"
-	// StreamEventStreamStart represents the start of the stream
-	StreamEventStreamStart StreamEvent = "stream-start"
-	// StreamEventContentStart represents the start of the content
-	StreamEventContentStart StreamEvent = "content-start"
-	// StreamEventContentDelta represents a content delta
-	StreamEventContentDelta StreamEvent = "content-delta"
-	// StreamEventContentEnd represents the end of the content
-	StreamEventContentEnd StreamEvent = "content-end"
-	// StreamEventMessageEnd represents the end of a message
-	StreamEventMessageEnd StreamEvent = "message-end"
-	// StreamEventStreamEnd represents the end of the stream
-	StreamEventStreamEnd StreamEvent = "stream-end"
-)
-
-// ResponseError represents an error response from the API
-type ResponseError struct {
-	Error string `json:"error"`
-}
-
-// GenerateResponseTokens represents the response tokens from content generation
-type GenerateResponseTokens struct {
-	Role    Role   `json:"role"`    // Role of the response (usually "assistant")
-	Model   string `json:"model"`   // Model that generated the response
-	Content string `json:"content"` // Generated content
-}
-
-// GenerateResponse represents the response from content generation
-type GenerateResponse struct {
-	Provider Provider               `json:"provider"` // Provider that generated the response
-	Response GenerateResponseTokens `json:"response"` // The generated response
-}
-
-// ErrorResponse represents an error response from the API
-type ErrorResponse struct {
-	Error string `json:"error"` // Error message from the API
-}
 
 // Client represents the SDK client interface
 type Client interface {
@@ -144,25 +48,7 @@ func NewClient(baseURL string) Client {
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
 func (c *clientImpl) ListModels(ctx context.Context) ([]ListModelsResponse, error) {
-	var models []ListModelsResponse
-	resp, err := c.http.R().
-		SetContext(ctx).
-		SetResult(&models).
-		Get(fmt.Sprintf("%s/llms", c.baseURL))
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errResp ErrorResponse
-		if err := json.Unmarshal(resp.Body(), &errResp); err != nil {
-			return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode())
-		}
-		return nil, fmt.Errorf("API error: %s", errResp.Error)
-	}
-
-	return models, nil
+	// TODO - implement it properly
 }
 
 // ListProviderModels returns all available language models for a specific provider.
@@ -176,25 +62,7 @@ func (c *clientImpl) ListModels(ctx context.Context) ([]ListModelsResponse, erro
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
 func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) ([]Model, error) {
-	var response ListModelsResponse
-	resp, err := c.http.R().
-		SetContext(ctx).
-		SetResult(&response).
-		Get(fmt.Sprintf("%s/llms/%s", c.baseURL, provider))
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errResp ErrorResponse
-		if err := json.Unmarshal(resp.Body(), &errResp); err != nil {
-			return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode())
-		}
-		return nil, fmt.Errorf("API error: %s", errResp.Error)
-	}
-
-	return response.Models, nil
+	// TODO - implement it properly
 }
 
 // GenerateContent generates content using the specified provider and model.
@@ -225,35 +93,9 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //	}
 //	fmt.Printf("Generated content: %s\n", response.Response.Content)
 func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*GenerateResponse, error) {
-	if len(messages) == 0 {
-		return nil, fmt.Errorf("at least one message is required")
-	}
+	// TODO - implement it properly
 
-	req := GenerateRequest{
-		Model:    model,
-		Messages: messages,
-	}
-
-	var result GenerateResponse
-	resp, err := c.http.R().
-		SetContext(ctx).
-		SetBody(req).
-		SetResult(&result).
-		Post(fmt.Sprintf("%s/llms/%s/generate", c.baseURL, provider))
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errResp ErrorResponse
-		if err := json.Unmarshal(resp.Body(), &errResp); err != nil {
-			return nil, fmt.Errorf("HTTP error: %d", resp.StatusCode())
-		}
-		return nil, fmt.Errorf("API error: %s", errResp.Error)
-	}
-
-	return &result, nil
+	// return &result, nil
 }
 
 // GenerateContentStream generates content using streaming mode and returns a channel of events.
@@ -297,73 +139,10 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //		}
 //	}
 func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error) {
-	if len(messages) == 0 {
-		return nil, fmt.Errorf("at least one message is required")
-	}
+	// TODO - implement it properly - send the stream as-is
+	ssevent := make(chan SSEvent, 100)
 
-	req := GenerateRequest{
-		Model:    model,
-		Messages: messages,
-		Stream:   true,
-		SSEvents: true,
-	}
-
-	resp, err := c.http.R().
-		SetContext(ctx).
-		SetDoNotParseResponse(true).
-		SetBody(req).
-		Post(fmt.Sprintf("%s/llms/%s/generate", c.baseURL, provider))
-
-	if err != nil {
-		return nil, err
-	}
-
-	eventChan := make(chan SSEvent)
-	reader := bufio.NewReader(resp.RawBody())
-
-	go func() {
-		defer close(eventChan)
-		defer resp.RawBody().Close()
-
-		for {
-			select {
-			case <-ctx.Done():
-				eventChan <- SSEvent{
-					Event: "error",
-					Data:  []byte("context canceled"),
-				}
-				return
-			default:
-				chunk, err := readSSEventsChunk(reader)
-				if err != nil {
-					if err != io.EOF {
-						eventChan <- SSEvent{
-							Event: "error",
-							Data:  []byte("error reading stream chunk"),
-						}
-					}
-					return
-				}
-
-				event, err := parseSSEvents(chunk)
-				if err != nil {
-					eventChan <- SSEvent{
-						Event: "error",
-						Data:  []byte("error parsing stream event"),
-					}
-					return
-				}
-
-				eventChan <- *event
-
-				if event.Event == StreamEventStreamEnd {
-					return
-				}
-			}
-		}
-	}()
-
-	return eventChan, nil
+	return ssevent, nil
 }
 
 // HealthCheck performs a health check request to verify API availability.
@@ -442,9 +221,10 @@ func parseSSEvents(line []byte) (*SSEvent, error) {
 
 		switch field {
 		case "data":
-			event.Data = value
+			event.Data = &value
 		case "event":
-			event.Event = StreamEvent(string(value))
+			eventVal := SSEventEvent(string(value))
+			event.Event = &eventVal
 		}
 	}
 

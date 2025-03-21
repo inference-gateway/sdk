@@ -7,15 +7,6 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
-// Defines values for ChatCompletionChoiceFinishReason.
-const (
-	ContentFilter ChatCompletionChoiceFinishReason = "content_filter"
-	FunctionCall  ChatCompletionChoiceFinishReason = "function_call"
-	Length        ChatCompletionChoiceFinishReason = "length"
-	Stop          ChatCompletionChoiceFinishReason = "stop"
-	ToolCalls     ChatCompletionChoiceFinishReason = "tool_calls"
-)
-
 // Defines values for ChatCompletionToolType.
 const (
 	Function ChatCompletionToolType = "function"
@@ -29,14 +20,14 @@ const (
 	User      MessageRole = "user"
 )
 
-// Defines values for Providers.
+// Defines values for Provider.
 const (
-	Anthropic  Providers = "anthropic"
-	Cloudflare Providers = "cloudflare"
-	Cohere     Providers = "cohere"
-	Groq       Providers = "groq"
-	Ollama     Providers = "ollama"
-	Openai     Providers = "openai"
+	Anthropic  Provider = "anthropic"
+	Cloudflare Provider = "cloudflare"
+	Cohere     Provider = "cohere"
+	Groq       Provider = "groq"
+	Ollama     Provider = "ollama"
+	Openai     Provider = "openai"
 )
 
 // Defines values for SSEventEvent.
@@ -49,27 +40,6 @@ const (
 	StreamEnd    SSEventEvent = "stream-end"
 	StreamStart  SSEventEvent = "stream-start"
 )
-
-// ChatCompletionChoice defines model for ChatCompletionChoice.
-type ChatCompletionChoice struct {
-	// FinishReason The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
-	// `length` if the maximum number of tokens specified in the request was reached,
-	// `content_filter` if content was omitted due to a flag from our content filters,
-	// `tool_calls` if the model called a tool.
-	FinishReason ChatCompletionChoiceFinishReason `json:"finish_reason"`
-
-	// Index The index of the choice in the list of choices.
-	Index int `json:"index"`
-
-	// Message Message structure for provider requests
-	Message Message `json:"message"`
-}
-
-// ChatCompletionChoiceFinishReason The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
-// `length` if the maximum number of tokens specified in the request was reached,
-// `content_filter` if content was omitted due to a flag from our content filters,
-// `tool_calls` if the model called a tool.
-type ChatCompletionChoiceFinishReason string
 
 // ChatCompletionMessageToolCall defines model for ChatCompletionMessageToolCall.
 type ChatCompletionMessageToolCall struct {
@@ -95,18 +65,6 @@ type ChatCompletionMessageToolCallFunction struct {
 // ChatCompletionToolType The type of the tool. Currently, only `function` is supported.
 type ChatCompletionToolType string
 
-// CompletionUsage Usage statistics for the completion request.
-type CompletionUsage struct {
-	// CompletionTokens Number of tokens in the generated completion.
-	CompletionTokens int64 `json:"completion_tokens"`
-
-	// PromptTokens Number of tokens in the prompt.
-	PromptTokens int64 `json:"prompt_tokens"`
-
-	// TotalTokens Total number of tokens used in the request (prompt + completion).
-	TotalTokens int64 `json:"total_tokens"`
-}
-
 // Error defines model for Error.
 type Error struct {
 	Error *string `json:"error,omitempty"`
@@ -114,9 +72,9 @@ type Error struct {
 
 // ListModelsResponse Response structure for listing models
 type ListModelsResponse struct {
-	Data     *[]Model `json:"data,omitempty"`
-	Object   *string  `json:"object,omitempty"`
-	Provider *string  `json:"provider,omitempty"`
+	Data     *[]Model  `json:"data,omitempty"`
+	Object   *string   `json:"object,omitempty"`
+	Provider *Provider `json:"provider,omitempty"`
 }
 
 // Message Message structure for provider requests
@@ -141,6 +99,9 @@ type Model struct {
 	OwnedBy  *string `json:"owned_by,omitempty"`
 	ServedBy *string `json:"served_by,omitempty"`
 }
+
+// Provider defines model for Provider.
+type Provider string
 
 // ProviderSpecificResponse Provider-specific response format. Examples:
 //
@@ -183,23 +144,10 @@ type Model struct {
 // ```
 type ProviderSpecificResponse map[string]interface{}
 
-// Providers defines model for Providers.
-type Providers string
-
 // SSEvent defines model for SSEvent.
 type SSEvent struct {
-	Data *struct {
-		Choices *[]ChatCompletionChoice `json:"choices,omitempty"`
-		Created *int64                  `json:"created,omitempty"`
-		Id      *string                 `json:"id,omitempty"`
-		Model   *string                 `json:"model,omitempty"`
-		Object  *string                 `json:"object,omitempty"`
-
-		// Usage Usage statistics for the completion request.
-		Usage *CompletionUsage `json:"usage,omitempty"`
-	} `json:"data,omitempty"`
+	Data  *[]byte       `json:"data,omitempty"`
 	Event *SSEventEvent `json:"event,omitempty"`
-	Id    *string       `json:"id,omitempty"`
 	Retry *int          `json:"retry,omitempty"`
 }
 
@@ -311,13 +259,13 @@ type PostV1ChatCompletionsJSONBody struct {
 // PostV1ChatCompletionsParams defines parameters for PostV1ChatCompletions.
 type PostV1ChatCompletionsParams struct {
 	// Provider Specific provider to use (default determined by model)
-	Provider *Providers `form:"provider,omitempty" json:"provider,omitempty"`
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
 // ListModelsParams defines parameters for ListModels.
 type ListModelsParams struct {
 	// Provider Specific provider to query (optional)
-	Provider *Providers `form:"provider,omitempty" json:"provider,omitempty"`
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
 // ProxyPatchJSONRequestBody defines body for ProxyPatch for application/json ContentType.

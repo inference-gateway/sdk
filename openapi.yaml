@@ -38,7 +38,7 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/Providers"
+            $ref: "#/components/schemas/Provider"
           description: Specific provider to query (optional)
       responses:
         "200":
@@ -107,7 +107,7 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/Providers"
+            $ref: "#/components/schemas/Provider"
           description: Specific provider to use (default determined by model)
       requestBody:
         required: true
@@ -193,7 +193,7 @@ paths:
         in: path
         required: true
         schema:
-          $ref: "#/components/schemas/Providers"
+          $ref: "#/components/schemas/Provider"
       - name: path
         in: path
         required: true
@@ -423,27 +423,10 @@ components:
             - message-end
             - stream-end
         data:
-          type: object
-          properties:
-            id:
-              type: string
-            choices:
-              type: array
-              items:
-                $ref: "#/components/schemas/ChatCompletionChoice"
-            created:
-              type: integer
-              format: int64
-            model:
-              type: string
-            object:
-              type: string
-            usage:
-              $ref: "#/components/schemas/CompletionUsage"
+          type: string
+          format: byte
         retry:
           type: integer
-        id:
-          type: string
     Endpoints:
       type: object
       properties:
@@ -451,7 +434,7 @@ components:
           type: string
         chat:
           type: string
-    Providers:
+    Provider:
       type: string
       enum:
         - ollama
@@ -638,7 +621,7 @@ components:
       description: Response structure for listing models
       properties:
         provider:
-          type: string
+          $ref: "#/components/schemas/Provider"
         object:
           type: string
         data:
