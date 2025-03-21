@@ -92,7 +92,7 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //	    log.Fatalf("Error generating content: %v", err)
 //	}
 //	fmt.Printf("Generated content: %s\n", response.Response.Content)
-func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*GenerateResponse, error) {
+func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error) {
 	// TODO - implement it properly
 
 	// return &result, nil

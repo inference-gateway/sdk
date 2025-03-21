@@ -7,6 +7,15 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for ChatCompletionChoiceFinishReason.
+const (
+	ContentFilter ChatCompletionChoiceFinishReason = "content_filter"
+	FunctionCall  ChatCompletionChoiceFinishReason = "function_call"
+	Length        ChatCompletionChoiceFinishReason = "length"
+	Stop          ChatCompletionChoiceFinishReason = "stop"
+	ToolCalls     ChatCompletionChoiceFinishReason = "tool_calls"
+)
+
 // Defines values for ChatCompletionToolType.
 const (
 	Function ChatCompletionToolType = "function"
@@ -41,6 +50,27 @@ const (
 	StreamStart  SSEventEvent = "stream-start"
 )
 
+// ChatCompletionChoice defines model for ChatCompletionChoice.
+type ChatCompletionChoice struct {
+	// FinishReason The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
+	// `length` if the maximum number of tokens specified in the request was reached,
+	// `content_filter` if content was omitted due to a flag from our content filters,
+	// `tool_calls` if the model called a tool.
+	FinishReason ChatCompletionChoiceFinishReason `json:"finish_reason"`
+
+	// Index The index of the choice in the list of choices.
+	Index int `json:"index"`
+
+	// Message Message structure for provider requests
+	Message Message `json:"message"`
+}
+
+// ChatCompletionChoiceFinishReason The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
+// `length` if the maximum number of tokens specified in the request was reached,
+// `content_filter` if content was omitted due to a flag from our content filters,
+// `tool_calls` if the model called a tool.
+type ChatCompletionChoiceFinishReason string
+
 // ChatCompletionMessageToolCall defines model for ChatCompletionMessageToolCall.
 type ChatCompletionMessageToolCall struct {
 	// Function The function that the model called.
@@ -64,6 +94,39 @@ type ChatCompletionMessageToolCallFunction struct {
 
 // ChatCompletionToolType The type of the tool. Currently, only `function` is supported.
 type ChatCompletionToolType string
+
+// CompletionUsage Usage statistics for the completion request.
+type CompletionUsage struct {
+	// CompletionTokens Number of tokens in the generated completion.
+	CompletionTokens int64 `json:"completion_tokens"`
+
+	// PromptTokens Number of tokens in the prompt.
+	PromptTokens int64 `json:"prompt_tokens"`
+
+	// TotalTokens Total number of tokens used in the request (prompt + completion).
+	TotalTokens int64 `json:"total_tokens"`
+}
+
+// CreateChatCompletionResponse Represents a chat completion response returned by model, based on the provided input.
+type CreateChatCompletionResponse struct {
+	// Choices A list of chat completion choices. Can be more than one if `n` is greater than 1.
+	Choices []ChatCompletionChoice `json:"choices"`
+
+	// Created The Unix timestamp (in seconds) of when the chat completion was created.
+	Created int `json:"created"`
+
+	// Id A unique identifier for the chat completion.
+	Id string `json:"id"`
+
+	// Model The model used for the chat completion.
+	Model string `json:"model"`
+
+	// Object The object type, which is always `chat.completion`.
+	Object string `json:"object"`
+
+	// Usage Usage statistics for the completion request.
+	Usage *CompletionUsage `json:"usage,omitempty"`
+}
 
 // Error defines model for Error.
 type Error struct {
