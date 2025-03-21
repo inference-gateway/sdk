@@ -11,7 +11,7 @@ import (
 type Client interface {
 	ListModels(ctx context.Context) ([]ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) ([]Model, error)
-	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*GenerateResponse, error)
+	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
 	HealthCheck(ctx context.Context) error
 }
