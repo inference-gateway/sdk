@@ -1,11 +1,8 @@
 package sdk
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -47,8 +44,26 @@ func NewClient(baseURL string) Client {
 //	    log.Fatalf("Error listing models: %v", err)
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
-func (c *clientImpl) ListModels(ctx context.Context) ([]ListModelsResponse, error) {
-	// TODO - implement it properly
+func (c *clientImpl) ListModels(ctx context.Context) (ListModelsResponse, error) {
+	resp, err := c.http.R().
+		SetContext(ctx).
+		SetResult(&ListModelsResponse{}).
+		Get(fmt.Sprintf("%s/models", c.baseURL))
+
+	if err != nil {
+		return ListModelsResponse{}, err
+	}
+
+	if resp.IsError() {
+		return ListModelsResponse{}, fmt.Errorf("failed to list models, status code: %d", resp.StatusCode())
+	}
+
+	result, ok := resp.Result().(*ListModelsResponse)
+	if !ok || result == nil {
+		return ListModelsResponse{}, fmt.Errorf("failed to parse response")
+	}
+
+	return *result, nil
 }
 
 // ListProviderModels returns all available language models for a specific provider.
@@ -62,7 +77,29 @@ func (c *clientImpl) ListModels(ctx context.Context) ([]ListModelsResponse, erro
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
 func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) ([]Model, error) {
-	// TODO - implement it properly
+	resp, err := c.http.R().
+		SetContext(ctx).
+		SetResult(&ListModelsResponse{}).
+		Get(fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, fmt.Errorf("failed to list models for provider %s, status code: %d", provider, resp.StatusCode())
+	}
+
+	result, ok := resp.Result().(*ListModelsResponse)
+	if !ok || result == nil {
+		return nil, fmt.Errorf("failed to parse response")
+	}
+
+	if result.Data == nil {
+		return []Model{}, nil
+	}
+
+	return *result.Data, nil
 }
 
 // GenerateContent generates content using the specified provider and model.
@@ -168,65 +205,4 @@ func (c *clientImpl) HealthCheck(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// readSSEventsChunk reads a chunk of Server-Sent Events from a buffered reader
-func readSSEventsChunk(reader *bufio.Reader) ([]byte, error) {
-	var buffer []byte
-
-	for {
-		line, err := reader.ReadBytes('\n')
-
-		if err != nil {
-			if err == io.EOF {
-				if len(buffer) > 0 {
-					return buffer, nil
-				}
-				return nil, err
-			}
-			return nil, err
-		}
-
-		buffer = append(buffer, line...)
-
-		if len(buffer) > 2 {
-			if bytes.HasSuffix(buffer, []byte("\n\n")) {
-				return buffer, nil
-			}
-		}
-	}
-}
-
-// ParseSSEvents parses a Server-Sent Event from a byte slice
-func parseSSEvents(line []byte) (*SSEvent, error) {
-	if len(bytes.TrimSpace(line)) == 0 {
-		return nil, fmt.Errorf("empty line")
-	}
-
-	lines := bytes.Split(line, []byte("\n"))
-	event := &SSEvent{}
-	for _, line := range lines {
-		line = bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
-
-		parts := bytes.SplitN(line, []byte(":"), 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		field := string(bytes.TrimSpace(parts[0]))
-		value := bytes.TrimSpace(parts[1])
-
-		switch field {
-		case "data":
-			event.Data = &value
-		case "event":
-			eventVal := SSEventEvent(string(value))
-			event.Event = &eventVal
-		}
-	}
-
-	return event, nil
 }
