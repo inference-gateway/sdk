@@ -40,7 +40,9 @@ func TestListModels(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
+
 	}))
 	defer server.Close()
 
@@ -83,7 +85,8 @@ func TestListProviderModels(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
 	}))
 	defer server.Close()
 
@@ -104,9 +107,10 @@ func TestListProviderModels(t *testing.T) {
 func TestListProviderModels_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(Error{
+		err := json.NewEncoder(w).Encode(Error{
 			Error: stringPtr("Invalid API key"),
 		})
+		assert.NoError(t, err)
 	}))
 	defer server.Close()
 
@@ -157,7 +161,8 @@ func TestGenerateContent(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		err = json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err, "Should be able to encode response")
 	}))
 	defer server.Close()
 
@@ -195,9 +200,10 @@ func TestGenerateContent(t *testing.T) {
 func TestGenerateContent_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Error{
+		err := json.NewEncoder(w).Encode(Error{
 			Error: stringPtr("Invalid model specified"),
 		})
+		assert.NoError(t, err)
 	}))
 	defer server.Close()
 
@@ -319,9 +325,10 @@ func TestGenerateContentStream(t *testing.T) {
 func TestGenerateContentStream_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(Error{
+		err := json.NewEncoder(w).Encode(Error{
 			Error: stringPtr("Invalid model for streaming"),
 		})
+		assert.NoError(t, err)
 	}))
 	defer server.Close()
 
