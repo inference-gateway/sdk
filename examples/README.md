@@ -4,19 +4,19 @@ This directory contains examples demonstrating how to use the Inference Gateway 
 
 ## Available Examples
 
-### [Models](models/)
+### [List Available Models](models/)
 
 Shows how to list available models from different providers using the SDK.
 
-### [Generation](generation/)
+### [Tokens Generation](generation/)
 
 Demonstrates basic content generation with different LLM providers.
 
-### [Streaming](stream/)
+### [Tokens Streaming](stream/)
 
 Illustrates how to use streaming mode to get content as it's generated.
 
-### [Tools & Function Calling](tools/)
+### [Tools-Use](tools/)
 
 Shows how to implement function calling and use tools with compatible models.
 
