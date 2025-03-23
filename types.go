@@ -92,6 +92,20 @@ type ChatCompletionMessageToolCallFunction struct {
 	Name string `json:"name"`
 }
 
+// ChatCompletionStreamOptions Options for streaming response. Only set this when you set `stream: true`.
+type ChatCompletionStreamOptions struct {
+	// IncludeUsage If set, an additional chunk will be streamed before the `data: [DONE]` message. The `usage` field on this chunk shows the token usage statistics for the entire request, and the `choices` field will always be an empty array. All other chunks will also include a `usage` field, but with a null value.
+	IncludeUsage *bool `json:"include_usage,omitempty"`
+}
+
+// ChatCompletionTool defines model for ChatCompletionTool.
+type ChatCompletionTool struct {
+	Function FunctionObject `json:"function"`
+
+	// Type The type of the tool. Currently, only `function` is supported.
+	Type ChatCompletionToolType `json:"type"`
+}
+
 // ChatCompletionToolType The type of the tool. Currently, only `function` is supported.
 type ChatCompletionToolType string
 
@@ -105,6 +119,27 @@ type CompletionUsage struct {
 
 	// TotalTokens Total number of tokens used in the request (prompt + completion).
 	TotalTokens int64 `json:"total_tokens"`
+}
+
+// CreateChatCompletionRequest defines model for CreateChatCompletionRequest.
+type CreateChatCompletionRequest struct {
+	// MaxTokens An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens.
+	MaxTokens *int `json:"max_tokens,omitempty"`
+
+	// Messages A list of messages comprising the conversation so far.
+	Messages []Message `json:"messages"`
+
+	// Model Model ID to use
+	Model string `json:"model"`
+
+	// Stream If set to true, the model response data will be streamed to the client as it is generated using [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).
+	Stream *bool `json:"stream,omitempty"`
+
+	// StreamOptions Options for streaming response. Only set this when you set `stream: true`.
+	StreamOptions *ChatCompletionStreamOptions `json:"stream_options,omitempty"`
+
+	// Tools A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for. A max of 128 functions are supported.
+	Tools *[]ChatCompletionTool `json:"tools,omitempty"`
 }
 
 // CreateChatCompletionResponse Represents a chat completion response returned by model, based on the provided input.
@@ -133,6 +168,35 @@ type Error struct {
 	Error *string `json:"error,omitempty"`
 }
 
+// FunctionObject defines model for FunctionObject.
+type FunctionObject struct {
+	// Description A description of what the function does, used by the model to choose when and how to call the function.
+	Description *string `json:"description,omitempty"`
+
+	// Name The name of the function to be called. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.
+	Name string `json:"name"`
+
+	// Parameters The parameters the functions accepts, described as a JSON Schema object. See the [guide](/docs/guides/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
+	// Omitting `parameters` defines a function with an empty parameter list.
+	Parameters *FunctionParameters `json:"parameters,omitempty"`
+
+	// Strict Whether to enable strict schema adherence when generating the function call. If set to true, the model will follow the exact schema defined in the `parameters` field. Only a subset of JSON Schema is supported when `strict` is `true`. Learn more about Structured Outputs in the [function calling guide](docs/guides/function-calling).
+	Strict *bool `json:"strict,omitempty"`
+}
+
+// FunctionParameters The parameters the functions accepts, described as a JSON Schema object. See the [guide](/docs/guides/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
+// Omitting `parameters` defines a function with an empty parameter list.
+type FunctionParameters struct {
+	// Properties The properties of the parameters.
+	Properties *map[string]interface{} `json:"properties,omitempty"`
+
+	// Required The required properties of the parameters.
+	Required *[]string `json:"required,omitempty"`
+
+	// Type The type of the parameters. Currently, only `object` is supported.
+	Type *string `json:"type,omitempty"`
+}
+
 // ListModelsResponse Response structure for listing models
 type ListModelsResponse struct {
 	Data     *[]Model  `json:"data,omitempty"`
@@ -156,11 +220,11 @@ type MessageRole string
 
 // Model Common model information
 type Model struct {
-	Created  *int64  `json:"created,omitempty"`
-	Id       *string `json:"id,omitempty"`
-	Object   *string `json:"object,omitempty"`
-	OwnedBy  *string `json:"owned_by,omitempty"`
-	ServedBy *string `json:"served_by,omitempty"`
+	Created  *int64    `json:"created,omitempty"`
+	Id       *string   `json:"id,omitempty"`
+	Object   *string   `json:"object,omitempty"`
+	OwnedBy  *string   `json:"owned_by,omitempty"`
+	ServedBy *Provider `json:"served_by,omitempty"`
 }
 
 // Provider defines model for Provider.
@@ -205,7 +269,7 @@ type Provider string
 //	}
 //
 // ```
-type ProviderSpecificResponse map[string]interface{}
+type ProviderSpecificResponse = map[string]interface{}
 
 // SSEvent defines model for SSEvent.
 type SSEvent struct {
@@ -307,20 +371,8 @@ type ProxyPutJSONBody struct {
 	Temperature *float32 `json:"temperature,omitempty"`
 }
 
-// PostV1ChatCompletionsJSONBody defines parameters for PostV1ChatCompletions.
-type PostV1ChatCompletionsJSONBody struct {
-	MaxTokens *int      `json:"max_tokens,omitempty"`
-	Messages  []Message `json:"messages"`
-
-	// Model Model ID to use
-	Model       string                    `json:"model"`
-	Stream      *bool                     `json:"stream,omitempty"`
-	Temperature *float32                  `json:"temperature,omitempty"`
-	Tools       *[]map[string]interface{} `json:"tools,omitempty"`
-}
-
-// PostV1ChatCompletionsParams defines parameters for PostV1ChatCompletions.
-type PostV1ChatCompletionsParams struct {
+// CreateChatCompletionParams defines parameters for CreateChatCompletion.
+type CreateChatCompletionParams struct {
 	// Provider Specific provider to use (default determined by model)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
@@ -340,5 +392,5 @@ type ProxyPostJSONRequestBody ProxyPostJSONBody
 // ProxyPutJSONRequestBody defines body for ProxyPut for application/json ContentType.
 type ProxyPutJSONRequestBody ProxyPutJSONBody
 
-// PostV1ChatCompletionsJSONRequestBody defines body for PostV1ChatCompletions for application/json ContentType.
-type PostV1ChatCompletionsJSONRequestBody PostV1ChatCompletionsJSONBody
+// CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
+type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
