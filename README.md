@@ -40,42 +40,7 @@ import (
 )
 
 func main() {
-    client := sdk.NewClient("http://localhost:8080")
-    ctx := context.Background()
-
-    // Health check
-    if err := client.HealthCheck(ctx); err != nil {
-        log.Fatalf("Health check failed: %v", err)
-    }
-
-    // List models
-    models, err := client.ListModels(ctx)
-    if err != nil {
-        log.Fatalf("Error listing models: %v", err)
-    }
-    fmt.Printf("Available models: %+v\n", models)
-
-    // Generate content using the llama2 model
-    response, err := client.GenerateContent(
-        ctx,
-        sdk.ProviderOllama,
-        "llama2",
-        []sdk.Message{
-            {
-                Role:    sdk.MessageRoleSystem,
-                Content: "You are a helpful assistant.",
-            },
-            {
-                Role:    sdk.MessageRoleUser,
-                Content: "What is Go?",
-            },
-        },
-    )
-    if err != nil {
-        log.Fatalf("Error generating content: %v", err)
-    }
-
-    fmt.Printf("Generated content: %s\n", response.Response.Content)
+    client := sdk.NewClient("http://localhost:8080/v1")
 }
 ```
 
@@ -87,18 +52,19 @@ To list available models, use the ListModels method:
 ctx := context.Background()
 
 // List all models from all providers
-models, err := client.ListModels(ctx)
+resp, err := client.ListModels(ctx)
 if err != nil {
     log.Fatalf("Error listing models: %v", err)
 }
-fmt.Printf("All available models: %+v\n", models)
+fmt.Printf("All available models: %+v\n", resp.Data)
 
 // List models for a specific provider
-providerModels, err := client.ListProviderModels(ctx, sdk.ProviderGroq)
+resp, err := client.ListProviderModels(ctx, sdk.Groq)
+fmt.PrintF("Provider %s", resp.Provider)
 if err != nil {
     log.Fatalf("Error listing provider models: %v", err)
 }
-fmt.Printf("Available Groq models: %+v\n", providerModels)
+fmt.Printf("Available Groq models: %+v\n", resp.Data)
 ```
 
 ### Generating Content
@@ -109,23 +75,31 @@ To generate content using a model, use the GenerateContent method:
 ctx := context.Background()
 response, err := client.GenerateContent(
     ctx,
-    sdk.ProviderOllama,
+    sdk.Ollama,
     "llama2",
     []sdk.Message{
         {
-            Role:    sdk.MessageRoleSystem,
+            Role:    sdk.System,
             Content: "You are a helpful assistant.",
         },
         {
-            Role:    sdk.MessageRoleUser,
+            Role:    sdk.User,
             Content: "What is Go?",
         },
-    }
+    },
 )
 if err != nil {
-    log.Fatalf("Error generating content: %v", err)
+    log.Printf("Error generating content: %v", err)
+    return
 }
-fmt.Println("Generated content:", response.Response.Content)
+
+var chatCompletion CreateChatCompletionResponse
+if err := json.Unmarshal(response.RawResponse, &chatCompletion); err != nil {
+    log.Printf("Error unmarshaling response: %v", err)
+    return
+}
+
+fmt.Printf("Generated content: %s\n", chatCompletion.Choices[0].Message.Content)
 ```
 
 ### Health Check
@@ -133,7 +107,8 @@ fmt.Println("Generated content:", response.Response.Content)
 To check if the API is healthy:
 
 ```go
-err := client.HealthCheck()
+ctx := context.Background()
+err := client.HealthCheck(ctx)
 if err != nil {
     log.Fatalf("Health check failed: %v", err)
 }
@@ -165,36 +140,45 @@ if err != nil {
 }
 // Read events from the stream / channel
 for event := range events {
-    switch event.Event {
-    case sdk.StreamEventContentDelta:
-        // Option 1: Use anonymous struct for simple cases
-        var delta struct {
-            Content string `json:"content"`
-        }
-        if err := json.Unmarshal(event.Data, &delta); err != nil {
-            log.Printf("Error parsing delta: %v", err)
-            continue
-        }
-        fmt.Print(delta.Content)
+    if event.Event != nil {
+        continue
+    }
 
-        // Option 2: Use GenerateResponseTokens for full response structure
-        var tokens sdk.GenerateResponseTokens
-        if err := json.Unmarshal(event.Data, &tokens); err != nil {
-            log.Printf("Error parsing tokens: %v", err)
-            continue
-        }
-        fmt.Printf("Model: %s, Role: %s, Content: %s\n",
-            tokens.Model, tokens.Role, tokens.Content)
+    switch *event.Event {
+    case sdk.ContentDelta:
+        if event.Data != nil {
+            // Parse the streaming response
+            var streamResponse sdk.CreateChatCompletionStreamResponse
+            if err := json.Unmarshal(*event.Data, &streamResponse); err != nil {
+                log.Printf("Error parsing stream response: %v", err)
+                continue
+            }
 
-    case sdk.StreamEventMessageError:
-        var errResp struct {
-            Error string `json:"error"`
+            // Process each choice in the response
+            for _, choice := range streamResponse.Choices {
+                if choice.Delta.Content != "" {
+                    // Just print the content as it comes in
+                    fmt.Print(choice.Delta.Content)
+                }
+            }
         }
-        if err := json.Unmarshal(event.Data, &errResp); err != nil {
-            log.Printf("Error parsing error: %v", err)
-            continue
+
+    case sdk.StreamEnd:
+        // Stream has ended
+        fmt.Println("\nStream ended")
+
+    case sdk.MessageError:
+        // Handle error events
+        if event.Data != nil {
+            var errResp struct {
+                Error string `json:"error"`
+            }
+            if err := json.Unmarshal(*event.Data, &errResp); err != nil {
+                log.Printf("Error parsing error: %v", err)
+                continue
+            }
+            log.Printf("Error: %s", errResp.Error)
         }
-        log.Printf("Error: %s", errResp.Error)
     }
 }
 ```
