@@ -1,3 +1,35 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [1.5.0-rc.1](https://github.com/inference-gateway/sdk/compare/v1.4.1...v1.5.0-rc.1) (2025-03-23)
+
+### ✨ Features
+
+* Add task to generate code from OpenAPI specification and define SSEvent schema ([17dfa8f](https://github.com/inference-gateway/sdk/commit/17dfa8f56ca9180d2a6233973ac3de56f8456830))
+
+### ♻️ Improvements
+
+* Add error handling for JSON encoding in test cases ([ad38d99](https://github.com/inference-gateway/sdk/commit/ad38d993de8da1f020a21c288fea14feafef4e7c))
+* Clarify TODO comment regarding error event type in GenerateContentStream method ([dff7c6b](https://github.com/inference-gateway/sdk/commit/dff7c6bb559bd97aaefa09d0d851a35e62b0e8c7))
+* Download OpenAPI spec from inference-gateway ([16d8ddc](https://github.com/inference-gateway/sdk/commit/16d8ddc310416815513f8384ba080f6063f21690))
+* Enhance GenerateContent and GenerateContentStream methods for improved error handling and streaming support ([19d5e98](https://github.com/inference-gateway/sdk/commit/19d5e98b5866844a047971b2a909546f8ffdb7ad))
+* Implement ListModels and ListProviderModels methods ([61a1e06](https://github.com/inference-gateway/sdk/commit/61a1e06c5365e00d18ad8b4c36dece87d88d12ae))
+* Make it possible to have a RC in the release workflow ([26c8f0b](https://github.com/inference-gateway/sdk/commit/26c8f0bf08a761ae70378240a444e1b25c9d93e9))
+* Place the comment for clarity on the right attribute ([1a75bcb](https://github.com/inference-gateway/sdk/commit/1a75bcba82f3adeb2a8681dc57a854bfd97f4ed3))
+* Rename Providers to Provider and update related schema references ([c114701](https://github.com/inference-gateway/sdk/commit/c114701551032cecdd6a214ba33a54ef3e265e78))
+* Run task generate ([6655266](https://github.com/inference-gateway/sdk/commit/66552664fc8968ccbd1ae8b44e713e5998f600cd))
+* Update GenerateContent method to return CreateChatCompletionResponse ([63d5585](https://github.com/inference-gateway/sdk/commit/63d5585dce897a7c54df48d4686bfd340eb73a09))
+* Update ListModels and ListProviderModels methods to return pointers to ListModelsResponse ([2534da0](https://github.com/inference-gateway/sdk/commit/2534da0e1ab9fe29b8ffd25c75e9a64cd8378915))
+* Update OpenAPI schema and SDK to support CreateChatCompletionResponse structure ([5f60537](https://github.com/inference-gateway/sdk/commit/5f60537527c921729c395afcd45244470541c156))
+* Update output filename for generated Go types to generated_types.go ([a8bc1b6](https://github.com/inference-gateway/sdk/commit/a8bc1b6517a6b334c6b301d0375ac318907c8902))
+* Update README for improved client usage and error handling ([911e8e5](https://github.com/inference-gateway/sdk/commit/911e8e5f76e1906c816ae2f80e722a3a683aed1c))
+* Update task description to clarify code generation for Go types ([886b130](https://github.com/inference-gateway/sdk/commit/886b1306172df04653404a2711cacaac3518996b))
+
+### 📚 Documentation
+
+* Download the latest OpenAPI specification ([ee60b31](https://github.com/inference-gateway/sdk/commit/ee60b311026d28d16f69dc7d5faee5cc505896b0))
+
 ## [1.4.1](https://github.com/inference-gateway/sdk/compare/v1.4.0...v1.4.1) (2025-02-02)
 
 ### 📚 Documentation
