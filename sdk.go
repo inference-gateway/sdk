@@ -264,8 +264,8 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 				if err != io.EOF {
 					errorData := []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
 					eventChan <- SSEvent{
-						Event: nil,
-						Data:  &errorData, // TODO - need to add error event type to enum in OpenAPI spec, but it's not very important because all providers following OpenAI and the event section is not provided in the SSEvents, i.e it's an optional and will be treated as a "nice-to-have"
+						Event: nil, // TODO - need to add error event type to enum in OpenAPI spec, but it's not very important because all providers following OpenAI and the event section is not provided in the SSEvents, i.e it's an optional and will be treated as a "nice-to-have"
+						Data:  &errorData,
 					}
 				}
 				return
