@@ -7,6 +7,9 @@ info:
     OpenAI, Groq, Ollama, and other providers are supported.
     OpenAI compatible API for using with existing clients.
     Unified API for all providers.
+  contact:
+    name: Inference Gateway
+    url: https://inference-gateway.github.io/docs/
   version: 1.0.0
   license:
     name: MIT
@@ -28,6 +31,9 @@ paths:
       operationId: listModels
       tags:
         - Models
+      description: |
+        Lists the currently available models, and provides basic information
+        about each one such as the owner and availability.
       summary:
         Lists the currently available models, and provides basic information
         about each one such as the owner and availability.
@@ -96,10 +102,13 @@ paths:
           $ref: "#/components/responses/InternalError"
   /v1/chat/completions:
     post:
-      summary: Create a chat completion
-      description: Creates a completion for the chat message with the specified provider
+      operationId: createChatCompletion
       tags:
         - Completions
+      description: |
+        Generates a chat completion based on the provided input.
+        The completion can be streamed to the client as it is generated.
+      summary: Create a chat completion
       security:
         - bearerAuth: []
       parameters:
@@ -110,35 +119,7 @@ paths:
             $ref: "#/components/schemas/Provider"
           description: Specific provider to use (default determined by model)
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - model
-                - messages
-              properties:
-                model:
-                  type: string
-                  description: Model ID to use
-                messages:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Message"
-                temperature:
-                  type: number
-                  format: float
-                  default: 0.7
-                stream:
-                  type: boolean
-                  default: false
-                tools:
-                  type: array
-                  items:
-                    type: object
-                max_tokens:
-                  type: integer
+        $ref: "#/components/requestBodies/CreateChatCompletionRequest"
       responses:
         "200":
           description: Successful response
@@ -171,10 +152,14 @@ paths:
           type: string
         description: The remaining path to proxy to the provider
     get:
-      summary: Proxy GET request to provider
       operationId: proxyGet
       tags:
         - Proxy
+      description: |
+        Proxy GET request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy GET request to provider
       responses:
         "200":
           $ref: "#/components/responses/ProviderResponse"
@@ -187,10 +172,14 @@ paths:
       security:
         - bearerAuth: []
     post:
-      summary: Proxy POST request to provider
       operationId: proxyPost
       tags:
         - Proxy
+      description: |
+        Proxy POST request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy POST request to provider
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -205,10 +194,14 @@ paths:
       security:
         - bearerAuth: []
     put:
-      summary: Proxy PUT request to provider
       operationId: proxyPut
       tags:
         - Proxy
+      description: |
+        Proxy PUT request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy PUT request to provider
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -223,10 +216,14 @@ paths:
       security:
         - bearerAuth: []
     delete:
-      summary: Proxy DELETE request to provider
       operationId: proxyDelete
       tags:
         - Proxy
+      description: |
+        Proxy DELETE request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy DELETE request to provider
       responses:
         "200":
           $ref: "#/components/responses/ProviderResponse"
@@ -239,10 +236,14 @@ paths:
       security:
         - bearerAuth: []
     patch:
-      summary: Proxy PATCH request to provider
       operationId: proxyPatch
       tags:
         - Proxy
+      description: |
+        Proxy PATCH request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy PATCH request to provider
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -259,9 +260,12 @@ paths:
   /health:
     get:
       operationId: healthCheck
-      summary: Health check
       tags:
         - Health
+      description: |
+        Health check endpoint
+        Returns a 200 status code if the service is healthy
+      summary: Health check
       responses:
         "200":
           description: Health check successful
@@ -377,31 +381,6 @@ components:
         To enable authentication, set ENABLE_AUTH to true.
         When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
-    SSEvent:
-      type: object
-      properties:
-        event:
-          type: string
-          enum:
-            - message-start
-            - stream-start
-            - content-start
-            - content-delta
-            - content-end
-            - message-end
-            - stream-end
-        data:
-          type: string
-          format: byte
-        retry:
-          type: integer
-    Endpoints:
-      type: object
-      properties:
-        models:
-          type: string
-        chat:
-          type: string
     Provider:
       type: string
       enum:
@@ -528,7 +507,6 @@ components:
           ]
         }
         ```
-      additionalProperties: true
     ProviderAuthType:
       type: string
       description: Authentication type for providers
@@ -537,6 +515,31 @@ components:
         - xheader
         - query
         - none
+    SSEvent:
+      type: object
+      properties:
+        event:
+          type: string
+          enum:
+            - message-start
+            - stream-start
+            - content-start
+            - content-delta
+            - content-end
+            - message-end
+            - stream-end
+        data:
+          type: string
+          format: byte
+        retry:
+          type: integer
+    Endpoints:
+      type: object
+      properties:
+        models:
+          type: string
+        chat:
+          type: string
     Error:
       type: object
       properties:
@@ -583,7 +586,7 @@ components:
         owned_by:
           type: string
         served_by:
-          type: string
+          $ref: "#/components/schemas/Provider"
     ListModelsResponse:
       type: object
       description: Response structure for listing models
@@ -651,20 +654,11 @@ components:
         properties:
           type: object
           description: The properties of the parameters.
-          additionalProperties:
-            type: object
-            description: The schema for the parameter.
-            additionalProperties: true
         required:
           type: array
           items:
             type: string
           description: The required properties of the parameters.
-        additionalProperties:
-          type: boolean
-          default: false
-          description: Whether additional properties are allowed.
-      additionalProperties: true
     ChatCompletionToolType:
       type: string
       description: The type of the tool. Currently, only `function` is supported.
@@ -779,16 +773,6 @@ components:
         - id
         - type
         - function
-    EventType:
-      type: string
-      enum:
-        - message-start
-        - stream-start
-        - content-start
-        - content-delta
-        - content-end
-        - message-end
-        - stream-end
     ChatCompletionChoice:
       type: object
       properties:
@@ -1043,89 +1027,6 @@ components:
         - id
         - model
         - object
-    CreateCompletionResponse:
-      type: object
-      description: >
-        Represents a completion response from the API. Note: both the streamed
-        and non-streamed response objects share the same shape (unlike the chat
-        endpoint).
-      properties:
-        id:
-          type: string
-          description: A unique identifier for the completion.
-        choices:
-          type: array
-          description:
-            The list of completion choices the model generated for the input
-            prompt.
-          items:
-            type: object
-            required:
-              - finish_reason
-              - index
-              - logprobs
-              - text
-            properties:
-              finish_reason:
-                type: string
-                description: >
-                  The reason the model stopped generating tokens. This will be
-                  `stop` if the model hit a natural stop point or a provided
-                  stop sequence,
-
-                  `length` if the maximum number of tokens specified in the
-                  request was reached,
-
-                  or `content_filter` if content was omitted due to a flag from
-                  our content filters.
-                enum:
-                  - stop
-                  - length
-                  - content_filter
-              index:
-                type: integer
-              logprobs:
-                type: object
-                properties:
-                  text_offset:
-                    type: array
-                    items:
-                      type: integer
-                  token_logprobs:
-                    type: array
-                    items:
-                      type: number
-                  tokens:
-                    type: array
-                    items:
-                      type: string
-                  top_logprobs:
-                    type: array
-                    items:
-                      type: object
-                      additionalProperties:
-                        type: number
-              text:
-                type: string
-        created:
-          type: integer
-          description: The Unix timestamp (in seconds) of when the completion was created.
-        model:
-          type: string
-          description: The model used for completion.
-        object:
-          type: string
-          description: The object type, which is always "text_completion"
-          enum:
-            - text_completion
-        usage:
-          $ref: "#/components/schemas/CompletionUsage"
-      required:
-        - id
-        - object
-        - created
-        - model
-        - choices
     Config:
       x-config:
         sections:
