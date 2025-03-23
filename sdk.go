@@ -1,9 +1,12 @@
 package sdk
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -90,8 +93,8 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 
 	if resp.IsError() {
 		var errorResp Error
-		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil {
-			return nil, fmt.Errorf("API error: %s", errorResp.Error)
+		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
+			return nil, fmt.Errorf("API error: %s", *errorResp.Error)
 		}
 		return nil, fmt.Errorf("failed to list provider models, status code: %d", resp.StatusCode())
 	}
@@ -132,7 +135,41 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //	}
 //	fmt.Printf("Generated content: %s\n", response.Response.Content)
 func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error) {
-	// TODO - implement it properly
+	requestBody := CreateChatCompletionRequest{
+		Model:    model,
+		Messages: messages,
+	}
+
+	queryParams := make(map[string]string)
+	if provider != "" {
+		queryParams["provider"] = string(provider)
+	}
+
+	resp, err := c.http.R().
+		SetContext(ctx).
+		SetQueryParams(queryParams).
+		SetBody(requestBody).
+		SetResult(&CreateChatCompletionResponse{}).
+		Post(fmt.Sprintf("%s/v1/chat/completions", c.baseURL))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		var errorResp Error
+		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
+			return nil, fmt.Errorf("API error: %s", *errorResp.Error)
+		}
+		return nil, fmt.Errorf("failed to generate content, status code: %d", resp.StatusCode())
+	}
+
+	result, ok := resp.Result().(*CreateChatCompletionResponse)
+	if !ok || result == nil {
+		return nil, fmt.Errorf("failed to parse response")
+	}
+
+	return result, nil
 }
 
 // GenerateContentStream generates content using streaming mode and returns a channel of events.
@@ -156,14 +193,17 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //	for event := range events {
 //		switch event.Event {
 //		case sdk.StreamEventContentDelta:
-//			var delta struct {
-//				Content string `json:"content"`
-//			}
-//			if err := json.Unmarshal(event.Data, &delta); err != nil {
-//				log.Printf("Error parsing delta: %v", err)
+//			var streamResponse CreateChatCompletionStreamResponse
+//			if err := json.Unmarshal(*event.Data, &streamResponse); err != nil {
+//				log.Printf("Error parsing stream response: %v", err)
 //				continue
 //			}
-//			fmt.Print(delta.Content)
+//
+//			for _, choice := range streamResponse.Choices {
+//				if choice.Delta.Content != "" {
+//					log.Printf("Content: %s", choice.Delta.Content)
+//				}
+//			}
 //		case sdk.StreamEventMessageError:
 //			var errResp struct {
 //				Error string `json:"error"`
@@ -176,10 +216,94 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //		}
 //	}
 func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error) {
-	// TODO - implement it properly - send the stream as-is
-	ssevent := make(chan SSEvent, 100)
+	eventChan := make(chan SSEvent, 100)
 
-	return ssevent, nil
+	requestBody := CreateChatCompletionRequest{
+		Model:    model,
+		Messages: messages,
+		Stream:   boolPtr(true),
+	}
+
+	queryParams := make(map[string]string)
+	if provider != "" {
+		queryParams["provider"] = string(provider)
+	}
+
+	req := c.http.R().
+		SetContext(ctx).
+		SetQueryParams(queryParams).
+		SetBody(requestBody).
+		SetDoNotParseResponse(true)
+
+	resp, err := req.Post(fmt.Sprintf("%s/v1/chat/completions", c.baseURL))
+	if err != nil {
+		close(eventChan)
+		return eventChan, err
+	}
+
+	if resp.IsError() {
+		close(eventChan)
+		return eventChan, fmt.Errorf("stream request failed with status: %d", resp.StatusCode())
+	}
+
+	rawBody := resp.RawBody()
+	if rawBody == nil {
+		close(eventChan)
+		return eventChan, fmt.Errorf("empty response body")
+	}
+
+	go func() {
+		defer close(eventChan)
+		defer rawBody.Close()
+
+		reader := bufio.NewReader(rawBody)
+
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				if err != io.EOF {
+					errorData := []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
+					eventChan <- SSEvent{
+						Event: nil,
+						Data:  &errorData, // TODO - need to add error event type to enum in OpenAPI spec, but it's not very important because all providers following OpenAI and the event section is not provided in the SSEvents
+					}
+				}
+				return
+			}
+
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+
+			if !strings.HasPrefix(line, "data: ") {
+				continue
+			}
+
+			data := strings.TrimPrefix(line, "data: ")
+
+			if data == "[DONE]" {
+				streamEnd := StreamEnd
+				eventChan <- SSEvent{
+					Event: &streamEnd,
+				}
+				return
+			}
+
+			contentDelta := ContentDelta
+			dataBytes := []byte(data)
+			eventChan <- SSEvent{
+				Event: &contentDelta,
+				Data:  &dataBytes,
+			}
+		}
+	}()
+
+	return eventChan, nil
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
 
 // HealthCheck performs a health check request to verify API availability.
