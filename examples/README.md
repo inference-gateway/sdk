@@ -63,5 +63,4 @@ Each example directory contains a README.md with specific instructions, but the 
 
 ## Notes
 
--   Some examples may require specific LLM providers that support certain features (like function calling)
 -   Each example can be modified to use different providers and models by setting environment variables
