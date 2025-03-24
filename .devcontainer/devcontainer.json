@@ -1,6 +1,9 @@
 {
   "name": "Debian with Go",
   "dockerFile": "Dockerfile",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:latest": {}
+  },
   "customizations": {
     "vscode": {
       "extensions": [

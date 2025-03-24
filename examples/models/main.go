@@ -37,13 +37,13 @@ func main() {
 	}
 
 	// List models for a specific provider
-	fmt.Println("\nListing models from OpenAI...")
-	openaiModels, err := client.ListProviderModels(ctx, sdk.Openai)
+	fmt.Println("\nListing models from Groq Cloud...")
+	groqModels, err := client.ListProviderModels(ctx, sdk.Groq)
 	if err != nil {
-		log.Printf("Error listing OpenAI models: %v", err)
+		log.Printf("Error listing Groq Cloud models: %v", err)
 	} else {
-		fmt.Printf("Provider: %s\n", *openaiModels.Provider)
-		for i, model := range *openaiModels.Data {
+		fmt.Printf("Provider: %s\n", *groqModels.Provider)
+		for i, model := range *groqModels.Data {
 			fmt.Printf("%d. %s\n", i+1, *model.Id)
 		}
 	}
