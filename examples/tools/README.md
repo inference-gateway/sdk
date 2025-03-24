@@ -17,10 +17,10 @@ This example demonstrates how to use the Inference Gateway SDK to implement Tool
 export INFERENCE_GATEWAY_URL="http://localhost:8080/v1"
 
 # Run the example
-go run [main.go](http://_vscodecontentref_/5)
+go run [main.go](main.go)
 ```
 
-Example Output:
+## Example Output:
 
 ```sh
 Asking about weather with function calling using gpt-4o...
