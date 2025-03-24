@@ -74,12 +74,13 @@ func main() {
 		Description: stringPtr("Get the current weather in a given location"),
 		Parameters: &sdk.FunctionParameters{
 			Type: stringPtr("object"),
-			Properties: &map[string]interface{}{
-				"location": map[string]interface{}{
+			Properties: &map[string]any{
+				"location": map[string]any{
 					"type":        "string",
+					"enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
 					"description": "The city and state, e.g. San Francisco, CA",
 				},
-				"unit": map[string]interface{}{
+				"unit": map[string]any{
 					"type":        "string",
 					"enum":        []string{"celsius", "fahrenheit"},
 					"description": "The temperature unit to use",
@@ -118,9 +119,6 @@ func main() {
 		log.Fatalf("Error generating content: %v", err)
 	}
 
-	// Print the response
-	fmt.Printf("Model response: %+v\n", response)
-
 	// Check if the model wants to call our function
 	if response.Choices[0].Message.ToolCalls != nil && len(*response.Choices[0].Message.ToolCalls) > 0 {
 		fmt.Println("Model is calling a function:")
@@ -139,14 +137,12 @@ func main() {
 			log.Fatalf("Failed to parse arguments: %v", err)
 		}
 
-		// Call the function with the provided arguments
-		location := args.Location
-		if location == "" {
-			location = "san francisco" // Default
-		}
-
-		weather := GetWeatherInfo(location)
+		weather := GetWeatherInfo(args.Location)
 		weatherJSON, _ := json.Marshal(weather)
+
+		// Print the weather data
+		fmt.Printf("Function result:\n")
+		fmt.Printf("Weather in %s: %.0f %s and %s\n\n", args.Location, weather.Temperature, weather.Unit, weather.Description)
 
 		// Create a message to send back with the function result
 		updatedMessages := append(messages, response.Choices[0].Message)
