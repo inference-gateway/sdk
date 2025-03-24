@@ -206,7 +206,8 @@ type ListModelsResponse struct {
 
 // Message Message structure for provider requests
 type Message struct {
-	Content string `json:"content"`
+	Content   string  `json:"content"`
+	Reasoning *string `json:"reasoning,omitempty"`
 
 	// Role Role of the message sender
 	Role       MessageRole                      `json:"role"`

@@ -145,6 +145,7 @@ func main() {
 		fmt.Printf("Weather in %s: %.0f %s and %s\n\n", args.Location, weather.Temperature, weather.Unit, weather.Description)
 
 		// Create a message to send back with the function result
+		response.Choices[0].Message.Reasoning = nil
 		updatedMessages := append(messages, response.Choices[0].Message)
 		updatedMessages = append(updatedMessages, sdk.Message{
 			Role:       sdk.Tool,

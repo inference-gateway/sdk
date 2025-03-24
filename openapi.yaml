@@ -567,8 +567,8 @@ components:
             $ref: "#/components/schemas/ChatCompletionMessageToolCall"
         tool_call_id:
           type: string
-        # reasoning: # TODO - need to check if I actually need it, the backend doesn't want it, it's comming as a response from Groq, but I don't want to implement something specifically for Groq only
-        #   type: string
+        reasoning:
+          type: string
       required:
         - role
         - content
