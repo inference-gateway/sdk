@@ -75,6 +75,7 @@ func main() {
 	}
 
 	// Process the stream of events
+	var usageStats *sdk.CompletionUsage
 	var fullContent string
 	for event := range eventCh {
 		if event.Event != nil {
@@ -97,12 +98,25 @@ func main() {
 							fullContent += choice.Delta.Content
 						}
 					}
+
+					// Extract usage statistics if present
+					if streamResponse.Usage != nil {
+						usageStats = streamResponse.Usage
+					}
 				}
 
 			case sdk.StreamEnd:
 				fmt.Println("\n\nStream ended")
 			}
 		}
+	}
+
+	// Display usage statistics if available
+	if usageStats != nil {
+		fmt.Printf("\nUsage Statistics:\n")
+		fmt.Printf("  Prompt tokens: %d\n", usageStats.PromptTokens)
+		fmt.Printf("  Completion tokens: %d\n", usageStats.CompletionTokens)
+		fmt.Printf("  Total tokens: %d\n", usageStats.TotalTokens)
 	}
 
 	fmt.Printf("\n\nFull content length: %d characters\n", len(fullContent))
