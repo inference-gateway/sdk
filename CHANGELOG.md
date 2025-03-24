@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0](https://github.com/inference-gateway/sdk/compare/v1.4.1...v1.5.0) (2025-03-24)
+
+### ✨ Features
+
+* Make this SDK OpenAI compatible ([#2](https://github.com/inference-gateway/sdk/issues/2)) ([3181988](https://github.com/inference-gateway/sdk/commit/318198864f14592ac5910c459417535569202737))
+
 ## [1.5.0-rc.2](https://github.com/inference-gateway/sdk/compare/v1.5.0-rc.1...v1.5.0-rc.2) (2025-03-24)
 
 ### ✨ Features
