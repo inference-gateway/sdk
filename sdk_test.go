@@ -7,479 +7,395 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestListModels(t *testing.T) {
-	tests := []struct {
-		name          string
-		serverHandler func(w http.ResponseWriter, r *http.Request)
-		expectedError string
-		expectedResp  []ListModelsResponse
-	}{
-		{
-			name: "successful list models",
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodGet, r.Method)
-				assert.Equal(t, "/llms", r.URL.Path)
+func TestNewClient(t *testing.T) {
+	client := NewClient("http://example.com", "", nil)
+	assert.NotNil(t, client, "NewClient should return a non-nil client")
+}
 
-				w.Header().Set("Content-Type", "application/json")
-				models := []ListModelsResponse{
-					{
-						Provider: ProviderOllama,
-						Models: []Model{
-							{
-								Name: "llama2",
-							},
-						},
-					},
-				}
-				err := json.NewEncoder(w).Encode(models)
-				assert.NoError(t, err)
-			},
-			expectedResp: []ListModelsResponse{
+func TestListModels(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/models", r.URL.Path, "Path should be /models")
+		assert.Equal(t, http.MethodGet, r.Method, "Method should be GET")
+
+		response := ListModelsResponse{
+			Object: stringPtr("list"),
+			Data: &[]Model{
 				{
-					Provider: ProviderOllama,
-					Models: []Model{
-						{
-							Name: "llama2",
-						},
-					},
+					Id:      stringPtr("gpt-4o"),
+					Object:  stringPtr("model"),
+					Created: int64Ptr(1686935002),
+					OwnedBy: stringPtr("openai"),
+				},
+				{
+					Id:      stringPtr("llama-3.3-70b-versatile"),
+					Object:  stringPtr("model"),
+					Created: int64Ptr(1723651281),
+					OwnedBy: stringPtr("groq"),
 				},
 			},
-		},
-		{
-			name: "server error",
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				err := json.NewEncoder(w).Encode(ErrorResponse{Error: "internal error"})
-				assert.NoError(t, err)
-			},
-			expectedError: "API error: internal error",
-		},
-	}
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(tt.serverHandler))
-			defer server.Close()
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
 
-			client := NewClient(server.URL)
-			ctx := context.Background()
-			resp, err := client.ListModels(ctx)
+	}))
+	defer server.Close()
 
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
-				assert.Nil(t, resp)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedResp, resp)
-			}
-		})
-	}
+	client := NewClient(server.URL, "", nil)
+
+	ctx := context.Background()
+	models, err := client.ListModels(ctx)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, models)
+	assert.Equal(t, "list", *models.Object)
+	assert.Len(t, *models.Data, 2)
+	assert.Equal(t, "gpt-4o", *(*models.Data)[0].Id)
+	assert.Equal(t, "llama-3.3-70b-versatile", *(*models.Data)[1].Id)
 }
 
 func TestListProviderModels(t *testing.T) {
-	tests := []struct {
-		name          string
-		provider      Provider
-		serverHandler func(w http.ResponseWriter, r *http.Request)
-		expectedError string
-		expectedResp  ListModelsResponse
-	}{
-		{
-			name:     "successful list provider models",
-			provider: ProviderGroq,
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodGet, r.Method)
-				assert.Equal(t, "/llms/groq", r.URL.Path)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/models", r.URL.Path, "Path should be /models")
+		assert.Equal(t, http.MethodGet, r.Method, "Method should be GET")
+		assert.Equal(t, "openai", r.URL.Query().Get("provider"), "Provider should be specified in query")
 
-				w.Header().Set("Content-Type", "application/json")
-				response := ListModelsResponse{
-					Provider: ProviderGroq,
-					Models: []Model{
-						{Name: "llama-3.3-70b-versatile"},
-						{Name: "llama-3.2-3b-preview"},
-						{Name: "llama-3.2-1b-preview"},
-						{Name: "llama-3.3-70b-specdec"},
-						{Name: "llama3-8b-8192"},
-					},
-				}
-				err := json.NewEncoder(w).Encode(response)
-				assert.NoError(t, err)
-			},
-			expectedResp: ListModelsResponse{
-				Provider: ProviderGroq,
-				Models: []Model{
-					{Name: "llama-3.3-70b-versatile"},
-					{Name: "llama-3.2-3b-preview"},
-					{Name: "llama-3.2-1b-preview"},
-					{Name: "llama-3.3-70b-specdec"},
-					{Name: "llama3-8b-8192"},
+		response := ListModelsResponse{
+			Provider: providerPtr(Openai),
+			Object:   stringPtr("list"),
+			Data: &[]Model{
+				{
+					Id:      stringPtr("gpt-4o"),
+					Object:  stringPtr("model"),
+					Created: int64Ptr(1686935002),
+					OwnedBy: stringPtr("openai"),
+				},
+				{
+					Id:      stringPtr("gpt-4-turbo"),
+					Object:  stringPtr("model"),
+					Created: int64Ptr(1687882410),
+					OwnedBy: stringPtr("openai"),
 				},
 			},
-		},
-		{
-			name:     "server error",
-			provider: ProviderGroq,
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				err := json.NewEncoder(w).Encode(ErrorResponse{Error: "internal error"})
-				assert.NoError(t, err)
-			},
-			expectedError: "API error: internal error",
-		},
-	}
+		}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(tt.serverHandler))
-			defer server.Close()
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
 
-			client := NewClient(server.URL)
-			ctx := context.Background()
-			resp, err := client.ListProviderModels(ctx, tt.provider)
+	client := NewClient(server.URL, "", nil)
 
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
-				assert.Nil(t, resp)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedResp.Models, resp)
-			}
+	ctx := context.Background()
+	models, err := client.ListProviderModels(ctx, Openai)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, models)
+	assert.Equal(t, Openai, *models.Provider)
+	assert.Equal(t, "list", *models.Object)
+	assert.Len(t, *models.Data, 2)
+	assert.Equal(t, "gpt-4o", *(*models.Data)[0].Id)
+	assert.Equal(t, "gpt-4-turbo", *(*models.Data)[1].Id)
+}
+
+func TestListProviderModels_APIError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		err := json.NewEncoder(w).Encode(Error{
+			Error: stringPtr("Invalid API key"),
 		})
-	}
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", nil)
+
+	ctx := context.Background()
+	models, err := client.ListProviderModels(ctx, Groq)
+
+	assert.Error(t, err)
+	assert.Nil(t, models)
+	assert.Contains(t, err.Error(), "API error")
 }
 
 func TestGenerateContent(t *testing.T) {
-	tests := []struct {
-		name          string
-		provider      Provider
-		model         string
-		messages      []Message
-		serverHandler func(w http.ResponseWriter, r *http.Request)
-		expectedError string
-		expectedResp  *GenerateResponse
-	}{
-		{
-			name:     "successful generation",
-			provider: ProviderOllama,
-			model:    "llama2",
-			messages: []Message{
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/chat/completions", r.URL.Path, "Path should be /v1/chat/completions")
+		assert.Equal(t, http.MethodPost, r.Method, "Method should be POST")
+		assert.Equal(t, "openai", r.URL.Query().Get("provider"), "Provider should be specified in query")
+
+		var requestBody CreateChatCompletionRequest
+		err := json.NewDecoder(r.Body).Decode(&requestBody)
+		assert.NoError(t, err, "Should be able to decode request body")
+		assert.Equal(t, "gpt-4o", requestBody.Model, "Model should match")
+		assert.Len(t, requestBody.Messages, 2, "Should have 2 messages")
+		assert.Equal(t, System, requestBody.Messages[0].Role, "First message should have system role")
+		assert.Equal(t, User, requestBody.Messages[1].Role, "Second message should have user role")
+
+		response := CreateChatCompletionResponse{
+			Id:      "chat-12345",
+			Object:  "chat.completion",
+			Created: 1693672537,
+			Model:   "gpt-4o",
+			Choices: []ChatCompletionChoice{
 				{
-					Role:    MessageRoleSystem,
-					Content: "You are a helpful assistant.",
-				},
-				{
-					Role:    MessageRoleUser,
-					Content: "What is Go?",
-				},
-			},
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodPost, r.Method)
-				assert.Equal(t, "/llms/ollama/generate", r.URL.Path)
-
-				var req GenerateRequest
-				err := json.NewDecoder(r.Body).Decode(&req)
-				assert.NoError(t, err)
-				assert.Equal(t, "llama2", req.Model)
-
-				assert.Equal(t, 2, len(req.Messages))
-				assert.Equal(t, MessageRoleSystem, req.Messages[0].Role)
-				assert.Equal(t, "You are a helpful assistant.", req.Messages[0].Content)
-				assert.Equal(t, MessageRoleUser, req.Messages[1].Role)
-				assert.Equal(t, "What is Go?", req.Messages[1].Content)
-
-				w.Header().Set("Content-Type", "application/json")
-				resp := &GenerateResponse{
-					Provider: ProviderOllama,
-					Response: GenerateResponseTokens{
-						Role:    MessageRoleAssistant,
-						Model:   "llama2",
-						Content: "Go is a programming language.",
+					Index: 0,
+					Message: Message{
+						Role:    Assistant,
+						Content: "Go is a programming language designed by Google engineers in 2007. It's known for its simplicity, efficiency, and strong support for concurrency.",
 					},
-				}
-				err = json.NewEncoder(w).Encode(resp)
-				assert.NoError(t, err)
-			},
-			expectedResp: &GenerateResponse{
-				Provider: ProviderOllama,
-				Response: GenerateResponseTokens{
-					Role:    MessageRoleAssistant,
-					Model:   "llama2",
-					Content: "Go is a programming language.",
+					FinishReason: Stop,
 				},
+			},
+			Usage: &CompletionUsage{
+				PromptTokens:     42,
+				CompletionTokens: 25,
+				TotalTokens:      67,
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err, "Should be able to encode response")
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(baseURL, "", nil)
+
+	ctx := context.Background()
+	response, err := client.GenerateContent(
+		ctx,
+		Openai,
+		"gpt-4o",
+		[]Message{
+			{
+				Role:    System,
+				Content: "You are a helpful assistant.",
+			},
+			{
+				Role:    User,
+				Content: "What is Go?",
 			},
 		},
-		{
-			name:     "server error",
-			provider: ProviderOllama,
-			model:    "llama2",
-			messages: []Message{
-				{
-					Role:    MessageRoleSystem,
-					Content: "You are a helpful assistant.",
-				},
-				{
-					Role:    MessageRoleUser,
-					Content: "What is Go?",
-				},
-			},
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				err := json.NewEncoder(w).Encode(ErrorResponse{Error: "model not found"})
-				assert.NoError(t, err)
-			},
-			expectedError: "API error: model not found",
-		},
-	}
+	)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(tt.serverHandler))
-			defer server.Close()
-
-			client := NewClient(server.URL)
-			ctx := context.Background()
-			resp, err := client.GenerateContent(ctx, tt.provider, tt.model, tt.messages)
-
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
-				assert.Nil(t, resp)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedResp, resp)
-			}
-		})
-	}
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Equal(t, "chat-12345", response.Id)
+	assert.Equal(t, "gpt-4o", response.Model)
+	assert.Len(t, response.Choices, 1)
+	assert.Equal(t, Assistant, response.Choices[0].Message.Role)
+	assert.Contains(t, response.Choices[0].Message.Content, "Go is a programming language")
+	assert.Equal(t, Stop, response.Choices[0].FinishReason)
+	assert.NotNil(t, response.Usage)
+	assert.Equal(t, int64(67), response.Usage.TotalTokens)
 }
 
-func TestHealthCheck(t *testing.T) {
-	tests := []struct {
-		name          string
-		serverHandler func(w http.ResponseWriter, r *http.Request)
-		expectedError string
-	}{
-		{
-			name: "healthy server",
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodGet, r.Method)
-				assert.Equal(t, "/health", r.URL.Path)
-				w.WriteHeader(http.StatusOK)
-			},
-		},
-		{
-			name: "unhealthy server",
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusServiceUnavailable)
-			},
-			expectedError: "health check failed with status: 503",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(tt.serverHandler))
-			defer server.Close()
-
-			client := NewClient(server.URL)
-			ctx := context.Background()
-			err := client.HealthCheck(ctx)
-
-			if tt.expectedError != "" {
-				assert.EqualError(t, err, tt.expectedError)
-			} else {
-				assert.NoError(t, err)
-			}
+func TestGenerateContent_APIError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		err := json.NewEncoder(w).Encode(Error{
+			Error: stringPtr("Invalid model specified"),
 		})
-	}
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", nil)
+
+	ctx := context.Background()
+	response, err := client.GenerateContent(
+		ctx,
+		Groq,
+		"invalid-model",
+		[]Message{
+			{
+				Role:    User,
+				Content: "What is Go?",
+			},
+		},
+	)
+
+	assert.Error(t, err)
+	assert.Nil(t, response)
+	assert.Contains(t, err.Error(), "API error")
+	assert.Contains(t, err.Error(), "Invalid model")
 }
 
 func TestGenerateContentStream(t *testing.T) {
-	tests := []struct {
-		name          string
-		provider      Provider
-		model         string
-		messages      []Message
-		serverHandler func(w http.ResponseWriter, r *http.Request)
-		expectedError string
-		validate      func(*testing.T, <-chan SSEvent)
-	}{
-		{
-			name:     "successful stream",
-			provider: ProviderOllama,
-			model:    "llama2",
-			messages: []Message{
-				{Role: MessageRoleSystem, Content: "You are helpful."},
-				{Role: MessageRoleUser, Content: "Hi"},
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/chat/completions", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "ollama", r.URL.Query().Get("provider"))
+
+		var requestBody CreateChatCompletionRequest
+		err := json.NewDecoder(r.Body).Decode(&requestBody)
+		assert.NoError(t, err)
+		assert.Equal(t, "llama2", requestBody.Model)
+		assert.True(t, *requestBody.Stream)
+
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			t.Fatalf("Streaming not supported")
+		}
+
+		// Send stream responses as single lines
+		chunk1 := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "llama2","choices": [{"delta": {"content": "Go"},"index": 0,"finish_reason": null}]}`
+		chunk2 := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "llama2","choices": [{"delta": {"content": " is"},"index": 0,"finish_reason": null}]}`
+		chunk3 := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "llama2","choices": [{"delta": {"content": " amazing"},"index": 0,"finish_reason": "stop"}]}`
+
+		fmt.Fprintf(w, "data: %s\n\n", chunk1)
+		flusher.Flush()
+
+		fmt.Fprintf(w, "data: %s\n\n", chunk2)
+		flusher.Flush()
+
+		fmt.Fprintf(w, "data: %s\n\n", chunk3)
+		flusher.Flush()
+
+		fmt.Fprintf(w, "data: [DONE]\n\n")
+		flusher.Flush()
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(baseURL, "", nil)
+
+	ctx := context.Background()
+	eventCh, err := client.GenerateContentStream(
+		ctx,
+		Ollama,
+		"llama2",
+		[]Message{
+			{
+				Role:    System,
+				Content: "You are a helpful assistant.",
 			},
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodPost, r.Method)
-				assert.Equal(t, "/llms/ollama/generate", r.URL.Path)
-
-				var req GenerateRequest
-				err := json.NewDecoder(r.Body).Decode(&req)
-				assert.NoError(t, err)
-				assert.True(t, req.Stream)
-				assert.True(t, req.SSEvents)
-
-				w.Header().Set("Content-Type", "text/event-stream")
-				w.WriteHeader(http.StatusOK)
-
-				events := []SSEvent{
-					{Event: StreamEventMessageStart, Data: json.RawMessage(`{"role":"assistant"}`)},
-					{Event: StreamEventStreamStart, Data: json.RawMessage(`{}`)},
-					{Event: StreamEventContentStart, Data: json.RawMessage(`{}`)},
-					{Event: StreamEventContentDelta, Data: json.RawMessage(`{"content":"Hello"}`)},
-					{Event: StreamEventContentDelta, Data: json.RawMessage(`{"content":" there"}`)},
-					{Event: StreamEventContentDelta, Data: json.RawMessage(`{"content":"!"}`)},
-					{Event: StreamEventContentEnd, Data: json.RawMessage(`{}`)},
-					{Event: StreamEventMessageEnd, Data: json.RawMessage(`{}`)},
-					{Event: StreamEventStreamEnd, Data: json.RawMessage(`{}`)},
-				}
-
-				for _, evt := range events {
-					data, err := evt.Data.MarshalJSON()
-					assert.NoError(t, err)
-					_, err = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", evt.Event, data)
-					assert.NoError(t, err)
-					w.(http.Flusher).Flush()
-				}
-			},
-			validate: func(t *testing.T, events <-chan SSEvent) {
-				expected := []SSEvent{
-					{Event: StreamEventMessageStart, Data: []byte(`{"role":"assistant"}`)},
-					{Event: StreamEventStreamStart, Data: []byte(`{}`)},
-					{Event: StreamEventContentStart, Data: []byte(`{}`)},
-					{Event: StreamEventContentDelta, Data: []byte(`{"content":"Hello"}`)},
-					{Event: StreamEventContentDelta, Data: []byte(`{"content":" there"}`)},
-					{Event: StreamEventContentDelta, Data: []byte(`{"content":"!"}`)},
-					{Event: StreamEventContentEnd, Data: []byte(`{}`)},
-					{Event: StreamEventMessageEnd, Data: []byte(`{}`)},
-					{Event: StreamEventStreamEnd, Data: []byte(`{}`)},
-				}
-
-				for _, expectedEvent := range expected {
-					event := <-events
-					assert.Equal(t, expectedEvent.Event, event.Event)
-					assert.JSONEq(t, string(expectedEvent.Data), string(event.Data))
-				}
-
-				_, more := <-events
-				assert.False(t, more, "channel should be closed")
+			{
+				Role:    User,
+				Content: "What is Go?",
 			},
 		},
-		{
-			name:     "server error",
-			provider: ProviderOllama,
-			model:    "llama2",
-			messages: []Message{
-				{Role: MessageRoleUser, Content: "Hi"},
-			},
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "text/event-stream")
-				w.WriteHeader(http.StatusOK)
+	)
 
-				events := []SSEvent{
-					{Event: StreamEventMessageStart, Data: json.RawMessage(`{"role":"assistant"}`)},
-					{Event: StreamEventMessageError, Data: json.RawMessage(`{"error":"error event captured"}`)},
-					{Event: StreamEventStreamEnd, Data: json.RawMessage(`{}`)},
-				}
+	assert.NoError(t, err)
+	assert.NotNil(t, eventCh)
 
-				for _, evt := range events {
-					data, err := evt.Data.MarshalJSON()
-					assert.NoError(t, err)
-					_, err = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", evt.Event, data)
-					assert.NoError(t, err)
-					w.(http.Flusher).Flush()
-				}
-			},
-			validate: func(t *testing.T, events <-chan SSEvent) {
-				expected := []SSEvent{
-					{Event: StreamEventMessageStart, Data: json.RawMessage(`{"role":"assistant"}`)},
-					{Event: StreamEventMessageError, Data: json.RawMessage(`{"error":"error event captured"}`)},
-					{Event: StreamEventStreamEnd, Data: json.RawMessage(`{}`)},
-				}
+	var content string
+	var eventCount int
+	var streamEndReceived bool
 
-				for _, expectedEvent := range expected {
-					event := <-events
-					t.Logf("Received event: %+v with data: %s", event.Event, string(event.Data))
-					assert.Equal(t, expectedEvent.Event, event.Event)
-					assert.JSONEq(t, string(expectedEvent.Data), string(event.Data))
-				}
+	for event := range eventCh {
+		eventCount++
 
-				_, more := <-events
-				assert.False(t, more, "channel should be closed")
-			},
-		},
-		{
-			name:     "context canceled",
-			provider: ProviderOllama,
-			model:    "llama2",
-			messages: []Message{
-				{Role: MessageRoleUser, Content: "Hi"},
-			},
-			serverHandler: func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "text/event-stream")
-				w.WriteHeader(http.StatusOK)
+		if event.Event != nil && *event.Event == StreamEnd {
+			streamEndReceived = true
+			continue
+		}
 
-				event := SSEvent{
-					Event: StreamEventMessageStart,
-					Data:  json.RawMessage(`{"role":"assistant"}`),
-				}
-
-				_, err := fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event.Event, event.Data)
-				assert.NoError(t, err)
-				w.(http.Flusher).Flush()
-
-				time.Sleep(100 * time.Millisecond)
-			},
-			validate: func(t *testing.T, events <-chan SSEvent) {
-				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-				defer cancel()
-
-				expected := SSEvent{
-					Event: StreamEventMessageStart,
-					Data:  json.RawMessage(`{"role":"assistant"}`),
-				}
-
-				select {
-				case event := <-events:
-					assert.Equal(t, expected.Event, event.Event)
-					assert.JSONEq(t, string(expected.Data), string(event.Data))
-				case <-ctx.Done():
-					t.Fatal("timeout waiting for first event")
-				}
-
-				<-ctx.Done()
-				_, more := <-events
-				assert.False(t, more, "channel should be closed after context cancellation")
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(tt.serverHandler))
-			defer server.Close()
-
-			client := NewClient(server.URL)
-			ctx := context.Background()
-			events, err := client.GenerateContentStream(ctx, tt.provider, tt.model, tt.messages)
-
-			if tt.expectedError != "" {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.expectedError)
-				assert.Nil(t, events)
-			} else {
-				assert.NoError(t, err)
-				tt.validate(t, events)
+		if event.Event != nil && *event.Event == ContentDelta && event.Data != nil {
+			var streamResponse CreateChatCompletionStreamResponse
+			err := json.Unmarshal(*event.Data, &streamResponse)
+			if err != nil {
+				continue
 			}
-		})
+
+			for _, choice := range streamResponse.Choices {
+				if choice.Delta.Content != "" {
+					content += choice.Delta.Content
+				}
+			}
+		}
 	}
+
+	assert.Equal(t, "Go is amazing", content)
+	assert.Equal(t, 4, eventCount) // 3 content chunks + DONE event
+	assert.True(t, streamEndReceived)
+}
+
+func TestGenerateContentStream_APIError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		err := json.NewEncoder(w).Encode(Error{
+			Error: stringPtr("Invalid model for streaming"),
+		})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", nil)
+
+	ctx := context.Background()
+	eventCh, err := client.GenerateContentStream(
+		ctx,
+		Groq,
+		"invalid-model",
+		[]Message{
+			{
+				Role:    User,
+				Content: "What is Go?",
+			},
+		},
+	)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "stream request failed")
+
+	_, open := <-eventCh
+	assert.False(t, open, "Channel should be closed on error")
+}
+
+func TestHealthCheck(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/health", r.URL.Path, "Path should be /health")
+		assert.Equal(t, http.MethodGet, r.Method, "Method should be GET")
+
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", nil)
+
+	ctx := context.Background()
+	err := client.HealthCheck(ctx)
+
+	assert.NoError(t, err)
+}
+
+func TestHealthCheck_Error(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", nil)
+
+	ctx := context.Background()
+	err := client.HealthCheck(ctx)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "health check failed")
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func int64Ptr(i int64) *int64 {
+	return &i
+}
+
+func providerPtr(p Provider) *Provider {
+	return &p
 }
