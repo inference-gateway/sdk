@@ -166,7 +166,8 @@ func TestGenerateContent(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	baseURL := server.URL + "/v1"
+	client := NewClient(baseURL)
 
 	ctx := context.Background()
 	response, err := client.GenerateContent(
@@ -268,7 +269,8 @@ func TestGenerateContentStream(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	baseURL := server.URL + "/v1"
+	client := NewClient(baseURL)
 
 	ctx := context.Background()
 	eventCh, err := client.GenerateContentStream(

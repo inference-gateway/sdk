@@ -150,7 +150,7 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 		SetQueryParams(queryParams).
 		SetBody(requestBody).
 		SetResult(&CreateChatCompletionResponse{}).
-		Post(fmt.Sprintf("%s/v1/chat/completions", c.baseURL))
+		Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
 
 	if err != nil {
 		return nil, err
@@ -235,7 +235,7 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 		SetBody(requestBody).
 		SetDoNotParseResponse(true)
 
-	resp, err := req.Post(fmt.Sprintf("%s/v1/chat/completions", c.baseURL))
+	resp, err := req.Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
 	if err != nil {
 		close(eventChan)
 		return eventChan, err
