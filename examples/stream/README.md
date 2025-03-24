@@ -16,10 +16,10 @@ This example demonstrates how to use the Inference Gateway SDK to stream content
 export INFERENCE_GATEWAY_URL="http://localhost:8080/v1"
 
 # Set your preferred provider (optional, default: ollama)
-export LLM_PROVIDER="ollama"
+export LLM_PROVIDER="groq"
 
 # Set your preferred model (optional, default: llama2)
-export LLM_MODEL="llama2"
+export LLM_MODEL="qwen-2.5-coder-32b"
 
 # Run the example
 go run [main.go](main.go)
@@ -27,54 +27,46 @@ go run [main.go](main.go)
 
 ## Example Output
 
-```sh
-Generating content using openai gpt-4o...
+```markdown
+Generating content using groq qwen-2.5-coder-32b...
 
-Model: gpt-4o
-Response: Goroutines and threads are both mechanisms used for concurrent execution, but they have several key differences:
+Model: qwen-2.5-coder-32b
+Response: Goroutines and threads are both units of execution in concurrent programming, but they operate in significantly different ways, especially in terms of their implementation and the environment in which they are used.
 
-1. **Resource Usage**:
-   - Goroutines are extremely lightweight, consuming only about 2KB of stack space initially.
-   - Threads are more heavyweight, typically requiring 1-2MB of memory per thread.
+### Threads
 
-2. **Creation Overhead**:
-   - Goroutines can be created in microseconds.
-   - Thread creation has higher overhead, often taking milliseconds.
+1. **Resource Heavy**: Threads are supported at the system level and thus have a significant overhead in terms of memory and processing power. Each thread typically needs to allocate a stack of a certain size (often in the range of 1-8 MB), which can add up to considerable memory consumption, especially when dealing with a large number of concurrent threads.
 
-3. **Scheduling**:
-   - Goroutines are scheduled by Go's runtime scheduler, which implements cooperative multitasking.
-   - Threads are scheduled by the operating system kernel, which uses preemptive scheduling.
+2. **Managed by OS**: Threads are managed by the operating system. This means that the OS scheduler handles the execution and switching of threads, which can lead to varying performance depending on the OS and the specific workload.
 
-4. **Communication**:
-   - Goroutines are designed to communicate through channels (following the "don't communicate by sharing memory; share memory by communicating" principle).
-   - Threads typically communicate through shared memory and locks.
+3. **Slower Context Switch**: Context switching between threads can be relatively slow due to the resources involved; this includes saving and restoring the thread's state, and handling the delicate process of stopping and restarting a thread's execution.
 
-5. **Scalability**:
-   - You can easily run thousands or even millions of goroutines concurrently.
-   - Most systems struggle with more than a few thousand threads.
+4. **Concurrency Control Complexity**: Threads require careful management to avoid issues like race conditions, deadlocks, and starvation. Programming with threads can therefore become complex, as one must employ synchronization mechanisms provided by the language (e.g., mutexes, semaphores).
 
-6. **Context Switching**:
-   - Context switching between goroutines is faster as it's handled by the Go runtime.
-   - Context switching between threads is more expensive as it involves the OS kernel.
+### Goroutines
 
-7. **Parallelism**:
-   - Goroutines can achieve parallelism when the Go program uses multiple OS threads (controlled by GOMAXPROCS).
-   - Threads can run in parallel directly on multiple CPU cores.
+1. **Lightweight**: Goroutines are managed by the Go runtime (also known as the Go Scheduler) and are not directly backed by any OS-level threads. They start off with a small stack (approximately 2 KB) and can grow or shrink dynamically based on the needs of the running program. This makes goroutines very lightweight and efficient, allowing for the concurrent execution of thousands if not millions of goroutines.
 
-8. **Stack Size**:
-   - Goroutines have dynamically sized stacks that can grow and shrink as needed.
-   - Threads typically have a fixed stack size determined at creation time.
+2. **Managed by Go Runtime**: Goroutines are scheduled to run on a pool of so-called logical processors (which, in turn, are mapped to OS-level threads). The Go runtime handles the execution and context switching between goroutines, which is more efficient and faster than OS-level context switching.
 
-9. **Platform Dependency**:
-   - Goroutines function the same way across all platforms supported by Go.
-   - Thread implementation details can vary across operating systems.
+3. **Faster Context Switch**: Because goroutines are managed by the Go runtime and operate within the user space, the cost of context switching between them is much lower compared to threads. This is one of the main advantages of using goroutines in Go for high concurrency.
 
-Because of these advantages, especially regarding resource usage and scalability, Go programs can handle highly concurrent workloads efficiently using goroutines where traditional thread-based approaches might struggle.
+4. **Ease of Use**: Goroutines abstract away much of the complexity involved in concurrent programming. There are no locks or mutexes; instead, goroutines use channels to communicate and synchronize, which leads to code that is often simpler and less prone to race conditions. The error handling mechanism provided by Go, such as deferred function calls and panic/recover, further aids in managing complex concurrent programs.
+
+### Summary
+
+In summary, the key differences are in the overhead and control of execution:
+
+-   **Efficiency and Scalability**: Goroutines offer better scalability and a higher degree of efficiency due to their lightweight nature.
+-   **Control and Management**: Threads are heavier, and their management is more complex, often leading to performance issues with a large number of threads. Goroutines are more straightforward, with Go's runtime handling the complexities of distribution over OS threads.
+-   **Concurrency Model**: Goroutines use channels for communication and synchronization, leading to cleaner and less error-prone concurrent programs. Threads rely on locks and other synchronization primitives.
+
+Using goroutines can often result in more efficient and maintainable concurrent applications, especially in Go.
 
 Usage Statistics:
-  Prompt tokens: 84
-  Completion tokens: 436
-  Total tokens: 520
+Prompt tokens: 34
+Completion tokens: 682
+Total tokens: 716
 ```
 
 ## How It Works
