@@ -8,6 +8,7 @@ This example demonstrates how to use the Inference Gateway SDK to stream content
 -   How to process streaming events as they arrive
 -   How to handle different event types in the stream
 -   How to concatenate content parts into a complete response
+-   How to access usage statistics in a streaming context
 
 ## Running the Example
 
@@ -71,7 +72,25 @@ Total tokens: 716
 
 ## How It Works
 
-1. The example creates a client and prepares a conversation with system and user messages
-2. It sends the request to the specified LLM provider and model
-3. Upon receiving the response, it displays the model's answer
-4. It also shows usage statistics such as token counts for the prompt and completion
+1. The example creates a client connected to the Inference Gateway API
+2. It creates a context with a timeout to manage the request lifetime
+3. It defines a conversation with system and user messages
+4. It initiates a streaming request using the GenerateContentStream method
+5. It processes the stream events as they arrive:
+
+-   StreamStart: Indicates the beginning of the stream
+-   ContentDelta: Contains the incremental content chunks
+-   StreamEnd: Marks the end of the stream
+
+6. It prints content incrementally as it's received
+7. At the end, it displays the total content length and usage statistics
+
+## Customization
+
+You can modify this example to:
+
+-   Change the system prompt to give the LLM different instructions
+-   Change the user prompt to ask different questions
+-   Use different providers and models through environment variables
+-   Process the streamed content in different ways (e.g., updating a UI)
+-   Track token usage for budgeting or rate limiting purposes
