@@ -28,26 +28,10 @@ func main() {
 	}
 
 	// Map provider string to SDK Provider type
-	var provider sdk.Provider
-	switch providerName {
-	case "openai":
-		provider = sdk.Openai
-	case "ollama":
-		provider = sdk.Ollama
-	case "groq":
-		provider = sdk.Groq
-	case "anthropic":
-		provider = sdk.Anthropic
-	case "cohere":
-		provider = sdk.Cohere
-	case "cloudflare":
-		provider = sdk.Cloudflare
-	default:
-		log.Fatalf("Unsupported provider: %s", providerName)
-	}
+	provider := sdk.Provider(providerName)
 
 	// Create a new client
-	client := sdk.NewClient(apiURL, nil)
+	client := sdk.NewClient(apiURL, "", nil)
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

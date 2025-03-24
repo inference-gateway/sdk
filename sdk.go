@@ -13,6 +13,7 @@ import (
 
 // Client represents the SDK client interface
 type Client interface {
+	WithAuthToken(token string) *clientImpl
 	ListModels(ctx context.Context) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
@@ -25,6 +26,7 @@ type Client interface {
 type clientImpl struct {
 	baseURL string        // Base URL of the Inference Gateway API
 	http    *resty.Client // HTTP client for making requests
+	token   string        // Authentication token
 	tools   *[]ChatCompletionTool
 }
 
@@ -32,20 +34,34 @@ type clientImpl struct {
 //
 // Example:
 //
-//	client := sdk.NewClient("http://localhost:8080")
-func NewClient(baseURL string, tools *[]ChatCompletionTool) Client {
+//	client := sdk.NewClient("http://localhost:8080/v1", "", nil)
+func NewClient(baseURL string, token string, tools *[]ChatCompletionTool) Client {
 	return &clientImpl{
 		baseURL: baseURL,
 		http:    resty.New(),
+		token:   token,
 		tools:   tools,
 	}
+}
+
+// WithAuthToken sets the authentication token for the client.
+//
+// Example:
+//
+//	client := sdk.NewClient("http://localhost:8080/v1", "", nil)
+//	client = client.WithAuthToken("your-auth-token")
+//	resp, err := client.ListModels(ctx)
+func (c *clientImpl) WithAuthToken(token string) *clientImpl {
+	c.token = token
+	c.http.SetAuthToken(token)
+	return c
 }
 
 // WithTools sets the tools for the client.
 //
 // Example:
 //
-//	client := sdk.NewClient("http://localhost:8080")
+//	client := sdk.NewClient("http://localhost:8080/v1", "", nil)
 //	tools := []sdk.ChatCompletionTool{
 //		{
 //			Name: "Weather",
