@@ -17,6 +17,7 @@ type Client interface {
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
+	WithTools(tools *[]ChatCompletionTool) *clientImpl
 	HealthCheck(ctx context.Context) error
 }
 
@@ -24,6 +25,7 @@ type Client interface {
 type clientImpl struct {
 	baseURL string        // Base URL of the Inference Gateway API
 	http    *resty.Client // HTTP client for making requests
+	tools   *[]ChatCompletionTool
 }
 
 // NewClient creates a new SDK client with the specified base URL.
@@ -31,11 +33,49 @@ type clientImpl struct {
 // Example:
 //
 //	client := sdk.NewClient("http://localhost:8080")
-func NewClient(baseURL string) Client {
+func NewClient(baseURL string, tools *[]ChatCompletionTool) Client {
 	return &clientImpl{
 		baseURL: baseURL,
 		http:    resty.New(),
+		tools:   tools,
 	}
+}
+
+// WithTools sets the tools for the client.
+//
+// Example:
+//
+//	client := sdk.NewClient("http://localhost:8080")
+//	tools := []sdk.ChatCompletionTool{
+//		{
+//			Name: "Weather",
+//			Functions: []sdk.FunctionObject{
+//				{
+//					Name: "get_current_weather",
+//					Description: stringPtr("Get the current weather in a given location"),
+//					Parameters: &sdk.FunctionParameters{
+//						Type: stringPtr("object"),
+//						Properties: &map[string]interface{}{
+//							"location": map[string]interface{}{
+//								"type":        "string",
+//								"description": "The city and state, e.g. San Francisco, CA",
+//							},
+//							"unit": map[string]interface{}{
+//								"type":        "string",
+//								"enum":        []string{"celsius", "fahrenheit"},
+//								"description": "The temperature unit to use",
+//							},
+//						},
+//						Required: &[]string{"location"},
+//					},
+//				},
+//			},
+//		},
+//	}
+//	resp, err = client.WithTools(tools).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) *clientImpl {
+	c.tools = tools
+	return c
 }
 
 // ListModels returns all available language models from all providers.
@@ -138,6 +178,7 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 	requestBody := CreateChatCompletionRequest{
 		Model:    model,
 		Messages: messages,
+		Tools:    c.tools,
 	}
 
 	queryParams := make(map[string]string)
@@ -222,6 +263,7 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 		Model:    model,
 		Messages: messages,
 		Stream:   boolPtr(true),
+		Tools:    c.tools,
 	}
 
 	queryParams := make(map[string]string)

@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	client := NewClient("http://example.com")
+	client := NewClient("http://example.com", nil)
 	assert.NotNil(t, client, "NewClient should return a non-nil client")
 }
 
@@ -46,7 +46,7 @@ func TestListModels(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := NewClient(server.URL, nil)
 
 	ctx := context.Background()
 	models, err := client.ListModels(ctx)
@@ -90,7 +90,7 @@ func TestListProviderModels(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := NewClient(server.URL, nil)
 
 	ctx := context.Background()
 	models, err := client.ListProviderModels(ctx, Openai)
@@ -114,7 +114,7 @@ func TestListProviderModels_APIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := NewClient(server.URL, nil)
 
 	ctx := context.Background()
 	models, err := client.ListProviderModels(ctx, Groq)
@@ -167,7 +167,7 @@ func TestGenerateContent(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL + "/v1"
-	client := NewClient(baseURL)
+	client := NewClient(baseURL, nil)
 
 	ctx := context.Background()
 	response, err := client.GenerateContent(
@@ -208,7 +208,7 @@ func TestGenerateContent_APIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := NewClient(server.URL, nil)
 
 	ctx := context.Background()
 	response, err := client.GenerateContent(
@@ -270,7 +270,7 @@ func TestGenerateContentStream(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL + "/v1"
-	client := NewClient(baseURL)
+	client := NewClient(baseURL, nil)
 
 	ctx := context.Background()
 	eventCh, err := client.GenerateContentStream(
@@ -334,7 +334,7 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := NewClient(server.URL, nil)
 
 	ctx := context.Background()
 	eventCh, err := client.GenerateContentStream(
@@ -365,7 +365,7 @@ func TestHealthCheck(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := NewClient(server.URL, nil)
 
 	ctx := context.Background()
 	err := client.HealthCheck(ctx)
@@ -379,7 +379,7 @@ func TestHealthCheck_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL)
+	client := NewClient(server.URL, nil)
 
 	ctx := context.Background()
 	err := client.HealthCheck(ctx)
