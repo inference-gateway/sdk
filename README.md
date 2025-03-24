@@ -8,8 +8,9 @@ An SDK written in Go for the [Inference Gateway](https://github.com/inference-ga
     - [Creating a Client](#creating-a-client)
     - [Listing Models](#listing-models)
     - [Generating Content](#generating-content)
-    - [Health Check](#health-check)
     - [Streaming Content](#streaming-content)
+    - [Tool-Use](#tool-use)
+    - [Health Check](#health-check)
   - [Supported Providers](#supported-providers)
   - [Documentation](#documentation)
   - [Contributing](#contributing)
@@ -102,18 +103,6 @@ if err := json.Unmarshal(response.RawResponse, &chatCompletion); err != nil {
 fmt.Printf("Generated content: %s\n", chatCompletion.Choices[0].Message.Content)
 ```
 
-### Health Check
-
-To check if the API is healthy:
-
-```go
-ctx := context.Background()
-err := client.HealthCheck(ctx)
-if err != nil {
-    log.Fatalf("Health check failed: %v", err)
-}
-```
-
 ### Streaming Content
 
 To generate content using streaming mode, use the GenerateContentStream method:
@@ -180,6 +169,72 @@ for event := range events {
             log.Printf("Error: %s", errResp.Error)
         }
     }
+}
+```
+
+### Tool-Use
+
+To use tools with the SDK, you can define a tool and provide it to the client:
+
+```go
+// Create tools array with our function
+tools := []sdk.ChatCompletionTool{
+    {
+        Type:     sdk.Function,
+        Function: sdk.FunctionObject{
+            Name:        "get_current_weather",
+            Description: stringPtr("Get the current weather in a given location"),
+            Parameters: &sdk.FunctionParameters{
+                Type: stringPtr("object"),
+                Properties: &map[string]any{
+                    "location": map[string]any{
+                        "type":        "string",
+                        "enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                    "unit": map[string]any{
+                        "type":        "string",
+                        "enum":        []string{"celsius", "fahrenheit"},
+                        "description": "The temperature unit to use",
+                    },
+                },
+                Required: &[]string{"location"},
+            },
+        }
+    },
+    {
+        Type:     sdk.Function,
+        Function: sdk.FunctionObject{
+            Name:        "get_current_time",
+            Description: stringPtr("Get the current time in a given location"),
+            Parameters: &sdk.FunctionParameters{
+                Type: stringPtr("object"),
+                Properties: &map[string]any{
+                    "location": map[string]any{
+                        "type":        "string",
+                        "enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
+                        "description": "The city and state, e.g. San Francisco, CA",
+                    },
+                },
+                Required: &[]string{"location"},
+            },
+        }
+    }
+}
+
+// Provide the tool to the client
+client.WithTools(&tools).GenerateContent(ctx, provider, modelName, messages)
+```
+
+### Health Check
+
+To check if the API is healthy:
+
+```go
+ctx := context.Background()
+err := client.HealthCheck(ctx)
+if err != nil {
+    log.Fatalf("Health check failed: %v", err)
 }
 ```
 
