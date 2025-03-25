@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1](https://github.com/inference-gateway/sdk/compare/v1.5.0...v1.5.1) (2025-03-25)
+
+### ♻️ Improvements
+
+* Update NewClient to accept ClientOptions for improved configuration ([#4](https://github.com/inference-gateway/sdk/issues/4)) ([efd181f](https://github.com/inference-gateway/sdk/commit/efd181fcbb320356946aba8a5982353d830f1c85))
+
+### 📚 Documentation
+
+* Add Tool-Use section and reorganize Health Check in README ([2e5d9e6](https://github.com/inference-gateway/sdk/commit/2e5d9e6004fce4c824cea0278318e664349708bf))
+* Update example README to correct link and format output section ([2d8abff](https://github.com/inference-gateway/sdk/commit/2d8abfffab13c8f84a3e81f3339dcc98617c92e0))
+
 ## [1.5.0](https://github.com/inference-gateway/sdk/compare/v1.4.1...v1.5.0) (2025-03-24)
 
 ### ✨ Features
