@@ -34,6 +34,7 @@ const (
 	Anthropic  Provider = "anthropic"
 	Cloudflare Provider = "cloudflare"
 	Cohere     Provider = "cohere"
+	Deepseek   Provider = "deepseek"
 	Groq       Provider = "groq"
 	Ollama     Provider = "ollama"
 	Openai     Provider = "openai"
@@ -206,8 +207,9 @@ type ListModelsResponse struct {
 
 // Message Message structure for provider requests
 type Message struct {
-	Content   string  `json:"content"`
-	Reasoning *string `json:"reasoning,omitempty"`
+	Content          string  `json:"content"`
+	Reasoning        *string `json:"reasoning,omitempty"`
+	ReasoningContent *string `json:"reasoning_content,omitempty"`
 
 	// Role Role of the message sender
 	Role       MessageRole                      `json:"role"`
@@ -341,6 +343,18 @@ type ProviderRequest struct {
 	Temperature *float32 `json:"temperature,omitempty"`
 }
 
+// CreateChatCompletionParams defines parameters for CreateChatCompletion.
+type CreateChatCompletionParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// ListModelsParams defines parameters for ListModels.
+type ListModelsParams struct {
+	// Provider Specific provider to query (optional)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
 // ProxyPatchJSONBody defines parameters for ProxyPatch.
 type ProxyPatchJSONBody struct {
 	Messages *[]struct {
@@ -371,17 +385,8 @@ type ProxyPutJSONBody struct {
 	Temperature *float32 `json:"temperature,omitempty"`
 }
 
-// CreateChatCompletionParams defines parameters for CreateChatCompletion.
-type CreateChatCompletionParams struct {
-	// Provider Specific provider to use (default determined by model)
-	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
-}
-
-// ListModelsParams defines parameters for ListModels.
-type ListModelsParams struct {
-	// Provider Specific provider to query (optional)
-	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
-}
+// CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
+type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
 
 // ProxyPatchJSONRequestBody defines body for ProxyPatch for application/json ContentType.
 type ProxyPatchJSONRequestBody ProxyPatchJSONBody
@@ -391,6 +396,3 @@ type ProxyPostJSONRequestBody ProxyPostJSONBody
 
 // ProxyPutJSONRequestBody defines body for ProxyPut for application/json ContentType.
 type ProxyPutJSONRequestBody ProxyPutJSONBody
-
-// CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
-type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
