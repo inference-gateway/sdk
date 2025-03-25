@@ -12,13 +12,15 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	client := NewClient("http://example.com", "", nil)
+	client := NewClient(&ClientOptions{
+		BaseURL: "http://localhost:8080/v1",
+	})
 	assert.NotNil(t, client, "NewClient should return a non-nil client")
 }
 
 func TestListModels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/models", r.URL.Path, "Path should be /models")
+		assert.Equal(t, "/v1/models", r.URL.Path, "Path should be /v1/models")
 		assert.Equal(t, http.MethodGet, r.Method, "Method should be GET")
 
 		response := ListModelsResponse{
@@ -46,7 +48,10 @@ func TestListModels(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "", nil)
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 
 	ctx := context.Background()
 	models, err := client.ListModels(ctx)
@@ -61,7 +66,7 @@ func TestListModels(t *testing.T) {
 
 func TestListProviderModels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/models", r.URL.Path, "Path should be /models")
+		assert.Equal(t, "/v1/models", r.URL.Path, "Path should be /v1/models")
 		assert.Equal(t, http.MethodGet, r.Method, "Method should be GET")
 		assert.Equal(t, "openai", r.URL.Query().Get("provider"), "Provider should be specified in query")
 
@@ -90,7 +95,10 @@ func TestListProviderModels(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "", nil)
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 
 	ctx := context.Background()
 	models, err := client.ListProviderModels(ctx, Openai)
@@ -114,7 +122,10 @@ func TestListProviderModels_APIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "", nil)
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 
 	ctx := context.Background()
 	models, err := client.ListProviderModels(ctx, Groq)
@@ -167,7 +178,9 @@ func TestGenerateContent(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL + "/v1"
-	client := NewClient(baseURL, "", nil)
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 
 	ctx := context.Background()
 	response, err := client.GenerateContent(
@@ -208,7 +221,10 @@ func TestGenerateContent_APIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "", nil)
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 
 	ctx := context.Background()
 	response, err := client.GenerateContent(
@@ -270,8 +286,9 @@ func TestGenerateContentStream(t *testing.T) {
 	defer server.Close()
 
 	baseURL := server.URL + "/v1"
-	client := NewClient(baseURL, "", nil)
-
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 	ctx := context.Background()
 	eventCh, err := client.GenerateContentStream(
 		ctx,
@@ -334,7 +351,10 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "", nil)
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 
 	ctx := context.Background()
 	eventCh, err := client.GenerateContentStream(
@@ -365,7 +385,10 @@ func TestHealthCheck(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "", nil)
+	baseURL := server.URL
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 
 	ctx := context.Background()
 	err := client.HealthCheck(ctx)
@@ -379,7 +402,10 @@ func TestHealthCheck_Error(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(server.URL, "", nil)
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
 
 	ctx := context.Background()
 	err := client.HealthCheck(ctx)

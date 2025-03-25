@@ -62,7 +62,9 @@ func main() {
 	provider := sdk.Provider(providerName)
 
 	// Create a new client
-	client := sdk.NewClient(apiURL, "", nil)
+	client := sdk.NewClient(&sdk.ClientOptions{
+		BaseURL: apiURL,
+	})
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

@@ -30,17 +30,34 @@ type clientImpl struct {
 	tools   *[]ChatCompletionTool
 }
 
-// NewClient creates a new SDK client with the specified base URL.
+// NewClient creates a new SDK client with the specified options.
 //
 // Example:
 //
-//	client := sdk.NewClient("http://localhost:8080/v1", "", nil)
-func NewClient(baseURL string, token string, tools *[]ChatCompletionTool) Client {
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//		APIKey: "your-api-key",
+//		Timeout: 30 * time.Second,
+//		Tools: nil,
+//	})
+func NewClient(options *ClientOptions) Client {
+	client := resty.New()
+
+	// Set timeout if provided
+	if options.Timeout > 0 {
+		client.SetTimeout(options.Timeout)
+	}
+
+	// Set auth token if provided
+	if options.APIKey != "" {
+		client.SetAuthToken(options.APIKey)
+	}
+
 	return &clientImpl{
-		baseURL: baseURL,
-		http:    resty.New(),
-		token:   token,
-		tools:   tools,
+		baseURL: options.BaseURL,
+		http:    client,
+		token:   options.APIKey,
+		tools:   options.Tools,
 	}
 }
 
@@ -48,7 +65,9 @@ func NewClient(baseURL string, token string, tools *[]ChatCompletionTool) Client
 //
 // Example:
 //
-//	client := sdk.NewClient("http://localhost:8080/v1", "", nil)
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
 //	client = client.WithAuthToken("your-auth-token")
 //	resp, err := client.ListModels(ctx)
 func (c *clientImpl) WithAuthToken(token string) *clientImpl {
@@ -61,7 +80,9 @@ func (c *clientImpl) WithAuthToken(token string) *clientImpl {
 //
 // Example:
 //
-//	client := sdk.NewClient("http://localhost:8080/v1", "", nil)
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
 //	tools := []sdk.ChatCompletionTool{
 //		{
 //			Name: "Weather",
@@ -98,6 +119,9 @@ func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) *clientImpl {
 //
 // Example:
 //
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
 //	ctx := context.Background()
 //	models, err := client.ListModels(ctx)
 //	if err != nil {
@@ -130,8 +154,11 @@ func (c *clientImpl) ListModels(ctx context.Context) (*ListModelsResponse, error
 //
 // Example:
 //
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
 //	ctx := context.Background()
-//	resp, err := client.ListProviderModels(sdk.Ollama)
+//	resp, err := client.ListProviderModels(ctx, sdk.Ollama)
 //	if err != nil {
 //	    log.Fatalf("Error listing models: %v", resp)
 //	}
@@ -167,6 +194,9 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //
 // Example:
 //
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
 //	ctx := context.Background()
 //	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 //	defer cancel()
@@ -233,6 +263,9 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //
 // Example:
 //
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
 //	ctx := context.Background()
 //	events, err := client.GenerateContentStream(
 //		ctx,
@@ -368,6 +401,9 @@ func boolPtr(b bool) *bool {
 //
 // Example:
 //
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
 //	ctx := context.Background()
 //	err := client.HealthCheck(ctx)
 //	if err != nil {
