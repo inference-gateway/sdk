@@ -263,12 +263,13 @@ if err != nil {
 
 The SDK supports the following LLM providers:
 
--   Ollama (sdk.ProviderOllama)
--   Groq (sdk.ProviderGroq)
--   OpenAI (sdk.ProviderOpenAI)
--   Cloudflare (sdk.ProviderCloudflare)
--   Cohere (sdk.ProviderCohere)
--   Anthropic (sdk.ProviderAnthropic)
+-   Ollama (sdk.Ollama)
+-   Groq (sdk.Groq)
+-   OpenAI (sdk.Openai)
+-   DeepSeek (sdk.Deepseek)
+-   Cloudflare (sdk.Cloudflare)
+-   Cohere (sdk.Cohere)
+-   Anthropic (sdk.Anthropic)
 
 ## Documentation
 

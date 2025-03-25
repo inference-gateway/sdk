@@ -16,6 +16,14 @@ info:
     url: https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE
 servers:
   - url: http://localhost:8080
+    description: Default server without version prefix for healthcheck and proxy and points
+    x-server-tags: ["Health", "Proxy"]
+  - url: http://localhost:8080/v1
+    description: Default server with version prefix for listing models and chat completions
+    x-server-tags: ["Models", "Completions"]
+  - url: https://api.inference-gateway.local/v1
+    description: Local server with version prefix for listing models and chat completions
+    x-server-tags: ["Models", "Completions"]
 tags:
   - name: Models
     description: List and describe the various models available in the API.
@@ -26,7 +34,7 @@ tags:
   - name: Health
     description: Health check
 paths:
-  /v1/models:
+  /models:
     get:
       operationId: listModels
       tags:
@@ -100,7 +108,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
-  /v1/chat/completions:
+  /chat/completions:
     post:
       operationId: createChatCompletion
       tags:
@@ -390,6 +398,7 @@ components:
         - cloudflare
         - cohere
         - anthropic
+        - deepseek
       x-provider-configs:
         ollama:
           id: "ollama"
@@ -469,6 +478,19 @@ components:
               name: "chat_completions"
               method: "POST"
               endpoint: "/v1/chat/completions"
+        deepseek:
+          id: "deepseek"
+          url: "https://api.deepseek.com"
+          auth_type: "bearer"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
     ProviderSpecificResponse:
       type: object
       description: |
@@ -568,6 +590,8 @@ components:
         tool_call_id:
           type: string
         reasoning:
+          type: string
+        reasoning_content:
           type: string
       required:
         - role
@@ -1198,4 +1222,14 @@ components:
                   env: "OPENAI_API_KEY"
                   type: string
                   description: "OpenAI API Key"
+                  secret: true
+                - name: deepseek_api_url
+                  env: "DEEPSEEK_API_URL"
+                  type: string
+                  default: "https://api.deepseek.com"
+                  description: "DeepSeek API URL"
+                - name: deepseek_api_key
+                  env: "DEEPSEEK_API_KEY"
+                  type: string
+                  description: "DeepSeek API Key"
                   secret: true

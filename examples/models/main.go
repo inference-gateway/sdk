@@ -50,6 +50,18 @@ func main() {
 		}
 	}
 
+	// List models for a specific provider
+	fmt.Println("\nListing models from DeepSeek...")
+	deepseekModels, err := client.ListProviderModels(ctx, sdk.Deepseek)
+	if err != nil {
+		log.Printf("Error listing DeepSeek models: %v", err)
+	} else {
+		fmt.Printf("Provider: %s\n", *deepseekModels.Provider)
+		for i, model := range *deepseekModels.Data {
+			fmt.Printf("%d. %s\n", i+1, *model.Id)
+		}
+	}
+
 	// List models for another provider
 	fmt.Println("\nListing models from Ollama...")
 	ollamaModels, err := client.ListProviderModels(ctx, sdk.Ollama)
