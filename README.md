@@ -41,7 +41,9 @@ import (
 )
 
 func main() {
-    client := sdk.NewClient("http://localhost:8080/v1")
+    client := sdk.NewClient(&sdk.ClientOptions{
+        BaseURL: "http://localhost:8080/v1",
+    })
 }
 ```
 
@@ -50,6 +52,10 @@ func main() {
 To list available models, use the ListModels method:
 
 ```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+})
+
 ctx := context.Background()
 
 // List all models from all providers
@@ -73,6 +79,10 @@ fmt.Printf("Available Groq models: %+v\n", resp.Data)
 To generate content using a model, use the GenerateContent method:
 
 ```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+})
+
 ctx := context.Background()
 response, err := client.GenerateContent(
     ctx,
@@ -108,6 +118,9 @@ fmt.Printf("Generated content: %s\n", chatCompletion.Choices[0].Message.Content)
 To generate content using streaming mode, use the GenerateContentStream method:
 
 ```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+})
 ctx := context.Background()
 events, err := client.GenerateContentStream(
     ctx,
@@ -177,6 +190,10 @@ for event := range events {
 To use tools with the SDK, you can define a tool and provide it to the client:
 
 ```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+})
+
 // Create tools array with our function
 tools := []sdk.ChatCompletionTool{
     {
@@ -231,6 +248,10 @@ client.WithTools(&tools).GenerateContent(ctx, provider, modelName, messages)
 To check if the API is healthy:
 
 ```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+})
+
 ctx := context.Background()
 err := client.HealthCheck(ctx)
 if err != nil {
