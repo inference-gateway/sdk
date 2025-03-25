@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0](https://github.com/inference-gateway/sdk/compare/v1.5.1...v1.6.0) (2025-03-25)
+
+### ✨ Features
+
+* Add Deepseek provider ([#5](https://github.com/inference-gateway/sdk/issues/5)) ([28ecd4a](https://github.com/inference-gateway/sdk/commit/28ecd4a4fb230a610c05ff491fbbfc5b829309c4))
+
+### 📚 Documentation
+
+* Update comment for Tools field in ClientOptions for clarity ([299ab0f](https://github.com/inference-gateway/sdk/commit/299ab0fa6737cb32190cb9c4f210badd4f435513))
+
 ## [1.5.1](https://github.com/inference-gateway/sdk/compare/v1.5.0...v1.5.1) (2025-03-25)
 
 ### ♻️ Improvements
