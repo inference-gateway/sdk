@@ -54,6 +54,6 @@ type ClientOptions struct {
 	BaseURL string
 	// Timeout is the timeout to use for the client.
 	Timeout time.Duration
-	// Tools is a map of tool names to tool IDs.
+	// Tools is the tools to use for the client.
 	Tools *[]ChatCompletionTool
 }
