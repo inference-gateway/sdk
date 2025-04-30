@@ -31,6 +31,9 @@ RUN apt-get update && \
 # Install semantic-release
 RUN npm install -g semantic-release @semantic-release/changelog @semantic-release/exec @semantic-release/git @semantic-release/github conventional-changelog-conventionalcommits
 
+# Install claude-code
+RUN npm install -g @anthropic-ai/claude-code
+
 # Install powerlevel10k theme
 RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k
 
