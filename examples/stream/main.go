@@ -20,12 +20,12 @@ func main() {
 
 	providerName := os.Getenv("LLM_PROVIDER")
 	if providerName == "" {
-		providerName = "ollama" // Default provider for streaming example
+		providerName = "groq" // Default provider for streaming example
 	}
 
 	modelName := os.Getenv("LLM_MODEL")
 	if modelName == "" {
-		modelName = "llama2" // Default model
+		modelName = "deepseek-r1-distill-llama-70b" // Default model
 	}
 
 	// Map provider string to SDK Provider type
@@ -63,6 +63,10 @@ func main() {
 	// Process the stream of events
 	var usageStats *sdk.CompletionUsage
 	var fullContent string
+	// Track thinking animation state
+	var isThinking bool
+	var reasoningText string
+
 	for event := range eventCh {
 		if event.Event != nil {
 			switch *event.Event {
@@ -78,8 +82,27 @@ func main() {
 					}
 
 					for _, choice := range streamResponse.Choices {
-						if choice.Delta.Content != "" {
-							// Print the content as it arrives
+						if choice.Delta.Reasoning != nil {
+							if !isThinking {
+								// Start thinking animation if we weren't already thinking
+								isThinking = true
+								fmt.Printf("\n\033[33m💭 Thinking...\033[0m\n")
+								reasoningText = ""
+							}
+
+							// Store and display the reasoning content with special formatting
+							if choice.Delta.Reasoning != nil && *choice.Delta.Reasoning != "" {
+								reasoningText += *choice.Delta.Reasoning
+								fmt.Printf("\033[90m%s\033[0m", *choice.Delta.Reasoning)
+							}
+
+						} else if choice.Delta.Content != "" {
+							if isThinking {
+								isThinking = false
+								fmt.Printf("\n\n")
+							}
+
+							// Display the content as it arrives
 							fmt.Print(choice.Delta.Content)
 							fullContent += choice.Delta.Content
 						}

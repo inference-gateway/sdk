@@ -19,12 +19,12 @@ func main() {
 
 	providerName := os.Getenv("LLM_PROVIDER")
 	if providerName == "" {
-		providerName = "openai" // Default provider
+		providerName = "groq" // Default provider
 	}
 
 	modelName := os.Getenv("LLM_MODEL")
 	if modelName == "" {
-		modelName = "gpt-4o" // Default model
+		modelName = "deepseek-r1-distill-llama-70b" // Default model
 	}
 
 	// Map provider string to SDK Provider type
@@ -54,13 +54,19 @@ func main() {
 	fmt.Printf("Generating content using %s %s...\n\n", provider, modelName)
 
 	// Generate content
-	response, err := client.GenerateContent(ctx, provider, modelName, messages)
+	reasoningFormat := "parsed"
+	response, err := client.WithOptions(&sdk.CreateChatCompletionRequest{
+		ReasoningFormat: &reasoningFormat,
+	}).GenerateContent(ctx, provider, modelName, messages)
 	if err != nil {
 		log.Fatalf("Error generating content: %v", err)
 	}
 
 	// Print the response
 	fmt.Printf("Model: %s\n", response.Model)
+	if response.Choices[0].Message.Reasoning != nil {
+		fmt.Printf("Reasoning: %s\n", *response.Choices[0].Message.Reasoning)
+	}
 	fmt.Printf("Response: %s\n", response.Choices[0].Message.Content)
 
 	// Print usage information if available
