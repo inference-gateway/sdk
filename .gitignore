@@ -1,4 +1,2 @@
-.vscode*/generation
-*/models
-*/stream
-*/tools
+.vscode/
+bin/
