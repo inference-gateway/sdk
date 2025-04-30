@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0](https://github.com/inference-gateway/sdk/compare/v1.6.0...v1.7.0) (2025-04-30)
+
+### ✨ Features
+
+* Update API spec and add reasoning format support ([#6](https://github.com/inference-gateway/sdk/issues/6)) ([f889151](https://github.com/inference-gateway/sdk/commit/f889151cac10656c12fae0240bca1f91ae067e1a)), closes [#7](https://github.com/inference-gateway/sdk/issues/7)
+
+### 📚 Documentation
+
+* Add CLAUDE.md with development guidelines ([c451ec4](https://github.com/inference-gateway/sdk/commit/c451ec4e48b10f7fb24899bc57300909943c889e))
+
+### 🔧 Miscellaneous
+
+* Add Claude Code CLI to development container ([2e716eb](https://github.com/inference-gateway/sdk/commit/2e716eb08edc387b6a720626c825fd32cc829fdc))
+
 ## [1.7.0-rc.2](https://github.com/inference-gateway/sdk/compare/v1.7.0-rc.1...v1.7.0-rc.2) (2025-04-30)
 
 ### ✨ Features
