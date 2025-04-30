@@ -8,6 +8,7 @@ An SDK written in Go for the [Inference Gateway](https://github.com/inference-ga
     - [Creating a Client](#creating-a-client)
     - [Listing Models](#listing-models)
     - [Generating Content](#generating-content)
+    - [Using ReasoningFormat](#using-reasoningformat)
     - [Streaming Content](#streaming-content)
     - [Tool-Use](#tool-use)
     - [Health Check](#health-check)
@@ -143,19 +144,14 @@ messages := []sdk.Message{
     },
 }
 
-// To use reasoning format, you need to create a custom HTTP request
-// This is a more advanced usage and requires manual handling
-// Here's how you would set up the request body:
-requestBody := map[string]interface{}{
-    "model":            "anthropic/claude-3-opus-20240229",
-    "messages":         messages,
-    "reasoning_format": "parsed", // Use "raw" or "parsed"
+// Create a request with reasoning format
+reasoningFormat := "parsed"  // Use "raw" or "parsed" - default to "parsed" if not specified
+options := &sdk.CreateChatCompletionRequest{
+    ReasoningFormat: &reasoningFormat,
 }
 
-// Then use a custom HTTP client to make the request
-// A future version of the SDK may provide a direct method for this
-// For this example, we'll use the regular GenerateContent method
-response, err := client.GenerateContent(
+// Set options and make the request
+response, err := client.WithOptions(options).GenerateContent(
     ctx,
     sdk.Anthropic,
     "anthropic/claude-3-opus-20240229",
@@ -199,6 +195,7 @@ events, err := client.GenerateContentStream(
 if err != nil {
     log.Fatalf("Error generating content stream: %v", err)
 }
+
 // Read events from the stream / channel
 for event := range events {
     if event.Event != nil {

@@ -14,11 +14,12 @@ import (
 // Client represents the SDK client interface
 type Client interface {
 	WithAuthToken(token string) *clientImpl
+	WithTools(tools *[]ChatCompletionTool) *clientImpl
+	WithOptions(options *CreateChatCompletionRequest) *clientImpl
 	ListModels(ctx context.Context) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
-	WithTools(tools *[]ChatCompletionTool) *clientImpl
 	HealthCheck(ctx context.Context) error
 }
 
@@ -28,6 +29,7 @@ type clientImpl struct {
 	http    *resty.Client // HTTP client for making requests
 	token   string        // Authentication token
 	tools   *[]ChatCompletionTool
+	options *CreateChatCompletionRequest // Custom request options
 }
 
 // NewClient creates a new SDK client with the specified options.
@@ -58,6 +60,7 @@ func NewClient(options *ClientOptions) Client {
 		http:    client,
 		token:   options.APIKey,
 		tools:   options.Tools,
+		options: nil, // Initialize options to nil
 	}
 }
 
@@ -112,6 +115,38 @@ func (c *clientImpl) WithAuthToken(token string) *clientImpl {
 //	resp, err = client.WithTools(tools).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) *clientImpl {
 	c.tools = tools
+	return c
+}
+
+// WithOptions sets custom request options for subsequent API calls.
+//
+// Example:
+//
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
+//
+//	// Set reasoning format for subsequent requests
+//	reasoningFormat := "parsed"
+//	options := &sdk.CreateChatCompletionRequest{
+//		ReasoningFormat: &reasoningFormat,
+//	}
+//
+//	// Use the options in a request
+//	response, err := client.WithOptions(options).GenerateContent(
+//		ctx,
+//		sdk.Anthropic,
+//		"anthropic/claude-3-opus-20240229",
+//		messages,
+//	)
+//
+// Notes:
+//   - For GenerateContent calls, Stream will always be set to false regardless of options
+//   - For GenerateContentStream calls, Stream will always be set to true regardless of options
+//   - Model and Messages provided in the actual method calls will override options
+//   - Options will persist for all future calls until cleared with WithOptions(nil)
+func (c *clientImpl) WithOptions(options *CreateChatCompletionRequest) *clientImpl {
+	c.options = options
 	return c
 }
 
@@ -221,10 +256,29 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //	}
 //	fmt.Printf("Generated content: %s\n", response.Response.Content)
 func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error) {
-	requestBody := CreateChatCompletionRequest{
+	request := CreateChatCompletionRequest{
 		Model:    model,
 		Messages: messages,
 		Tools:    c.tools,
+		Stream:   boolPtr(false),
+	}
+
+	if c.options != nil {
+		options := *c.options
+
+		if options.Model == "" {
+			options.Model = request.Model
+		}
+		if len(options.Messages) == 0 {
+			options.Messages = request.Messages
+		}
+		if options.Tools == nil && c.tools != nil {
+			options.Tools = c.tools
+		}
+
+		options.Stream = boolPtr(false)
+
+		request = options
 	}
 
 	queryParams := make(map[string]string)
@@ -235,7 +289,7 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 	resp, err := c.http.R().
 		SetContext(ctx).
 		SetQueryParams(queryParams).
-		SetBody(requestBody).
+		SetBody(request).
 		SetResult(&CreateChatCompletionResponse{}).
 		Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
 
@@ -308,11 +362,29 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error) {
 	eventChan := make(chan SSEvent, 100)
 
-	requestBody := CreateChatCompletionRequest{
+	request := CreateChatCompletionRequest{
 		Model:    model,
 		Messages: messages,
 		Stream:   boolPtr(true),
 		Tools:    c.tools,
+	}
+
+	if c.options != nil {
+		options := *c.options
+
+		if options.Model == "" {
+			options.Model = request.Model
+		}
+		if len(options.Messages) == 0 {
+			options.Messages = request.Messages
+		}
+		if options.Tools == nil && c.tools != nil {
+			options.Tools = c.tools
+		}
+
+		options.Stream = boolPtr(true)
+
+		request = options
 	}
 
 	queryParams := make(map[string]string)
@@ -323,7 +395,7 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 	req := c.http.R().
 		SetContext(ctx).
 		SetQueryParams(queryParams).
-		SetBody(requestBody).
+		SetBody(request).
 		SetDoNotParseResponse(true)
 
 	resp, err := req.Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
@@ -355,7 +427,7 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 				if err != io.EOF {
 					errorData := []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
 					eventChan <- SSEvent{
-						Event: nil, // TODO - need to add error event type to enum in OpenAPI spec, but it's not very important because all providers following OpenAI and the event section is not provided in the SSEvents, i.e it's an optional and will be treated as a "nice-to-have"
+						Event: nil,
 						Data:  &errorData,
 					}
 				}

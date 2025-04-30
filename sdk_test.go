@@ -418,12 +418,242 @@ func TestHealthCheck_Error(t *testing.T) {
 	assert.Contains(t, err.Error(), "health check failed")
 }
 
-func stringPtr(s string) *string {
-	return &s
+func TestWithOptions(t *testing.T) {
+	testCases := []struct {
+		name            string
+		provider        Provider
+		model           string
+		messages        []Message
+		options         *CreateChatCompletionRequest
+		isStreaming     bool
+		expectedOptions func(t *testing.T, req CreateChatCompletionRequest)
+		mockResponse    func(t *testing.T) interface{}
+	}{
+		{
+			name:     "Basic content with no options",
+			provider: Openai,
+			model:    "openai/gpt-4o",
+			messages: []Message{
+				{Role: User, Content: "Hello"},
+			},
+			options:     nil,
+			isStreaming: false,
+			expectedOptions: func(t *testing.T, req CreateChatCompletionRequest) {
+				assert.Equal(t, "openai/gpt-4o", req.Model)
+				assert.Equal(t, 1, len(req.Messages))
+				assert.NotNil(t, req.Stream)
+				assert.False(t, *req.Stream)
+			},
+			mockResponse: func(t *testing.T) interface{} {
+				return CreateChatCompletionResponse{
+					Id:      "test-1",
+					Object:  "chat.completion",
+					Created: 1693672537,
+					Model:   "openai/gpt-4o",
+					Choices: []ChatCompletionChoice{
+						{
+							Index: 0,
+							Message: Message{
+								Role:    Assistant,
+								Content: "Hello there!",
+							},
+							FinishReason: Stop,
+						},
+					},
+				}
+			},
+		},
+		{
+			name:     "Content with reasoning format parsed",
+			provider: Anthropic,
+			model:    "anthropic/claude-3-opus-20240229",
+			messages: []Message{
+				{Role: User, Content: "What is the square root of 144?"},
+			},
+			options: &CreateChatCompletionRequest{
+				ReasoningFormat: stringPtr("parsed"),
+			},
+			isStreaming: false,
+			expectedOptions: func(t *testing.T, req CreateChatCompletionRequest) {
+				assert.Equal(t, "anthropic/claude-3-opus-20240229", req.Model)
+				assert.NotNil(t, req.ReasoningFormat)
+				assert.Equal(t, "parsed", *req.ReasoningFormat)
+				assert.NotNil(t, req.Stream)
+				assert.False(t, *req.Stream)
+			},
+			mockResponse: func(t *testing.T) interface{} {
+				reasoningContent := "I need to calculate the square root of 144. The square root of a number is a value that, when multiplied by itself, gives the original number. For 144, the square root is 12 because 12 × 12 = 144."
+				return CreateChatCompletionResponse{
+					Id:      "test-2",
+					Object:  "chat.completion",
+					Created: 1693672537,
+					Model:   "anthropic/claude-3-opus-20240229",
+					Choices: []ChatCompletionChoice{
+						{
+							Index: 0,
+							Message: Message{
+								Role:             Assistant,
+								Content:          "The square root of 144 is 12.",
+								ReasoningContent: &reasoningContent,
+								Reasoning:        &reasoningContent,
+							},
+							FinishReason: Stop,
+						},
+					},
+				}
+			},
+		},
+		{
+			name:     "Content with reasoning format raw",
+			provider: Anthropic,
+			model:    "anthropic/claude-3-opus-20240229",
+			messages: []Message{
+				{Role: User, Content: "What is the square root of 144?"},
+			},
+			options: &CreateChatCompletionRequest{
+				ReasoningFormat: stringPtr("raw"),
+			},
+			isStreaming: false,
+			expectedOptions: func(t *testing.T, req CreateChatCompletionRequest) {
+				assert.Equal(t, "anthropic/claude-3-opus-20240229", req.Model)
+				assert.NotNil(t, req.ReasoningFormat)
+				assert.Equal(t, "raw", *req.ReasoningFormat)
+				assert.NotNil(t, req.Stream)
+				assert.False(t, *req.Stream)
+			},
+			mockResponse: func(t *testing.T) interface{} {
+				return CreateChatCompletionResponse{
+					Id:      "test-3",
+					Object:  "chat.completion",
+					Created: 1693672537,
+					Model:   "anthropic/claude-3-opus-20240229",
+					Choices: []ChatCompletionChoice{
+						{
+							Index: 0,
+							Message: Message{
+								Role:    Assistant,
+								Content: "<think>\nI need to calculate the square root of 144. \n\nThe square root of a number is a value that, when multiplied by itself, gives the original number.\n\nFor 144:\n√144 = x means x² = 144\n\n12² = 144 because 12 × 12 = 144\n\nTherefore, √144 = 12\n</think>\n\nThe square root of 144 is 12.",
+							},
+							FinishReason: Stop,
+						},
+					},
+				}
+			},
+		},
+		{
+			name:     "Streaming content with options",
+			provider: Ollama,
+			model:    "ollama/llama2",
+			messages: []Message{
+				{Role: User, Content: "Tell me about streaming"},
+			},
+			options: &CreateChatCompletionRequest{
+				Stream: boolPtr(false),
+			},
+			isStreaming: true,
+			expectedOptions: func(t *testing.T, req CreateChatCompletionRequest) {
+				assert.Equal(t, "ollama/llama2", req.Model)
+				assert.NotNil(t, req.Stream)
+				assert.True(t, *req.Stream)
+			},
+			mockResponse: func(t *testing.T) interface{} {
+				return nil
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "/v1/chat/completions", r.URL.Path)
+				assert.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, string(tc.provider), r.URL.Query().Get("provider"))
+
+				var requestBody CreateChatCompletionRequest
+				err := json.NewDecoder(r.Body).Decode(&requestBody)
+				assert.NoError(t, err)
+
+				tc.expectedOptions(t, requestBody)
+
+				if tc.isStreaming {
+					w.Header().Set("Content-Type", "text/event-stream")
+					w.Header().Set("Cache-Control", "no-cache")
+					w.Header().Set("Connection", "keep-alive")
+
+					flusher, ok := w.(http.Flusher)
+					if !ok {
+						t.Fatalf("Streaming not supported")
+					}
+
+					chunk := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "ollama/llama2","choices": [{"delta": {"content": "Streaming content"},"index": 0,"finish_reason": null}]}`
+					fmt.Fprintf(w, "data: %s\n\n", chunk)
+					flusher.Flush()
+
+					fmt.Fprintf(w, "data: [DONE]\n\n")
+					flusher.Flush()
+				} else {
+					resp := tc.mockResponse(t)
+					w.Header().Set("Content-Type", "application/json")
+					err = json.NewEncoder(w).Encode(resp)
+					assert.NoError(t, err)
+				}
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL: baseURL,
+			})
+
+			if tc.options != nil {
+				client = client.WithOptions(tc.options)
+			}
+
+			ctx := context.Background()
+
+			if tc.isStreaming {
+				events, err := client.GenerateContentStream(ctx, tc.provider, tc.model, tc.messages)
+				assert.NoError(t, err)
+				assert.NotNil(t, events)
+
+				var content string
+				var eventCount int
+
+				for event := range events {
+					eventCount++
+
+					if event.Event != nil && *event.Event == ContentDelta {
+						var streamResponse CreateChatCompletionStreamResponse
+						err := json.Unmarshal(*event.Data, &streamResponse)
+						if err != nil {
+							continue
+						}
+
+						for _, choice := range streamResponse.Choices {
+							content += choice.Delta.Content
+						}
+					}
+				}
+
+				assert.Equal(t, "Streaming content", content)
+				assert.Equal(t, 2, eventCount)
+			} else {
+				result, err := client.GenerateContent(ctx, tc.provider, tc.model, tc.messages)
+				assert.NoError(t, err)
+				assert.NotNil(t, result)
+
+				if tc.name == "Content with reasoning format" {
+					assert.NotNil(t, result.Choices[0].Message.ReasoningContent)
+					assert.NotNil(t, result.Choices[0].Message.Reasoning)
+					assert.Contains(t, *result.Choices[0].Message.Reasoning, "square root of 144")
+				}
+			}
+		})
+	}
 }
 
-func int64Ptr(i int64) *int64 {
-	return &i
+func stringPtr(s string) *string {
+	return &s
 }
 
 func providerPtr(p Provider) *Provider {
