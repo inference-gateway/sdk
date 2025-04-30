@@ -51,12 +51,12 @@ func main() {
 
 	providerName := os.Getenv("LLM_PROVIDER")
 	if providerName == "" {
-		providerName = "openai" // Default provider for streaming example
+		providerName = "groq" // Default provider for streaming example
 	}
 
 	modelName := os.Getenv("LLM_MODEL")
 	if modelName == "" {
-		modelName = "gpt-4o" // Default model
+		modelName = "deepseek-r1-distill-llama-70b" // Default model
 	}
 
 	provider := sdk.Provider(providerName)
