@@ -66,12 +66,12 @@ if err != nil {
 fmt.Printf("All available models: %+v\n", resp.Data)
 
 // List models for a specific provider
-resp, err := client.ListProviderModels(ctx, sdk.Groq)
-fmt.PrintF("Provider %s", resp.Provider)
+groqResp, err := client.ListProviderModels(ctx, sdk.Groq)
 if err != nil {
     log.Fatalf("Error listing provider models: %v", err)
 }
-fmt.Printf("Available Groq models: %+v\n", resp.Data)
+fmt.Printf("Provider: %s\n", *groqResp.Provider)
+fmt.Printf("Available Groq models: %+v\n", groqResp.Data)
 ```
 
 ### Generating Content
@@ -87,7 +87,7 @@ ctx := context.Background()
 response, err := client.GenerateContent(
     ctx,
     sdk.Ollama,
-    "llama2",
+    "ollama/llama2",
     []sdk.Message{
         {
             Role:    sdk.System,
@@ -124,15 +124,15 @@ client := sdk.NewClient(&sdk.ClientOptions{
 ctx := context.Background()
 events, err := client.GenerateContentStream(
     ctx,
-    sdk.ProviderOllama,
-    "llama2",
+    sdk.Ollama,
+    "ollama/llama2",
     []sdk.Message{
         {
-            Role:    sdk.MessageRoleSystem,
+            Role:    sdk.System,
             Content: "You are a helpful assistant.",
         },
         {
-            Role:    sdk.MessageRoleUser,
+            Role:    sdk.User,
             Content: "What is Go?",
         },
     },
@@ -202,20 +202,20 @@ tools := []sdk.ChatCompletionTool{
             Name:        "get_current_weather",
             Description: stringPtr("Get the current weather in a given location"),
             Parameters: &sdk.FunctionParameters{
-                Type: stringPtr("object"),
-                Properties: &map[string]any{
-                    "location": map[string]any{
+                "type": "object",
+                "properties": map[string]interface{}{
+                    "location": map[string]interface{}{
                         "type":        "string",
                         "enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
                         "description": "The city and state, e.g. San Francisco, CA",
                     },
-                    "unit": map[string]any{
+                    "unit": map[string]interface{}{
                         "type":        "string",
                         "enum":        []string{"celsius", "fahrenheit"},
                         "description": "The temperature unit to use",
                     },
                 },
-                Required: &[]string{"location"},
+                "required": []string{"location"},
             },
         }
     },
@@ -225,15 +225,15 @@ tools := []sdk.ChatCompletionTool{
             Name:        "get_current_time",
             Description: stringPtr("Get the current time in a given location"),
             Parameters: &sdk.FunctionParameters{
-                Type: stringPtr("object"),
-                Properties: &map[string]any{
-                    "location": map[string]any{
+                "type": "object",
+                "properties": map[string]interface{}{
+                    "location": map[string]interface{}{
                         "type":        "string",
                         "enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
                         "description": "The city and state, e.g. San Francisco, CA",
                     },
                 },
-                Required: &[]string{"location"},
+                "required": []string{"location"},
             },
         }
     }
