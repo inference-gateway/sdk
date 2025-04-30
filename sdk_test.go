@@ -24,19 +24,21 @@ func TestListModels(t *testing.T) {
 		assert.Equal(t, http.MethodGet, r.Method, "Method should be GET")
 
 		response := ListModelsResponse{
-			Object: stringPtr("list"),
-			Data: &[]Model{
+			Object: "list",
+			Data: []Model{
 				{
-					Id:      stringPtr("gpt-4o"),
-					Object:  stringPtr("model"),
-					Created: int64Ptr(1686935002),
-					OwnedBy: stringPtr("openai"),
+					Id:       "openai/gpt-4o",
+					Object:   "model",
+					Created:  1686935002,
+					OwnedBy:  "openai",
+					ServedBy: Openai,
 				},
 				{
-					Id:      stringPtr("llama-3.3-70b-versatile"),
-					Object:  stringPtr("model"),
-					Created: int64Ptr(1723651281),
-					OwnedBy: stringPtr("groq"),
+					Id:       "groq/llama-3.3-70b-versatile",
+					Object:   "model",
+					Created:  1723651281,
+					OwnedBy:  "groq",
+					ServedBy: Groq,
 				},
 			},
 		}
@@ -58,10 +60,10 @@ func TestListModels(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, models)
-	assert.Equal(t, "list", *models.Object)
-	assert.Len(t, *models.Data, 2)
-	assert.Equal(t, "gpt-4o", *(*models.Data)[0].Id)
-	assert.Equal(t, "llama-3.3-70b-versatile", *(*models.Data)[1].Id)
+	assert.Equal(t, "list", models.Object)
+	assert.Len(t, models.Data, 2)
+	assert.Equal(t, "openai/gpt-4o", models.Data[0].Id)
+	assert.Equal(t, "groq/llama-3.3-70b-versatile", models.Data[1].Id)
 }
 
 func TestListProviderModels(t *testing.T) {
@@ -72,19 +74,21 @@ func TestListProviderModels(t *testing.T) {
 
 		response := ListModelsResponse{
 			Provider: providerPtr(Openai),
-			Object:   stringPtr("list"),
-			Data: &[]Model{
+			Object:   "list",
+			Data: []Model{
 				{
-					Id:      stringPtr("gpt-4o"),
-					Object:  stringPtr("model"),
-					Created: int64Ptr(1686935002),
-					OwnedBy: stringPtr("openai"),
+					Id:       "openai/gpt-4o",
+					Object:   "model",
+					Created:  1686935002,
+					OwnedBy:  "openai",
+					ServedBy: Openai,
 				},
 				{
-					Id:      stringPtr("gpt-4-turbo"),
-					Object:  stringPtr("model"),
-					Created: int64Ptr(1687882410),
-					OwnedBy: stringPtr("openai"),
+					Id:       "openai/gpt-4-turbo",
+					Object:   "model",
+					Created:  1687882410,
+					OwnedBy:  "openai",
+					ServedBy: Openai,
 				},
 			},
 		}
@@ -106,10 +110,10 @@ func TestListProviderModels(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, models)
 	assert.Equal(t, Openai, *models.Provider)
-	assert.Equal(t, "list", *models.Object)
-	assert.Len(t, *models.Data, 2)
-	assert.Equal(t, "gpt-4o", *(*models.Data)[0].Id)
-	assert.Equal(t, "gpt-4-turbo", *(*models.Data)[1].Id)
+	assert.Equal(t, "list", models.Object)
+	assert.Len(t, models.Data, 2)
+	assert.Equal(t, "openai/gpt-4o", models.Data[0].Id)
+	assert.Equal(t, "openai/gpt-4-turbo", models.Data[1].Id)
 }
 
 func TestListProviderModels_APIError(t *testing.T) {

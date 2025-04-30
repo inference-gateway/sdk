@@ -33,9 +33,9 @@ func main() {
 		log.Fatalf("Error listing models: %v", err)
 	}
 
-	fmt.Printf("Found %d models\n", len(*allModels.Data))
-	for i, model := range *allModels.Data {
-		fmt.Printf("%d. %s (owned by %s)\n", i+1, *model.Id, *model.OwnedBy)
+	fmt.Printf("Found %d models\n", len(allModels.Data))
+	for i, model := range allModels.Data {
+		fmt.Printf("%d. %s (owned by %s)\n", i+1, model.Id, model.OwnedBy)
 	}
 
 	// List models for a specific provider
@@ -45,8 +45,8 @@ func main() {
 		log.Printf("Error listing Groq Cloud models: %v", err)
 	} else {
 		fmt.Printf("Provider: %s\n", *groqModels.Provider)
-		for i, model := range *groqModels.Data {
-			fmt.Printf("%d. %s\n", i+1, *model.Id)
+		for i, model := range groqModels.Data {
+			fmt.Printf("%d. %s\n", i+1, model.Id)
 		}
 	}
 
@@ -57,8 +57,8 @@ func main() {
 		log.Printf("Error listing DeepSeek models: %v", err)
 	} else {
 		fmt.Printf("Provider: %s\n", *deepseekModels.Provider)
-		for i, model := range *deepseekModels.Data {
-			fmt.Printf("%d. %s\n", i+1, *model.Id)
+		for i, model := range deepseekModels.Data {
+			fmt.Printf("%d. %s\n", i+1, model.Id)
 		}
 	}
 
@@ -69,8 +69,8 @@ func main() {
 		log.Printf("Error listing Ollama models: %v", err)
 	} else {
 		fmt.Printf("Provider: %s\n", *ollamaModels.Provider)
-		for i, model := range *ollamaModels.Data {
-			fmt.Printf("%d. %s\n", i+1, *model.Id)
+		for i, model := range ollamaModels.Data {
+			fmt.Printf("%d. %s\n", i+1, model.Id)
 		}
 	}
 }
