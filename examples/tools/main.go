@@ -51,12 +51,12 @@ func main() {
 
 	providerName := os.Getenv("LLM_PROVIDER")
 	if providerName == "" {
-		providerName = "openai" // Default provider for streaming example
+		providerName = "groq" // Default provider for streaming example
 	}
 
 	modelName := os.Getenv("LLM_MODEL")
 	if modelName == "" {
-		modelName = "gpt-4o" // Default model
+		modelName = "deepseek-r1-distill-llama-70b" // Default model
 	}
 
 	provider := sdk.Provider(providerName)
@@ -75,20 +75,20 @@ func main() {
 		Name:        "get_current_weather",
 		Description: stringPtr("Get the current weather in a given location"),
 		Parameters: &sdk.FunctionParameters{
-			Type: stringPtr("object"),
-			Properties: &map[string]any{
-				"location": map[string]any{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"location": map[string]interface{}{
 					"type":        "string",
 					"enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
 					"description": "The city and state, e.g. San Francisco, CA",
 				},
-				"unit": map[string]any{
+				"unit": map[string]interface{}{
 					"type":        "string",
 					"enum":        []string{"celsius", "fahrenheit"},
 					"description": "The temperature unit to use",
 				},
 			},
-			Required: &[]string{"location"},
+			"required": []string{"location"},
 		},
 	}
 

@@ -96,7 +96,7 @@ type ChatCompletionMessageToolCallFunction struct {
 // ChatCompletionStreamOptions Options for streaming response. Only set this when you set `stream: true`.
 type ChatCompletionStreamOptions struct {
 	// IncludeUsage If set, an additional chunk will be streamed before the `data: [DONE]` message. The `usage` field on this chunk shows the token usage statistics for the entire request, and the `choices` field will always be an empty array. All other chunks will also include a `usage` field, but with a null value.
-	IncludeUsage *bool `json:"include_usage,omitempty"`
+	IncludeUsage bool `json:"include_usage"`
 }
 
 // ChatCompletionTool defines model for ChatCompletionTool.
@@ -132,6 +132,10 @@ type CreateChatCompletionRequest struct {
 
 	// Model Model ID to use
 	Model string `json:"model"`
+
+	// ReasoningFormat The format of the reasoning content. Can be `raw` or `parsed`.
+	// When specified as raw some reasoning models will output <think /> tags. When specified as parsed the model will output the reasoning under  `reasoning` or `reasoning_content` attribute.
+	ReasoningFormat *string `json:"reasoning_format,omitempty"`
 
 	// Stream If set to true, the model response data will be streamed to the client as it is generated using [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).
 	Stream *bool `json:"stream,omitempty"`
@@ -187,28 +191,23 @@ type FunctionObject struct {
 
 // FunctionParameters The parameters the functions accepts, described as a JSON Schema object. See the [guide](/docs/guides/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
 // Omitting `parameters` defines a function with an empty parameter list.
-type FunctionParameters struct {
-	// Properties The properties of the parameters.
-	Properties *map[string]interface{} `json:"properties,omitempty"`
-
-	// Required The required properties of the parameters.
-	Required *[]string `json:"required,omitempty"`
-
-	// Type The type of the parameters. Currently, only `object` is supported.
-	Type *string `json:"type,omitempty"`
-}
+type FunctionParameters map[string]interface{}
 
 // ListModelsResponse Response structure for listing models
 type ListModelsResponse struct {
-	Data     *[]Model  `json:"data,omitempty"`
-	Object   *string   `json:"object,omitempty"`
+	Data     []Model   `json:"data"`
+	Object   string    `json:"object"`
 	Provider *Provider `json:"provider,omitempty"`
 }
 
 // Message Message structure for provider requests
 type Message struct {
-	Content          string  `json:"content"`
-	Reasoning        *string `json:"reasoning,omitempty"`
+	Content string `json:"content"`
+
+	// Reasoning The reasoning of the chunk message. Same as reasoning_content.
+	Reasoning *string `json:"reasoning,omitempty"`
+
+	// ReasoningContent The reasoning content of the chunk message.
 	ReasoningContent *string `json:"reasoning_content,omitempty"`
 
 	// Role Role of the message sender
@@ -222,11 +221,11 @@ type MessageRole string
 
 // Model Common model information
 type Model struct {
-	Created  *int64    `json:"created,omitempty"`
-	Id       *string   `json:"id,omitempty"`
-	Object   *string   `json:"object,omitempty"`
-	OwnedBy  *string   `json:"owned_by,omitempty"`
-	ServedBy *Provider `json:"served_by,omitempty"`
+	Created  int64    `json:"created"`
+	Id       string   `json:"id"`
+	Object   string   `json:"object"`
+	OwnedBy  string   `json:"owned_by"`
+	ServedBy Provider `json:"served_by"`
 }
 
 // Provider defines model for Provider.

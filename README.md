@@ -8,6 +8,7 @@ An SDK written in Go for the [Inference Gateway](https://github.com/inference-ga
     - [Creating a Client](#creating-a-client)
     - [Listing Models](#listing-models)
     - [Generating Content](#generating-content)
+    - [Using ReasoningFormat](#using-reasoningformat)
     - [Streaming Content](#streaming-content)
     - [Tool-Use](#tool-use)
     - [Health Check](#health-check)
@@ -66,17 +67,19 @@ if err != nil {
 fmt.Printf("All available models: %+v\n", resp.Data)
 
 // List models for a specific provider
-resp, err := client.ListProviderModels(ctx, sdk.Groq)
-fmt.PrintF("Provider %s", resp.Provider)
+groqResp, err := client.ListProviderModels(ctx, sdk.Groq)
 if err != nil {
     log.Fatalf("Error listing provider models: %v", err)
 }
-fmt.Printf("Available Groq models: %+v\n", resp.Data)
+fmt.Printf("Provider: %s\n", *groqResp.Provider)
+fmt.Printf("Available Groq models: %+v\n", groqResp.Data)
 ```
 
 ### Generating Content
 
 To generate content using a model, use the GenerateContent method:
+
+> **Note:** Some models support reasoning capabilities. You can use the `ReasoningFormat` parameter to control how reasoning is provided in the response. The model's reasoning will be available in the `Reasoning` or `ReasoningContent` fields of the response message.
 
 ```go
 client := sdk.NewClient(&sdk.ClientOptions{
@@ -87,7 +90,7 @@ ctx := context.Background()
 response, err := client.GenerateContent(
     ctx,
     sdk.Ollama,
-    "llama2",
+    "ollama/llama2",
     []sdk.Message{
         {
             Role:    sdk.System,
@@ -111,6 +114,58 @@ if err := json.Unmarshal(response.RawResponse, &chatCompletion); err != nil {
 }
 
 fmt.Printf("Generated content: %s\n", chatCompletion.Choices[0].Message.Content)
+
+// If reasoning was requested and the model supports it
+if chatCompletion.Choices[0].Message.Reasoning != nil {
+    fmt.Printf("Reasoning: %s\n", *chatCompletion.Choices[0].Message.Reasoning)
+}
+```
+
+### Using ReasoningFormat
+
+You can enable reasoning capabilities by setting the ReasoningFormat parameter in your request:
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+})
+
+ctx := context.Background()
+
+// Set up your messages
+messages := []sdk.Message{
+    {
+        Role:    sdk.System,
+        Content: "You are a helpful assistant. Please include your reasoning for complex questions.",
+    },
+    {
+        Role:    sdk.User,
+        Content: "What is the square root of 144 and why?",
+    },
+}
+
+// Create a request with reasoning format
+reasoningFormat := "parsed"  // Use "raw" or "parsed" - default to "parsed" if not specified
+options := &sdk.CreateChatCompletionRequest{
+    ReasoningFormat: &reasoningFormat,
+}
+
+// Set options and make the request
+response, err := client.WithOptions(options).GenerateContent(
+    ctx,
+    sdk.Anthropic,
+    "anthropic/claude-3-opus-20240229",
+    messages,
+)
+
+if err != nil {
+    log.Fatalf("Error generating content: %v", err)
+}
+
+fmt.Printf("Content: %s\n", response.Choices[0].Message.Content)
+if response.Choices[0].Message.Reasoning != nil {
+    fmt.Printf("Reasoning: %s\n", *response.Choices[0].Message.Reasoning)
+}
 ```
 
 ### Streaming Content
@@ -124,15 +179,15 @@ client := sdk.NewClient(&sdk.ClientOptions{
 ctx := context.Background()
 events, err := client.GenerateContentStream(
     ctx,
-    sdk.ProviderOllama,
-    "llama2",
+    sdk.Ollama,
+    "ollama/llama2",
     []sdk.Message{
         {
-            Role:    sdk.MessageRoleSystem,
+            Role:    sdk.System,
             Content: "You are a helpful assistant.",
         },
         {
-            Role:    sdk.MessageRoleUser,
+            Role:    sdk.User,
             Content: "What is Go?",
         },
     },
@@ -140,6 +195,7 @@ events, err := client.GenerateContentStream(
 if err != nil {
     log.Fatalf("Error generating content stream: %v", err)
 }
+
 // Read events from the stream / channel
 for event := range events {
     if event.Event != nil {
@@ -202,20 +258,20 @@ tools := []sdk.ChatCompletionTool{
             Name:        "get_current_weather",
             Description: stringPtr("Get the current weather in a given location"),
             Parameters: &sdk.FunctionParameters{
-                Type: stringPtr("object"),
-                Properties: &map[string]any{
-                    "location": map[string]any{
+                "type": "object",
+                "properties": map[string]interface{}{
+                    "location": map[string]interface{}{
                         "type":        "string",
                         "enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
                         "description": "The city and state, e.g. San Francisco, CA",
                     },
-                    "unit": map[string]any{
+                    "unit": map[string]interface{}{
                         "type":        "string",
                         "enum":        []string{"celsius", "fahrenheit"},
                         "description": "The temperature unit to use",
                     },
                 },
-                Required: &[]string{"location"},
+                "required": []string{"location"},
             },
         }
     },
@@ -225,15 +281,15 @@ tools := []sdk.ChatCompletionTool{
             Name:        "get_current_time",
             Description: stringPtr("Get the current time in a given location"),
             Parameters: &sdk.FunctionParameters{
-                Type: stringPtr("object"),
-                Properties: &map[string]any{
-                    "location": map[string]any{
+                "type": "object",
+                "properties": map[string]interface{}{
+                    "location": map[string]interface{}{
                         "type":        "string",
                         "enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
                         "description": "The city and state, e.g. San Francisco, CA",
                     },
                 },
-                Required: &[]string{"location"},
+                "required": []string{"location"},
             },
         }
     }

@@ -16,10 +16,10 @@ This example demonstrates how to use the Inference Gateway SDK to stream content
 # Set your API URL (optional)
 export INFERENCE_GATEWAY_URL="http://localhost:8080/v1"
 
-# Set your preferred provider (optional, default: ollama)
+# Set your preferred provider (optional, default: groq)
 export LLM_PROVIDER="groq"
 
-# Set your preferred model (optional, default: llama2)
+# Set your preferred model (optional, default: deepseek-r1-distill-llama-70b)
 export LLM_MODEL="qwen-2.5-coder-32b"
 
 # Run the example
