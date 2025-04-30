@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0-rc.1](https://github.com/inference-gateway/sdk/compare/v1.6.0...v1.7.0-rc.1) (2025-04-30)
+
+### ✨ Features
+
+* Add WithOptions method and support for reasoning formats ([d929814](https://github.com/inference-gateway/sdk/commit/d9298147f955e77de9ae248ecd7d058c91b0e30c))
+* Update to latest OpenAPI spec and model ID format ([537cd1f](https://github.com/inference-gateway/sdk/commit/537cd1ffe3fe70c26ec6e740f48880ad9b9c750c))
+
+### 📚 Documentation
+
+* Add CLAUDE.md with development guidelines ([c451ec4](https://github.com/inference-gateway/sdk/commit/c451ec4e48b10f7fb24899bc57300909943c889e))
+* Add information about ReasoningFormat and Reasoning fields ([f8d667d](https://github.com/inference-gateway/sdk/commit/f8d667df8bee90bbb987f66d711b2bb35932cb32))
+* Update CLAUDE.md with latest API conventions ([7845cf8](https://github.com/inference-gateway/sdk/commit/7845cf8afb539e75c3857a892cc962811f56b042))
+* Update README.md to reflect API changes ([7b6e315](https://github.com/inference-gateway/sdk/commit/7b6e315df08e64ee938e56abca60176f54d2ccfb))
+
+### 🔧 Miscellaneous
+
+* Add binary files to .gitignore ([97cdbca](https://github.com/inference-gateway/sdk/commit/97cdbcaadf8cbf73f37acd1a40d636a572318c31))
+* Add Claude Code CLI to development container ([2e716eb](https://github.com/inference-gateway/sdk/commit/2e716eb08edc387b6a720626c825fd32cc829fdc))
+* Ensure newline at end of .gitignore for consistency ([77b1511](https://github.com/inference-gateway/sdk/commit/77b1511eedbdf0423646434d5cc10eab1af621fa))
+* Update .gitignore to properly ignore binaries ([35a74e9](https://github.com/inference-gateway/sdk/commit/35a74e93e242ff049a97e97caf50a0303c829e4c))
+
 ## [1.6.0](https://github.com/inference-gateway/sdk/compare/v1.5.1...v1.6.0) (2025-03-25)
 
 ### ✨ Features
