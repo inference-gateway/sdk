@@ -2,9 +2,7 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-resty/resty/v2 v2.16.3 h1:zacNT7lt4b8M/io2Ahj6yPypL7bqx9n1iprfQuodV+E=
 github.com/go-resty/resty/v2 v2.16.3/go.mod h1:hkJtXbA2iKHzJheXYvQ8snQES5ZLGKMwQ07xAwp/fiA=
-github.com/inference-gateway/sdk v1.7.0-rc.1 h1:o0Dw0fnUshLsfNsiV/SOuEfScIY8rXh5eYP3b8OQvqU=
-github.com/inference-gateway/sdk v1.7.0-rc.1/go.mod h1:6w2xtu4rDzmg9MrL/3tFuIKF1XondqdIWls8lRUiHpo=
-github.com/inference-gateway/sdk v1.7.0 h1:V5pw0rwFHEYf/iobMey05xm+EporhHbWmOyXJIafask=
+github.com/inference-gateway/sdk v1.7.0 h1:PbDwBUHAm0ZdxW47q9PwwQW5azPcoMPdBrlYVcUL588=
 github.com/inference-gateway/sdk v1.7.0/go.mod h1:6w2xtu4rDzmg9MrL/3tFuIKF1XondqdIWls8lRUiHpo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
