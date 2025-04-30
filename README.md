@@ -78,6 +78,8 @@ fmt.Printf("Available Groq models: %+v\n", groqResp.Data)
 
 To generate content using a model, use the GenerateContent method:
 
+> **Note:** Some models support reasoning capabilities. You can use the `ReasoningFormat` parameter to control how reasoning is provided in the response. The model's reasoning will be available in the `Reasoning` or `ReasoningContent` fields of the response message.
+
 ```go
 client := sdk.NewClient(&sdk.ClientOptions{
     BaseURL: "http://localhost:8080/v1",
@@ -111,6 +113,63 @@ if err := json.Unmarshal(response.RawResponse, &chatCompletion); err != nil {
 }
 
 fmt.Printf("Generated content: %s\n", chatCompletion.Choices[0].Message.Content)
+
+// If reasoning was requested and the model supports it
+if chatCompletion.Choices[0].Message.Reasoning != nil {
+    fmt.Printf("Reasoning: %s\n", *chatCompletion.Choices[0].Message.Reasoning)
+}
+```
+
+### Using ReasoningFormat
+
+You can enable reasoning capabilities by setting the ReasoningFormat parameter in your request:
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+})
+
+ctx := context.Background()
+
+// Set up your messages
+messages := []sdk.Message{
+    {
+        Role:    sdk.System,
+        Content: "You are a helpful assistant. Please include your reasoning for complex questions.",
+    },
+    {
+        Role:    sdk.User,
+        Content: "What is the square root of 144 and why?",
+    },
+}
+
+// To use reasoning format, you need to create a custom HTTP request
+// This is a more advanced usage and requires manual handling
+// Here's how you would set up the request body:
+requestBody := map[string]interface{}{
+    "model":            "anthropic/claude-3-opus-20240229",
+    "messages":         messages,
+    "reasoning_format": "parsed", // Use "raw" or "parsed"
+}
+
+// Then use a custom HTTP client to make the request
+// A future version of the SDK may provide a direct method for this
+// For this example, we'll use the regular GenerateContent method
+response, err := client.GenerateContent(
+    ctx,
+    sdk.Anthropic,
+    "anthropic/claude-3-opus-20240229",
+    messages,
+)
+
+if err != nil {
+    log.Fatalf("Error generating content: %v", err)
+}
+
+fmt.Printf("Content: %s\n", response.Choices[0].Message.Content)
+if response.Choices[0].Message.Reasoning != nil {
+    fmt.Printf("Reasoning: %s\n", *response.Choices[0].Message.Reasoning)
+}
 ```
 
 ### Streaming Content
