@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0-rc.2](https://github.com/inference-gateway/sdk/compare/v1.7.0-rc.1...v1.7.0-rc.2) (2025-04-30)
+
+### ✨ Features
+
+* Add Reasoning and ReasoningContent fields to ChatCompletionStreamResponseDelta ([1f0143e](https://github.com/inference-gateway/sdk/commit/1f0143e9e8837042c6f0b6c01e89876a9f05475a))
+
 ## [1.7.0-rc.1](https://github.com/inference-gateway/sdk/compare/v1.6.0...v1.7.0-rc.1) (2025-04-30)
 
 ### ✨ Features
