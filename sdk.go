@@ -213,9 +213,16 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 	if resp.IsError() {
 		var errorResp Error
 		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s", *errorResp.Error)
+			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
 		}
-		return nil, fmt.Errorf("failed to list provider models, status code: %d", resp.StatusCode())
+
+		errMsg := fmt.Sprintf("failed to list provider models, status code: %d", resp.StatusCode())
+
+		if len(resp.Body()) > 0 {
+			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
+		}
+
+		return nil, fmt.Errorf("%s", errMsg)
 	}
 
 	result, ok := resp.Result().(*ListModelsResponse)
@@ -301,9 +308,16 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 	if resp.IsError() {
 		var errorResp Error
 		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s", *errorResp.Error)
+			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
 		}
-		return nil, fmt.Errorf("failed to generate content, status code: %d", resp.StatusCode())
+
+		errMsg := fmt.Sprintf("failed to generate content, status code: %d", resp.StatusCode())
+
+		if len(resp.Body()) > 0 {
+			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
+		}
+
+		return nil, fmt.Errorf("%s", errMsg)
 	}
 
 	result, ok := resp.Result().(*CreateChatCompletionResponse)
@@ -407,7 +421,20 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 
 	if resp.IsError() {
 		close(eventChan)
-		return eventChan, fmt.Errorf("stream request failed with status: %d", resp.StatusCode())
+
+		body, _ := io.ReadAll(resp.RawBody())
+		var errorResp Error
+		if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error != nil {
+			return eventChan, fmt.Errorf("API stream error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
+		}
+
+		errMsg := fmt.Sprintf("stream request failed with status: %d", resp.StatusCode())
+
+		if len(body) > 0 {
+			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(body))
+		}
+
+		return eventChan, fmt.Errorf("%s", errMsg)
 	}
 
 	rawBody := resp.RawBody()

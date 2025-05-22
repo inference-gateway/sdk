@@ -379,7 +379,7 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 	)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "stream request failed")
+	assert.Contains(t, err.Error(), "API stream error")
 
 	_, open := <-eventCh
 	assert.False(t, open, "Channel should be closed on error")
