@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewClient(t *testing.T) {
@@ -275,16 +276,20 @@ func TestGenerateContentStream(t *testing.T) {
 		chunk2 := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "llama2","choices": [{"delta": {"content": " is"},"index": 0,"finish_reason": null}]}`
 		chunk3 := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "llama2","choices": [{"delta": {"content": " amazing"},"index": 0,"finish_reason": "stop"}]}`
 
-		fmt.Fprintf(w, "data: %s\n\n", chunk1)
+		_, err = fmt.Fprintf(w, "data: %s\n\n", chunk1)
+		require.NoError(t, err)
 		flusher.Flush()
 
-		fmt.Fprintf(w, "data: %s\n\n", chunk2)
+		_, err = fmt.Fprintf(w, "data: %s\n\n", chunk2)
+		require.NoError(t, err)
 		flusher.Flush()
 
-		fmt.Fprintf(w, "data: %s\n\n", chunk3)
+		_, err = fmt.Fprintf(w, "data: %s\n\n", chunk3)
+		require.NoError(t, err)
 		flusher.Flush()
 
-		fmt.Fprintf(w, "data: [DONE]\n\n")
+		_, err = fmt.Fprintf(w, "data: [DONE]\n\n")
+		require.NoError(t, err)
 		flusher.Flush()
 	}))
 	defer server.Close()
@@ -586,10 +591,12 @@ func TestWithOptions(t *testing.T) {
 					}
 
 					chunk := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "ollama/llama2","choices": [{"delta": {"content": "Streaming content"},"index": 0,"finish_reason": null}]}`
-					fmt.Fprintf(w, "data: %s\n\n", chunk)
+					_, err = fmt.Fprintf(w, "data: %s\n\n", chunk)
+					require.NoError(t, err)
 					flusher.Flush()
 
-					fmt.Fprintf(w, "data: [DONE]\n\n")
+					_, err = fmt.Fprintf(w, "data: [DONE]\n\n")
+					require.NoError(t, err)
 					flusher.Flush()
 				} else {
 					resp := tc.mockResponse(t)

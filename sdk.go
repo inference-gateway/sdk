@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/require"
 )
 
 // Client represents the SDK client interface
@@ -417,7 +418,11 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 
 	go func() {
 		defer close(eventChan)
-		defer rawBody.Close()
+
+		defer func() {
+			err := rawBody.Close()
+			require.NoError(nil, err, "failed to close response body")
+		}()
 
 		reader := bufio.NewReader(rawBody)
 
