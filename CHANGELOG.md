@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.1](https://github.com/inference-gateway/sdk/compare/v1.7.0...v1.7.1) (2025-05-22)
+
+### 🐛 Bug Fixes
+
+* Improve error handling for API errors in content generation and streaming ([4e63a87](https://github.com/inference-gateway/sdk/commit/4e63a87a9ae9d4009c2c9a7866de6a974423c2d2))
+
+### 🔧 Miscellaneous
+
+* Add Copilot instructions and improve error handling in content stream generation ([205ed95](https://github.com/inference-gateway/sdk/commit/205ed9574752cca065817bdc32e2de4f81c2f39c))
+* Add task completion support to zsh configuration ([ca452af](https://github.com/inference-gateway/sdk/commit/ca452af3b66769c1ee986c0c9d572a01c0fc05e0))
+* Enhance Copilot instructions for pull request and test generation ([f8590cb](https://github.com/inference-gateway/sdk/commit/f8590cbaf04b65b77c89656caa689d7869ea01f7))
+* update dependencies to latest versions in go.mod and go.sum ([36c39f3](https://github.com/inference-gateway/sdk/commit/36c39f364203f572b343fb26f97b4838dbae444d))
+
+### 📦 Miscellaneous
+
+* Update devcontainer configuration and remove unused files ([127bde4](https://github.com/inference-gateway/sdk/commit/127bde435b61248a36e1db590e1cc3d14baa1b2b))
+
 ## [1.7.0](https://github.com/inference-gateway/sdk/compare/v1.6.0...v1.7.0) (2025-04-30)
 
 ### ✨ Features
