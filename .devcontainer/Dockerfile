@@ -45,3 +45,5 @@ RUN go install golang.org/x/tools/cmd/godoc@latest
 RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /home/vscode/.powerlevel10k && \
     echo 'source /home/vscode/.powerlevel10k/powerlevel10k.zsh-theme' >> /home/vscode/.zshrc && \
     echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >> /home/vscode/.zshrc
+
+RUN echo "source <(task --completion zsh)" >> /home/vscode/.zshrc 
