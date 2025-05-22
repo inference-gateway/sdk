@@ -37,7 +37,33 @@
           {
             "text": "Always use conventional commit message format."
           }
-        ]
+        ],
+        "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
+          {
+            "text": "Always fill the pull request with the following information: \n ## Summary\n <summary of the pull request>\n"
+          }
+        ],
+        "github.copilot.chat.testGeneration.instructions": [
+          {
+            "text": "Always use table-driven tests."
+          }
+        ],
+        "mcp": {
+          "servers": {
+            "Context7": {
+              "command": "docker",
+              "args": [
+                "run",
+                "-i",
+                "--rm",
+                "node:lts",
+                "npx",
+                "-y",
+                "@upstash/context7-mcp@latest"
+              ]
+            }
+          }
+        }
       }
     }
   },
