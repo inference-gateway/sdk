@@ -19,6 +19,7 @@ type Client interface {
 	WithOptions(options *CreateChatCompletionRequest) *clientImpl
 	ListModels(ctx context.Context) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
+	ListTools(ctx context.Context) (*ListToolsResponse, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
 	HealthCheck(ctx context.Context) error
@@ -226,6 +227,54 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 	}
 
 	result, ok := resp.Result().(*ListModelsResponse)
+	if !ok || result == nil {
+		return nil, fmt.Errorf("failed to parse response")
+	}
+
+	return result, nil
+}
+
+// ListTools returns all available MCP tools.
+// Only accessible when EXPOSE_MCP is enabled on the server.
+//
+// Example:
+//
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//		APIKey: "your-api-key",
+//	})
+//	ctx := context.Background()
+//	tools, err := client.ListTools(ctx)
+//	if err != nil {
+//	    log.Fatalf("Error listing tools: %v", err)
+//	}
+//	fmt.Printf("Available tools: %+v\n", tools.Data)
+func (c *clientImpl) ListTools(ctx context.Context) (*ListToolsResponse, error) {
+	resp, err := c.http.R().
+		SetContext(ctx).
+		SetResult(&ListToolsResponse{}).
+		Get(fmt.Sprintf("%s/mcp/tools", c.baseURL))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		var errorResp Error
+		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
+			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
+		}
+
+		errMsg := fmt.Sprintf("failed to list MCP tools, status code: %d", resp.StatusCode())
+
+		if len(resp.Body()) > 0 {
+			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
+		}
+
+		return nil, fmt.Errorf("%s", errMsg)
+	}
+
+	result, ok := resp.Result().(*ListToolsResponse)
 	if !ok || result == nil {
 		return nil, fmt.Errorf("failed to parse response")
 	}
