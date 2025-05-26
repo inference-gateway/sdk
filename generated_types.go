@@ -200,6 +200,30 @@ type ListModelsResponse struct {
 	Provider *Provider `json:"provider,omitempty"`
 }
 
+// ListToolsResponse Response structure for listing MCP tools
+type ListToolsResponse struct {
+	// Data Array of available MCP tools
+	Data []MCPTool `json:"data"`
+
+	// Object Always "list"
+	Object string `json:"object"`
+}
+
+// MCPTool An MCP tool definition
+type MCPTool struct {
+	// Description A description of what the tool does
+	Description string `json:"description"`
+
+	// InputSchema JSON schema for the tool's input parameters
+	InputSchema *map[string]interface{} `json:"input_schema,omitempty"`
+
+	// Name The name of the tool
+	Name string `json:"name"`
+
+	// Server The MCP server that provides this tool
+	Server string `json:"server"`
+}
+
 // Message Message structure for provider requests
 type Message struct {
 	Content string `json:"content"`
@@ -287,6 +311,9 @@ type BadRequest = Error
 
 // InternalError defines model for InternalError.
 type InternalError = Error
+
+// MCPNotExposed defines model for MCPNotExposed.
+type MCPNotExposed = Error
 
 // ProviderResponse Provider-specific response format. Examples:
 //

@@ -8,6 +8,10 @@ This directory contains examples demonstrating how to use the Inference Gateway 
 
 Shows how to list available models from different providers using the SDK.
 
+### [List MCP Tools](list-tools/)
+
+Demonstrates how to list available MCP (Model Context Protocol) tools when the server has `EXPOSE_MCP=true` configured.
+
 ### [Tokens Generation](generation/)
 
 Demonstrates basic content generation with different LLM providers.

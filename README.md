@@ -2,20 +2,21 @@
 
 An SDK written in Go for the [Inference Gateway](https://github.com/inference-gateway/inference-gateway).
 
-- [Inference Gateway Go SDK](#inference-gateway-go-sdk)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Creating a Client](#creating-a-client)
-    - [Listing Models](#listing-models)
-    - [Generating Content](#generating-content)
-    - [Using ReasoningFormat](#using-reasoningformat)
-    - [Streaming Content](#streaming-content)
-    - [Tool-Use](#tool-use)
-    - [Health Check](#health-check)
-  - [Supported Providers](#supported-providers)
-  - [Documentation](#documentation)
-  - [Contributing](#contributing)
-  - [License](#license)
+-   [Inference Gateway Go SDK](#inference-gateway-go-sdk)
+    -   [Installation](#installation)
+    -   [Usage](#usage)
+        -   [Creating a Client](#creating-a-client)
+        -   [Listing Models](#listing-models)
+        -   [Listing MCP Tools](#listing-mcp-tools)
+        -   [Generating Content](#generating-content)
+        -   [Using ReasoningFormat](#using-reasoningformat)
+        -   [Streaming Content](#streaming-content)
+        -   [Tool-Use](#tool-use)
+        -   [Health Check](#health-check)
+    -   [Supported Providers](#supported-providers)
+    -   [Documentation](#documentation)
+    -   [Contributing](#contributing)
+    -   [License](#license)
 
 ## Installation
 
@@ -74,6 +75,33 @@ if err != nil {
 fmt.Printf("Provider: %s\n", *groqResp.Provider)
 fmt.Printf("Available Groq models: %+v\n", groqResp.Data)
 ```
+
+### Listing MCP Tools
+
+To list available MCP (Model Context Protocol) tools, use the `ListTools` method. This functionality is only available when `EXPOSE_MCP=true` is set on the Inference Gateway server:
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+    APIKey:  "your-api-key", // Required for MCP tools access
+})
+
+ctx := context.Background()
+tools, err := client.ListTools(ctx)
+if err != nil {
+    log.Fatalf("Error listing tools: %v", err)
+}
+
+fmt.Printf("Found %d MCP tools:\n", len(tools.Data))
+for _, tool := range tools.Data {
+    fmt.Printf("- %s: %s (Server: %s)\n", tool.Name, tool.Description, tool.Server)
+    if tool.InputSchema != nil {
+        fmt.Printf("  Input Schema: %+v\n", *tool.InputSchema)
+    }
+}
+```
+
+> **Note:** The MCP tools endpoint requires authentication and is only accessible when the server has `EXPOSE_MCP=true` configured. If the endpoint is not exposed, you'll receive a 403 error with the message "MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable."
 
 ### Generating Content
 
