@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0](https://github.com/inference-gateway/sdk/compare/v1.7.1...v1.8.0) (2025-05-26)
+
+### ✨ Features
+
+* Implement List MCP Tools ([#9](https://github.com/inference-gateway/sdk/issues/9)) ([c8020e1](https://github.com/inference-gateway/sdk/commit/c8020e18400b635306efb64c41436b1870583c9d))
+
 ## [1.7.1](https://github.com/inference-gateway/sdk/compare/v1.7.0...v1.7.1) (2025-05-22)
 
 ### 🐛 Bug Fixes
