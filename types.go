@@ -58,4 +58,6 @@ type ClientOptions struct {
 	Timeout time.Duration
 	// Tools is the tools to use for the client.
 	Tools *[]ChatCompletionTool
+	// Headers is a map of custom headers to include with all requests.
+	Headers map[string]string
 }

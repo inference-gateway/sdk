@@ -2,21 +2,22 @@
 
 An SDK written in Go for the [Inference Gateway](https://github.com/inference-gateway/inference-gateway).
 
--   [Inference Gateway Go SDK](#inference-gateway-go-sdk)
-    -   [Installation](#installation)
-    -   [Usage](#usage)
-        -   [Creating a Client](#creating-a-client)
-        -   [Listing Models](#listing-models)
-        -   [Listing MCP Tools](#listing-mcp-tools)
-        -   [Generating Content](#generating-content)
-        -   [Using ReasoningFormat](#using-reasoningformat)
-        -   [Streaming Content](#streaming-content)
-        -   [Tool-Use](#tool-use)
-        -   [Health Check](#health-check)
-    -   [Supported Providers](#supported-providers)
-    -   [Documentation](#documentation)
-    -   [Contributing](#contributing)
-    -   [License](#license)
+- [Inference Gateway Go SDK](#inference-gateway-go-sdk)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Creating a Client](#creating-a-client)
+    - [Using Custom Headers](#using-custom-headers)
+    - [Listing Models](#listing-models)
+    - [Listing MCP Tools](#listing-mcp-tools)
+    - [Generating Content](#generating-content)
+    - [Using ReasoningFormat](#using-reasoningformat)
+    - [Streaming Content](#streaming-content)
+    - [Tool-Use](#tool-use)
+    - [Health Check](#health-check)
+  - [Supported Providers](#supported-providers)
+  - [Documentation](#documentation)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Installation
 
@@ -47,6 +48,57 @@ func main() {
         BaseURL: "http://localhost:8080/v1",
     })
 }
+```
+
+### Using Custom Headers
+
+The SDK supports custom HTTP headers that can be included with all requests. You can set headers in three ways:
+
+1. **Initial headers via ClientOptions:**
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+    Headers: map[string]string{
+        "X-Custom-Header": "my-value",
+        "User-Agent":      "my-app/1.0",
+    },
+})
+```
+
+2. **Multiple headers using WithHeaders:**
+
+```go
+client = client.WithHeaders(map[string]string{
+    "X-Request-ID": "abc123",
+    "X-Source":     "sdk",
+})
+```
+
+3. **Single header using WithHeader:**
+
+```go
+client = client.WithHeader("Authorization", "Bearer token123")
+```
+
+Headers can be combined and will override previous values if the same header name is used:
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+    Headers: map[string]string{
+        "X-App-Name": "my-app",
+    },
+})
+
+// Add more headers
+client = client.WithHeaders(map[string]string{
+    "X-Request-ID": "req-123",
+    "X-Version":    "1.0",
+}).WithHeader("Authorization", "Bearer token")
+
+// All subsequent requests will include all these headers
+response, err := client.GenerateContent(ctx, provider, model, messages)
 ```
 
 ### Listing Models

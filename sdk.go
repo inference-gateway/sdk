@@ -17,6 +17,8 @@ type Client interface {
 	WithAuthToken(token string) *clientImpl
 	WithTools(tools *[]ChatCompletionTool) *clientImpl
 	WithOptions(options *CreateChatCompletionRequest) *clientImpl
+	WithHeaders(headers map[string]string) *clientImpl
+	WithHeader(name, value string) *clientImpl
 	ListModels(ctx context.Context) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	ListTools(ctx context.Context) (*ListToolsResponse, error)
@@ -43,6 +45,10 @@ type clientImpl struct {
 //		APIKey: "your-api-key",
 //		Timeout: 30 * time.Second,
 //		Tools: nil,
+//		Headers: map[string]string{
+//			"X-Custom-Header": "custom-value",
+//			"User-Agent": "my-app/1.0",
+//		},
 //	})
 func NewClient(options *ClientOptions) Client {
 	client := resty.New()
@@ -55,6 +61,11 @@ func NewClient(options *ClientOptions) Client {
 	// Set auth token if provided
 	if options.APIKey != "" {
 		client.SetAuthToken(options.APIKey)
+	}
+
+	// Set custom headers if provided
+	if len(options.Headers) > 0 {
+		client.SetHeaders(options.Headers)
 	}
 
 	return &clientImpl{
@@ -149,6 +160,39 @@ func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) *clientImpl {
 //   - Options will persist for all future calls until cleared with WithOptions(nil)
 func (c *clientImpl) WithOptions(options *CreateChatCompletionRequest) *clientImpl {
 	c.options = options
+	return c
+}
+
+// WithHeaders sets custom headers for the client.
+//
+// Example:
+//
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
+//	headers := map[string]string{
+//		"X-Custom-Header": "value",
+//	}
+//	client = client.WithHeaders(headers)
+//	resp, err := client.ListModels(ctx)
+func (c *clientImpl) WithHeaders(headers map[string]string) *clientImpl {
+	for name, value := range headers {
+		c.http.Header.Set(name, value)
+	}
+	return c
+}
+
+// WithHeader sets a single custom header for the client.
+//
+// Example:
+//
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
+//	client = client.WithHeader("X-Custom-Header", "value")
+//	resp, err := client.ListModels(ctx)
+func (c *clientImpl) WithHeader(name, value string) *clientImpl {
+	c.http.Header.Set(name, value)
 	return c
 }
 

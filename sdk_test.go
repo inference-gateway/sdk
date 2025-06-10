@@ -753,6 +753,219 @@ func TestWithOptions(t *testing.T) {
 	}
 }
 
+func TestWithHeaders(t *testing.T) {
+	tests := []struct {
+		name            string
+		initialHeaders  map[string]string
+		withHeaders     map[string]string
+		singleHeaders   map[string]string
+		expectedHeaders map[string]string
+	}{
+		{
+			name: "Set headers from ClientOptions",
+			initialHeaders: map[string]string{
+				"X-Initial-Header": "initial-value",
+				"User-Agent":       "test-app/1.0",
+			},
+			expectedHeaders: map[string]string{
+				"X-Initial-Header": "initial-value",
+				"User-Agent":       "test-app/1.0",
+			},
+		},
+		{
+			name: "WithHeaders sets multiple headers",
+			withHeaders: map[string]string{
+				"X-Custom-Header-1": "value1",
+				"X-Custom-Header-2": "value2",
+			},
+			expectedHeaders: map[string]string{
+				"X-Custom-Header-1": "value1",
+				"X-Custom-Header-2": "value2",
+			},
+		},
+		{
+			name: "WithHeader sets single header",
+			singleHeaders: map[string]string{
+				"X-Single-Header": "single-value",
+			},
+			expectedHeaders: map[string]string{
+				"X-Single-Header": "single-value",
+			},
+		},
+		{
+			name: "Mixed headers from options and methods",
+			initialHeaders: map[string]string{
+				"X-Initial": "initial",
+			},
+			withHeaders: map[string]string{
+				"X-Multi-1": "multi1",
+				"X-Multi-2": "multi2",
+			},
+			singleHeaders: map[string]string{
+				"X-Single": "single",
+			},
+			expectedHeaders: map[string]string{
+				"X-Initial": "initial",
+				"X-Multi-1": "multi1",
+				"X-Multi-2": "multi2",
+				"X-Single":  "single",
+			},
+		},
+		{
+			name: "Headers override",
+			initialHeaders: map[string]string{
+				"X-Override": "initial",
+			},
+			withHeaders: map[string]string{
+				"X-Override": "withHeaders",
+			},
+			singleHeaders: map[string]string{
+				"X-Override": "withHeader",
+			},
+			expectedHeaders: map[string]string{
+				"X-Override": "withHeader", // Last one wins
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				for key, expectedValue := range tt.expectedHeaders {
+					actualValue := r.Header.Get(key)
+					assert.Equal(t, expectedValue, actualValue, "Header %s should have value %s", key, expectedValue)
+				}
+
+				response := ListModelsResponse{Object: "list", Data: []Model{}}
+				w.Header().Set("Content-Type", "application/json")
+				err := json.NewEncoder(w).Encode(response)
+				assert.NoError(t, err)
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL: baseURL,
+				Headers: tt.initialHeaders,
+			})
+
+			if tt.withHeaders != nil {
+				client = client.WithHeaders(tt.withHeaders)
+			}
+
+			for key, value := range tt.singleHeaders {
+				client = client.WithHeader(key, value)
+			}
+
+			ctx := context.Background()
+			_, err := client.ListModels(ctx)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestHeadersInAllRequests(t *testing.T) {
+	customHeaders := map[string]string{
+		"X-API-Version": "v1.0",
+		"X-Client-ID":   "test-client",
+	}
+
+	testCases := []struct {
+		name     string
+		endpoint string
+		makeCall func(client Client) error
+	}{
+		{
+			name:     "ListModels",
+			endpoint: "/v1/models",
+			makeCall: func(client Client) error {
+				_, err := client.ListModels(context.Background())
+				return err
+			},
+		},
+		{
+			name:     "ListProviderModels",
+			endpoint: "/v1/models",
+			makeCall: func(client Client) error {
+				_, err := client.ListProviderModels(context.Background(), Openai)
+				return err
+			},
+		},
+		{
+			name:     "ListTools",
+			endpoint: "/v1/mcp/tools",
+			makeCall: func(client Client) error {
+				_, err := client.ListTools(context.Background())
+				return err
+			},
+		},
+		{
+			name:     "HealthCheck",
+			endpoint: "/v1/health",
+			makeCall: func(client Client) error {
+				return client.HealthCheck(context.Background())
+			},
+		},
+		{
+			name:     "GenerateContent",
+			endpoint: "/v1/chat/completions",
+			makeCall: func(client Client) error {
+				_, err := client.GenerateContent(context.Background(), Openai, "gpt-4o", []Message{{Role: User, Content: "test"}})
+				return err
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				for key, expectedValue := range customHeaders {
+					actualValue := r.Header.Get(key)
+					assert.Equal(t, expectedValue, actualValue, "Header %s should be present in %s request", key, tc.name)
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				switch r.URL.Path {
+				case "/v1/models":
+					response := ListModelsResponse{Object: "list", Data: []Model{}}
+					err := json.NewEncoder(w).Encode(response)
+					assert.NoError(t, err)
+				case "/v1/mcp/tools":
+					response := ListToolsResponse{Data: []MCPTool{}}
+					err := json.NewEncoder(w).Encode(response)
+					assert.NoError(t, err)
+				case "/v1/health":
+					w.WriteHeader(http.StatusOK)
+				case "/v1/chat/completions":
+					response := CreateChatCompletionResponse{
+						Id:      "test",
+						Object:  "chat.completion",
+						Created: 123456789,
+						Model:   "gpt-4o",
+						Choices: []ChatCompletionChoice{{
+							Index:        0,
+							FinishReason: Stop,
+							Message:      Message{Role: Assistant, Content: "test response"},
+						}},
+					}
+					err := json.NewEncoder(w).Encode(response)
+					assert.NoError(t, err)
+				}
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL: baseURL,
+				Headers: customHeaders,
+			})
+
+			err := tc.makeCall(client)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func stringPtr(s string) *string {
 	return &s
 }

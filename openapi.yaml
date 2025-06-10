@@ -17,20 +17,22 @@ info:
 servers:
   - url: http://localhost:8080
     description: Default server without version prefix for healthcheck and proxy and points
-    x-server-tags: ["Health", "Proxy"]
+    x-server-tags: ['Health', 'Proxy']
   - url: http://localhost:8080/v1
     description: Default server with version prefix for listing models and chat completions
-    x-server-tags: ["Models", "Completions"]
+    x-server-tags: ['Models', 'Completions']
   - url: https://api.inference-gateway.local/v1
     description: Local server with version prefix for listing models and chat completions
-    x-server-tags: ["Models", "Completions"]
+    x-server-tags: ['Models', 'Completions']
 tags:
   - name: Models
     description: List and describe the various models available in the API.
   - name: Completions
     description: Generate completions from the models.
-  - name: Tools
+  - name: MCP
     description: List and manage MCP tools.
+  - name: A2A
+    description: List and manage A2A agents.
   - name: Proxy
     description: Proxy requests to provider endpoints.
   - name: Health
@@ -54,70 +56,70 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/Provider"
+            $ref: '#/components/schemas/Provider'
           description: Specific provider to query (optional)
       responses:
-        "200":
+        '200':
           description: List of available models
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListModelsResponse"
+                $ref: '#/components/schemas/ListModelsResponse'
               examples:
                 allProviders:
                   summary: Models from all providers
                   value:
-                    object: "list"
+                    object: 'list'
                     data:
-                      - id: "openai/gpt-4o"
-                        object: "model"
+                      - id: 'openai/gpt-4o'
+                        object: 'model'
                         created: 1686935002
-                        owned_by: "openai"
-                        served_by: "openai"
-                      - id: "openai/llama-3.3-70b-versatile"
-                        object: "model"
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                      - id: 'openai/llama-3.3-70b-versatile'
+                        object: 'model'
                         created: 1723651281
-                        owned_by: "groq"
-                        served_by: "groq"
-                      - id: "cohere/claude-3-opus-20240229"
-                        object: "model"
+                        owned_by: 'groq'
+                        served_by: 'groq'
+                      - id: 'cohere/claude-3-opus-20240229'
+                        object: 'model'
                         created: 1708905600
-                        owned_by: "anthropic"
-                        served_by: "anthropic"
-                      - id: "cohere/command-r"
-                        object: "model"
+                        owned_by: 'anthropic'
+                        served_by: 'anthropic'
+                      - id: 'cohere/command-r'
+                        object: 'model'
                         created: 1707868800
-                        owned_by: "cohere"
-                        served_by: "cohere"
-                      - id: "ollama/phi3:3.8b"
-                        object: "model"
+                        owned_by: 'cohere'
+                        served_by: 'cohere'
+                      - id: 'ollama/phi3:3.8b'
+                        object: 'model'
                         created: 1718441600
-                        owned_by: "ollama"
-                        served_by: "ollama"
+                        owned_by: 'ollama'
+                        served_by: 'ollama'
                 singleProvider:
                   summary: Models from a specific provider
                   value:
-                    object: "list"
+                    object: 'list'
                     data:
-                      - id: "openai/gpt-4o"
-                        object: "model"
+                      - id: 'openai/gpt-4o'
+                        object: 'model'
                         created: 1686935002
-                        owned_by: "openai"
-                        served_by: "openai"
-                      - id: "openai/gpt-4-turbo"
-                        object: "model"
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                      - id: 'openai/gpt-4-turbo'
+                        object: 'model'
                         created: 1687882410
-                        owned_by: "openai"
-                        served_by: "openai"
-                      - id: "openai/gpt-3.5-turbo"
-                        object: "model"
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                      - id: 'openai/gpt-3.5-turbo'
+                        object: 'model'
                         created: 1677649963
-                        owned_by: "openai"
-                        served_by: "openai"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
+                        owned_by: 'openai'
+                        served_by: 'openai'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /chat/completions:
     post:
       operationId: createChatCompletion
@@ -134,56 +136,79 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/Provider"
+            $ref: '#/components/schemas/Provider'
           description: Specific provider to use (default determined by model)
       requestBody:
-        $ref: "#/components/requestBodies/CreateChatCompletionRequest"
+        $ref: '#/components/requestBodies/CreateChatCompletionRequest'
       responses:
-        "200":
+        '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CreateChatCompletionResponse"
+                $ref: '#/components/schemas/CreateChatCompletionResponse'
             text/event-stream:
               schema:
-                $ref: "#/components/schemas/SSEvent"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
+                $ref: '#/components/schemas/SSEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /mcp/tools:
     get:
       operationId: listTools
       tags:
-        - Tools
+        - MCP
       description: |
         Lists the currently available MCP tools. Only accessible when EXPOSE_MCP is enabled.
       summary: Lists the currently available MCP tools
       security:
         - bearerAuth: []
       responses:
-        "200":
+        '200':
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListToolsResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "403":
-          $ref: "#/components/responses/MCPNotExposed"
-        "500":
-          $ref: "#/components/responses/InternalError"
+                $ref: '#/components/schemas/ListToolsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/MCPNotExposed'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /a2a/agents:
+    get:
+      operationId: listAgents
+      tags:
+        - A2A
+      description: |
+        Lists the currently available A2A agents. Only accessible when EXPOSE_A2A is enabled.
+      summary: Lists the currently available A2A agents
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAgentsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/A2ANotExposed'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /proxy/{provider}/{path}:
     parameters:
       - name: provider
         in: path
         required: true
         schema:
-          $ref: "#/components/schemas/Provider"
+          $ref: '#/components/schemas/Provider'
       - name: path
         in: path
         required: true
@@ -202,14 +227,14 @@ paths:
         If you decide to use this approach, please follow the provider-specific documentations.
       summary: Proxy GET request to provider
       responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
+        '200':
+          $ref: '#/components/responses/ProviderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       security:
         - bearerAuth: []
     post:
@@ -222,16 +247,16 @@ paths:
         If you decide to use this approach, please follow the provider-specific documentations.
       summary: Proxy POST request to provider
       requestBody:
-        $ref: "#/components/requestBodies/ProviderRequest"
+        $ref: '#/components/requestBodies/ProviderRequest'
       responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
+        '200':
+          $ref: '#/components/responses/ProviderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       security:
         - bearerAuth: []
     put:
@@ -244,16 +269,16 @@ paths:
         If you decide to use this approach, please follow the provider-specific documentations.
       summary: Proxy PUT request to provider
       requestBody:
-        $ref: "#/components/requestBodies/ProviderRequest"
+        $ref: '#/components/requestBodies/ProviderRequest'
       responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
+        '200':
+          $ref: '#/components/responses/ProviderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       security:
         - bearerAuth: []
     delete:
@@ -266,14 +291,14 @@ paths:
         If you decide to use this approach, please follow the provider-specific documentations.
       summary: Proxy DELETE request to provider
       responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
+        '200':
+          $ref: '#/components/responses/ProviderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       security:
         - bearerAuth: []
     patch:
@@ -286,16 +311,16 @@ paths:
         If you decide to use this approach, please follow the provider-specific documentations.
       summary: Proxy PATCH request to provider
       requestBody:
-        $ref: "#/components/requestBodies/ProviderRequest"
+        $ref: '#/components/requestBodies/ProviderRequest'
       responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
+        '200':
+          $ref: '#/components/responses/ProviderResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
       security:
         - bearerAuth: []
   /health:
@@ -308,7 +333,7 @@ paths:
         Returns a 200 status code if the service is healthy
       summary: Health check
       responses:
-        "200":
+        '200':
           description: Health check successful
 components:
   requestBodies:
@@ -341,18 +366,18 @@ components:
             openai:
               summary: OpenAI chat completion request
               value:
-                model: "gpt-3.5-turbo"
+                model: 'gpt-3.5-turbo'
                 messages:
-                  - role: "user"
-                    content: "Hello! How can I assist you today?"
+                  - role: 'user'
+                    content: 'Hello! How can I assist you today?'
                 temperature: 0.7
             anthropic:
               summary: Anthropic Claude request
               value:
-                model: "claude-3-opus-20240229"
+                model: 'claude-3-opus-20240229'
                 messages:
-                  - role: "user"
-                    content: "Explain quantum computing"
+                  - role: 'user'
+                    content: 'Explain quantum computing'
                 temperature: 0.5
     CreateChatCompletionRequest:
       required: true
@@ -362,34 +387,42 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/CreateChatCompletionRequest"
+            $ref: '#/components/schemas/CreateChatCompletionRequest'
   responses:
     BadRequest:
       description: Bad request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     Unauthorized:
       description: Unauthorized
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     InternalError:
       description: Internal server error
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
     MCPNotExposed:
       description: MCP tools endpoint is not exposed
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Error"
+            $ref: '#/components/schemas/Error'
           example:
-            error: "MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable."
+            error: 'MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable.'
+    A2ANotExposed:
+      description: A2A agents endpoint is not exposed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'A2A agents endpoint is not exposed. Set EXPOSE_A2A=true to enable.'
     ProviderResponse:
       description: |
         ProviderResponse depends on the specific provider and endpoint being called
@@ -397,26 +430,26 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ProviderSpecificResponse"
+            $ref: '#/components/schemas/ProviderSpecificResponse'
           examples:
             openai:
               summary: OpenAI API response
               value:
                 {
-                  "id": "chatcmpl-123",
-                  "object": "chat.completion",
-                  "created": 1677652288,
-                  "model": "gpt-3.5-turbo",
-                  "choices":
+                  'id': 'chatcmpl-123',
+                  'object': 'chat.completion',
+                  'created': 1677652288,
+                  'model': 'gpt-3.5-turbo',
+                  'choices':
                     [
                       {
-                        "index": 0,
-                        "message":
+                        'index': 0,
+                        'message':
                           {
-                            "role": "assistant",
-                            "content": "Hello! How can I help you today?",
+                            'role': 'assistant',
+                            'content': 'Hello! How can I help you today?',
                           },
-                        "finish_reason": "stop",
+                        'finish_reason': 'stop',
                       },
                     ],
                 }
@@ -442,96 +475,96 @@ components:
         - deepseek
       x-provider-configs:
         ollama:
-          id: "ollama"
-          url: "http://ollama:8080/v1"
-          auth_type: "none"
+          id: 'ollama'
+          url: 'http://ollama:8080/v1'
+          auth_type: 'none'
           endpoints:
             models:
-              name: "list_models"
-              method: "GET"
-              endpoint: "/models"
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
             chat:
-              name: "chat_completions"
-              method: "POST"
-              endpoint: "/chat/completions"
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
         anthropic:
-          id: "anthropic"
-          url: "https://api.anthropic.com/v1"
-          auth_type: "bearer"
+          id: 'anthropic'
+          url: 'https://api.anthropic.com/v1'
+          auth_type: 'bearer'
           endpoints:
             models:
-              name: "list_models"
-              method: "GET"
-              endpoint: "/models"
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
             chat:
-              name: "chat_completions"
-              method: "POST"
-              endpoint: "/chat/completions"
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
         cohere:
-          id: "cohere"
-          url: "https://api.cohere.ai"
-          auth_type: "bearer"
+          id: 'cohere'
+          url: 'https://api.cohere.ai'
+          auth_type: 'bearer'
           endpoints:
             models:
-              name: "list_models"
-              method: "GET"
-              endpoint: "/v1/models"
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/v1/models'
             chat:
-              name: "chat_completions"
-              method: "POST"
-              endpoint: "/compatibility/v1/chat/completions"
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/compatibility/v1/chat/completions'
         groq:
-          id: "groq"
-          url: "https://api.groq.com/openai/v1"
-          auth_type: "bearer"
+          id: 'groq'
+          url: 'https://api.groq.com/openai/v1'
+          auth_type: 'bearer'
           endpoints:
             models:
-              name: "list_models"
-              method: "GET"
-              endpoint: "/models"
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
             chat:
-              name: "chat_completions"
-              method: "POST"
-              endpoint: "/chat/completions"
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
         openai:
-          id: "openai"
-          url: "https://api.openai.com/v1"
-          auth_type: "bearer"
+          id: 'openai'
+          url: 'https://api.openai.com/v1'
+          auth_type: 'bearer'
           endpoints:
             models:
-              name: "list_models"
-              method: "GET"
-              endpoint: "/models"
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
             chat:
-              name: "chat_completions"
-              method: "POST"
-              endpoint: "/chat/completions"
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
         cloudflare:
-          id: "cloudflare"
-          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai"
-          auth_type: "bearer"
+          id: 'cloudflare'
+          url: 'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai'
+          auth_type: 'bearer'
           endpoints:
             models:
-              name: "list_models"
-              method: "GET"
-              endpoint: "/finetunes/public?limit=1000"
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/finetunes/public?limit=1000'
             chat:
-              name: "chat_completions"
-              method: "POST"
-              endpoint: "/v1/chat/completions"
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/v1/chat/completions'
         deepseek:
-          id: "deepseek"
-          url: "https://api.deepseek.com"
-          auth_type: "bearer"
+          id: 'deepseek'
+          url: 'https://api.deepseek.com'
+          auth_type: 'bearer'
           endpoints:
             models:
-              name: "list_models"
-              method: "GET"
-              endpoint: "/models"
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
             chat:
-              name: "chat_completions"
-              method: "POST"
-              endpoint: "/chat/completions"
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
     ProviderSpecificResponse:
       type: object
       description: |
@@ -624,13 +657,13 @@ components:
       description: Message structure for provider requests
       properties:
         role:
-          $ref: "#/components/schemas/MessageRole"
+          $ref: '#/components/schemas/MessageRole'
         content:
           type: string
         tool_calls:
           type: array
           items:
-            $ref: "#/components/schemas/ChatCompletionMessageToolCall"
+            $ref: '#/components/schemas/ChatCompletionMessageToolCall'
         tool_call_id:
           type: string
         reasoning_content:
@@ -656,7 +689,7 @@ components:
         owned_by:
           type: string
         served_by:
-          $ref: "#/components/schemas/Provider"
+          $ref: '#/components/schemas/Provider'
       required:
         - id
         - object
@@ -668,13 +701,13 @@ components:
       description: Response structure for listing models
       properties:
         provider:
-          $ref: "#/components/schemas/Provider"
+          $ref: '#/components/schemas/Provider'
         object:
           type: string
         data:
           type: array
           items:
-            $ref: "#/components/schemas/Model"
+            $ref: '#/components/schemas/Model'
           default: []
       required:
         - object
@@ -686,13 +719,30 @@ components:
         object:
           type: string
           description: Always "list"
-          example: "list"
+          example: 'list'
         data:
           type: array
           items:
-            $ref: "#/components/schemas/MCPTool"
+            $ref: '#/components/schemas/MCPTool'
           default: []
           description: Array of available MCP tools
+      required:
+        - object
+        - data
+    ListAgentsResponse:
+      type: object
+      description: Response structure for listing A2A agents
+      properties:
+        object:
+          type: string
+          description: Always "list"
+          example: 'list'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/A2AItem'
+          default: []
+          description: Array of available A2A agents
       required:
         - object
         - data
@@ -703,29 +753,50 @@ components:
         name:
           type: string
           description: The name of the tool
-          example: "read_file"
+          example: 'read_file'
         description:
           type: string
           description: A description of what the tool does
-          example: "Read content from a file"
+          example: 'Read content from a file'
         server:
           type: string
           description: The MCP server that provides this tool
-          example: "http://mcp-filesystem-server:8083/mcp"
+          example: 'http://mcp-filesystem-server:8083/mcp'
         input_schema:
           type: object
           description: JSON schema for the tool's input parameters
           example:
-            type: "object"
+            type: 'object'
             properties:
               file_path:
-                type: "string"
-                description: "Path to the file to read"
-            required: ["file_path"]
+                type: 'string'
+                description: 'Path to the file to read'
+            required: ['file_path']
+          additionalProperties: true
       required:
         - name
         - description
         - server
+    A2AItem:
+      type: object
+      description: An item in the A2A list
+      properties:
+        id:
+          type: string
+          description: The ID of the item
+        name:
+          type: string
+          description: The name of the item
+        description:
+          type: string
+          description: A description of the item
+        url:
+          type: string
+          format: uri
+          description: The URL of the item
+      required:
+        - id
+        - name
     FunctionObject:
       type: object
       properties:
@@ -740,7 +811,7 @@ components:
             The name of the function to be called. Must be a-z, A-Z, 0-9, or
             contain underscores and dashes, with a maximum length of 64.
         parameters:
-          $ref: "#/components/schemas/FunctionParameters"
+          $ref: '#/components/schemas/FunctionParameters'
         strict:
           type: boolean
           default: false
@@ -757,9 +828,9 @@ components:
       type: object
       properties:
         type:
-          $ref: "#/components/schemas/ChatCompletionToolType"
+          $ref: '#/components/schemas/ChatCompletionToolType'
         function:
-          $ref: "#/components/schemas/FunctionObject"
+          $ref: '#/components/schemas/FunctionObject'
       required:
         - type
         - function
@@ -830,7 +901,7 @@ components:
           type: array
           minItems: 1
           items:
-            $ref: "#/components/schemas/Message"
+            $ref: '#/components/schemas/Message'
         max_tokens:
           description: >
             An upper bound for the number of tokens that can be generated
@@ -844,7 +915,7 @@ components:
           type: boolean
           default: false
         stream_options:
-          $ref: "#/components/schemas/ChatCompletionStreamOptions"
+          $ref: '#/components/schemas/ChatCompletionStreamOptions'
         tools:
           type: array
           description: >
@@ -853,7 +924,7 @@ components:
             the model may generate JSON inputs for. A max of 128 functions
             are supported.
           items:
-            $ref: "#/components/schemas/ChatCompletionTool"
+            $ref: '#/components/schemas/ChatCompletionTool'
         reasoning_format:
           type: string
           description: >
@@ -890,9 +961,9 @@ components:
           type: string
           description: The ID of the tool call.
         type:
-          $ref: "#/components/schemas/ChatCompletionToolType"
+          $ref: '#/components/schemas/ChatCompletionToolType'
         function:
-          $ref: "#/components/schemas/ChatCompletionMessageToolCallFunction"
+          $ref: '#/components/schemas/ChatCompletionMessageToolCallFunction'
       required:
         - id
         - type
@@ -924,7 +995,7 @@ components:
           type: integer
           description: The index of the choice in the list of choices.
         message:
-          $ref: "#/components/schemas/Message"
+          $ref: '#/components/schemas/Message'
       required:
         - finish_reason
         - index
@@ -938,7 +1009,7 @@ components:
         - index
       properties:
         delta:
-          $ref: "#/components/schemas/ChatCompletionStreamResponseDelta"
+          $ref: '#/components/schemas/ChatCompletionStreamResponseDelta'
         logprobs:
           description: Log probability information for the choice.
           type: object
@@ -947,17 +1018,17 @@ components:
               description: A list of message content tokens with log probability information.
               type: array
               items:
-                $ref: "#/components/schemas/ChatCompletionTokenLogprob"
+                $ref: '#/components/schemas/ChatCompletionTokenLogprob'
             refusal:
               description: A list of message refusal tokens with log probability information.
               type: array
               items:
-                $ref: "#/components/schemas/ChatCompletionTokenLogprob"
+                $ref: '#/components/schemas/ChatCompletionTokenLogprob'
           required:
             - content
             - refusal
         finish_reason:
-          $ref: "#/components/schemas/FinishReason"
+          $ref: '#/components/schemas/FinishReason'
         index:
           type: integer
           description: The index of the choice in the list of choices.
@@ -976,7 +1047,7 @@ components:
             A list of chat completion choices. Can be more than one if `n` is
             greater than 1.
           items:
-            $ref: "#/components/schemas/ChatCompletionChoice"
+            $ref: '#/components/schemas/ChatCompletionChoice'
         created:
           type: integer
           description:
@@ -990,7 +1061,7 @@ components:
           description: The object type, which is always `chat.completion`.
           x-stainless-const: true
         usage:
-          $ref: "#/components/schemas/CompletionUsage"
+          $ref: '#/components/schemas/CompletionUsage'
       required:
         - choices
         - created
@@ -1013,9 +1084,9 @@ components:
         tool_calls:
           type: array
           items:
-            $ref: "#/components/schemas/ChatCompletionMessageToolCallChunk"
+            $ref: '#/components/schemas/ChatCompletionMessageToolCallChunk'
         role:
-          $ref: "#/components/schemas/MessageRole"
+          $ref: '#/components/schemas/MessageRole'
         refusal:
           type: string
           description: The refusal message generated by the model.
@@ -1034,19 +1105,7 @@ components:
           type: string
           description: The type of the tool. Currently, only `function` is supported.
         function:
-          type: object
-          properties:
-            name:
-              type: string
-              description: The name of the function to call.
-            arguments:
-              type: string
-              description:
-                The arguments to call the function with, as generated by the model
-                in JSON format. Note that the model does not always generate
-                valid JSON, and may hallucinate parameters not defined by your
-                function schema. Validate the arguments in your code before
-                calling your function.
+          $ref: '#/components/schemas/ChatCompletionMessageToolCallFunction'
       required:
         - index
     ChatCompletionTokenLogprob:
@@ -1131,7 +1190,7 @@ components:
 
             last chunk if you set `stream_options: {"include_usage": true}`.
           items:
-            $ref: "#/components/schemas/ChatCompletionStreamChoice"
+            $ref: '#/components/schemas/ChatCompletionStreamChoice'
         created:
           type: integer
           description:
@@ -1153,7 +1212,7 @@ components:
           type: string
           description: The object type, which is always `chat.completion.chunk`.
         usage:
-          $ref: "#/components/schemas/CompletionUsage"
+          $ref: '#/components/schemas/CompletionUsage'
         reasoning_format:
           type: string
           description: >
@@ -1171,223 +1230,265 @@ components:
       x-config:
         sections:
           - general:
-              title: "General settings"
+              title: 'General settings'
               settings:
                 - name: environment
-                  env: "ENVIRONMENT"
+                  env: 'ENVIRONMENT'
                   type: string
-                  default: "production"
-                  description: "The environment"
+                  default: 'production'
+                  description: 'The environment'
                 - name: enable_telemetry
-                  env: "ENABLE_TELEMETRY"
+                  env: 'ENABLE_TELEMETRY'
                   type: bool
-                  default: "false"
-                  description: "Enable telemetry"
+                  default: 'false'
+                  description: 'Enable telemetry'
                 - name: enable_auth
-                  env: "ENABLE_AUTH"
+                  env: 'ENABLE_AUTH'
                   type: bool
-                  default: "false"
-                  description: "Enable authentication"
+                  default: 'false'
+                  description: 'Enable authentication'
+                - name: allowed_models
+                  env: 'ALLOWED_MODELS'
+                  type: string
+                  default: ''
+                  description: 'Comma-separated list of models to allow. If empty, all models will be available'
           - mcp:
-              title: "Model Context Protocol (MCP)"
+              title: 'Model Context Protocol (MCP)'
               settings:
                 - name: mcp_enable
-                  env: "MCP_ENABLE"
+                  env: 'MCP_ENABLE'
                   type: bool
-                  default: "false"
-                  description: "Enable MCP"
+                  default: 'false'
+                  description: 'Enable MCP'
                 - name: mcp_expose
-                  env: "MCP_EXPOSE"
+                  env: 'MCP_EXPOSE'
                   type: bool
-                  default: "false"
-                  description: "Expose MCP tools endpoint"
+                  default: 'false'
+                  description: 'Expose MCP tools endpoint'
                 - name: mcp_servers
-                  env: "MCP_SERVERS"
+                  env: 'MCP_SERVERS'
                   type: string
-                  description: "List of MCP servers"
+                  description: 'List of MCP servers'
                 - name: mcp_client_timeout
-                  env: "MCP_CLIENT_TIMEOUT"
+                  env: 'MCP_CLIENT_TIMEOUT'
                   type: time.Duration
-                  default: "5s"
-                  description: "MCP client HTTP timeout"
+                  default: '5s'
+                  description: 'MCP client HTTP timeout'
                 - name: mcp_dial_timeout
-                  env: "MCP_DIAL_TIMEOUT"
+                  env: 'MCP_DIAL_TIMEOUT'
                   type: time.Duration
-                  default: "3s"
-                  description: "MCP client dial timeout"
+                  default: '3s'
+                  description: 'MCP client dial timeout'
                 - name: mcp_tls_handshake_timeout
-                  env: "MCP_TLS_HANDSHAKE_TIMEOUT"
+                  env: 'MCP_TLS_HANDSHAKE_TIMEOUT'
                   type: time.Duration
-                  default: "3s"
-                  description: "MCP client TLS handshake timeout"
+                  default: '3s'
+                  description: 'MCP client TLS handshake timeout'
                 - name: mcp_response_header_timeout
-                  env: "MCP_RESPONSE_HEADER_TIMEOUT"
+                  env: 'MCP_RESPONSE_HEADER_TIMEOUT'
                   type: time.Duration
-                  default: "3s"
-                  description: "MCP client response header timeout"
+                  default: '3s'
+                  description: 'MCP client response header timeout'
                 - name: mcp_expect_continue_timeout
-                  env: "MCP_EXPECT_CONTINUE_TIMEOUT"
+                  env: 'MCP_EXPECT_CONTINUE_TIMEOUT'
                   type: time.Duration
-                  default: "1s"
-                  description: "MCP client expect continue timeout"
+                  default: '1s'
+                  description: 'MCP client expect continue timeout'
                 - name: mcp_request_timeout
-                  env: "MCP_REQUEST_TIMEOUT"
+                  env: 'MCP_REQUEST_TIMEOUT'
                   type: time.Duration
-                  default: "5s"
-                  description: "MCP client request timeout for initialize and tool calls"
+                  default: '5s'
+                  description: 'MCP client request timeout for initialize and tool calls'
+          - a2a:
+              title: 'Agent-to-Agent (A2A) Protocol'
+              settings:
+                - name: a2a_enable
+                  env: 'A2A_ENABLE'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable A2A protocol support'
+                - name: a2a_expose
+                  env: 'A2A_EXPOSE'
+                  type: bool
+                  default: 'false'
+                  description: 'Expose A2A agents list cards endpoint'
+                - name: a2a_agents
+                  env: 'A2A_AGENTS'
+                  type: string
+                  description: 'Comma-separated list of A2A agent URLs'
+                - name: a2a_client_timeout
+                  env: 'A2A_CLIENT_TIMEOUT'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'A2A client timeout'
           - oidc:
-              title: "OpenID Connect"
+              title: 'OpenID Connect'
               settings:
                 - name: issuer_url
-                  env: "OIDC_ISSUER_URL"
+                  env: 'OIDC_ISSUER_URL'
                   type: string
-                  default: "http://keycloak:8080/realms/inference-gateway-realm"
-                  description: "OIDC issuer URL"
+                  default: 'http://keycloak:8080/realms/inference-gateway-realm'
+                  description: 'OIDC issuer URL'
                 - name: client_id
-                  env: "OIDC_CLIENT_ID"
+                  env: 'OIDC_CLIENT_ID'
                   type: string
-                  default: "inference-gateway-client"
-                  description: "OIDC client ID"
+                  default: 'inference-gateway-client'
+                  description: 'OIDC client ID'
                   secret: true
                 - name: client_secret
-                  env: "OIDC_CLIENT_SECRET"
+                  env: 'OIDC_CLIENT_SECRET'
                   type: string
-                  description: "OIDC client secret"
+                  description: 'OIDC client secret'
                   secret: true
           - server:
-              title: "Server settings"
+              title: 'Server settings'
               settings:
                 - name: host
-                  env: "SERVER_HOST"
+                  env: 'SERVER_HOST'
                   type: string
-                  default: "0.0.0.0"
-                  description: "Server host"
+                  default: '0.0.0.0'
+                  description: 'Server host'
                 - name: port
-                  env: "SERVER_PORT"
+                  env: 'SERVER_PORT'
                   type: string
-                  default: "8080"
-                  description: "Server port"
+                  default: '8080'
+                  description: 'Server port'
                 - name: read_timeout
-                  env: "SERVER_READ_TIMEOUT"
+                  env: 'SERVER_READ_TIMEOUT'
                   type: time.Duration
-                  default: "30s"
-                  description: "Read timeout"
+                  default: '30s'
+                  description: 'Read timeout'
                 - name: write_timeout
-                  env: "SERVER_WRITE_TIMEOUT"
+                  env: 'SERVER_WRITE_TIMEOUT'
                   type: time.Duration
-                  default: "30s"
-                  description: "Write timeout"
+                  default: '30s'
+                  description: 'Write timeout'
                 - name: idle_timeout
-                  env: "SERVER_IDLE_TIMEOUT"
+                  env: 'SERVER_IDLE_TIMEOUT'
                   type: time.Duration
-                  default: "120s"
-                  description: "Idle timeout"
+                  default: '120s'
+                  description: 'Idle timeout'
                 - name: tls_cert_path
-                  env: "SERVER_TLS_CERT_PATH"
+                  env: 'SERVER_TLS_CERT_PATH'
                   type: string
-                  description: "TLS certificate path"
+                  description: 'TLS certificate path'
                 - name: tls_key_path
-                  env: "SERVER_TLS_KEY_PATH"
+                  env: 'SERVER_TLS_KEY_PATH'
                   type: string
-                  description: "TLS key path"
+                  description: 'TLS key path'
           - client:
-              title: "Client settings"
+              title: 'Client settings'
               settings:
                 - name: timeout
-                  env: "CLIENT_TIMEOUT"
+                  env: 'CLIENT_TIMEOUT'
                   type: time.Duration
-                  default: "30s"
-                  description: "Client timeout"
+                  default: '30s'
+                  description: 'Client timeout'
                 - name: max_idle_conns
-                  env: "CLIENT_MAX_IDLE_CONNS"
+                  env: 'CLIENT_MAX_IDLE_CONNS'
                   type: int
-                  default: "20"
-                  description: "Maximum idle connections"
+                  default: '20'
+                  description: 'Maximum idle connections'
                 - name: max_idle_conns_per_host
-                  env: "CLIENT_MAX_IDLE_CONNS_PER_HOST"
+                  env: 'CLIENT_MAX_IDLE_CONNS_PER_HOST'
                   type: int
-                  default: "20"
-                  description: "Maximum idle connections per host"
+                  default: '20'
+                  description: 'Maximum idle connections per host'
                 - name: idle_conn_timeout
-                  env: "CLIENT_IDLE_CONN_TIMEOUT"
+                  env: 'CLIENT_IDLE_CONN_TIMEOUT'
                   type: time.Duration
-                  default: "30s"
-                  description: "Idle connection timeout"
+                  default: '30s'
+                  description: 'Idle connection timeout'
                 - name: tls_min_version
-                  env: "CLIENT_TLS_MIN_VERSION"
+                  env: 'CLIENT_TLS_MIN_VERSION'
                   type: string
-                  default: "TLS12"
-                  description: "Minimum TLS version"
+                  default: 'TLS12'
+                  description: 'Minimum TLS version'
+                - name: disable_compression
+                  env: 'CLIENT_DISABLE_COMPRESSION'
+                  type: bool
+                  default: 'true'
+                  description: 'Disable compression for faster streaming'
+                - name: response_header_timeout
+                  env: 'CLIENT_RESPONSE_HEADER_TIMEOUT'
+                  type: time.Duration
+                  default: '10s'
+                  description: 'Response header timeout'
+                - name: expect_continue_timeout
+                  env: 'CLIENT_EXPECT_CONTINUE_TIMEOUT'
+                  type: time.Duration
+                  default: '1s'
+                  description: 'Expect continue timeout'
           - providers:
-              title: "Providers"
+              title: 'Providers'
               settings:
                 - name: anthropic_api_url
-                  env: "ANTHROPIC_API_URL"
+                  env: 'ANTHROPIC_API_URL'
                   type: string
-                  default: "https://api.anthropic.com/v1"
-                  description: "Anthropic API URL"
+                  default: 'https://api.anthropic.com/v1'
+                  description: 'Anthropic API URL'
                 - name: anthropic_api_key
-                  env: "ANTHROPIC_API_KEY"
+                  env: 'ANTHROPIC_API_KEY'
                   type: string
-                  description: "Anthropic API Key"
+                  description: 'Anthropic API Key'
                   secret: true
                 - name: cloudflare_api_url
-                  env: "CLOUDFLARE_API_URL"
+                  env: 'CLOUDFLARE_API_URL'
                   type: string
-                  default: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai"
-                  description: "Cloudflare API URL"
+                  default: 'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai'
+                  description: 'Cloudflare API URL'
                 - name: cloudflare_api_key
-                  env: "CLOUDFLARE_API_KEY"
+                  env: 'CLOUDFLARE_API_KEY'
                   type: string
-                  description: "Cloudflare API Key"
+                  description: 'Cloudflare API Key'
                   secret: true
                 - name: cohere_api_url
-                  env: "COHERE_API_URL"
+                  env: 'COHERE_API_URL'
                   type: string
-                  default: "https://api.cohere.ai"
-                  description: "Cohere API URL"
+                  default: 'https://api.cohere.ai'
+                  description: 'Cohere API URL'
                 - name: cohere_api_key
-                  env: "COHERE_API_KEY"
+                  env: 'COHERE_API_KEY'
                   type: string
-                  description: "Cohere API Key"
+                  description: 'Cohere API Key'
                   secret: true
                 - name: groq_api_url
-                  env: "GROQ_API_URL"
+                  env: 'GROQ_API_URL'
                   type: string
-                  default: "https://api.groq.com/openai/v1"
-                  description: "Groq API URL"
+                  default: 'https://api.groq.com/openai/v1'
+                  description: 'Groq API URL'
                 - name: groq_api_key
-                  env: "GROQ_API_KEY"
+                  env: 'GROQ_API_KEY'
                   type: string
-                  description: "Groq API Key"
+                  description: 'Groq API Key'
                   secret: true
                 - name: ollama_api_url
-                  env: "OLLAMA_API_URL"
+                  env: 'OLLAMA_API_URL'
                   type: string
-                  default: "http://ollama:8080/v1"
-                  description: "Ollama API URL"
+                  default: 'http://ollama:8080/v1'
+                  description: 'Ollama API URL'
                 - name: ollama_api_key
-                  env: "OLLAMA_API_KEY"
+                  env: 'OLLAMA_API_KEY'
                   type: string
-                  description: "Ollama API Key"
+                  description: 'Ollama API Key'
                   secret: true
                 - name: openai_api_url
-                  env: "OPENAI_API_URL"
+                  env: 'OPENAI_API_URL'
                   type: string
-                  default: "https://api.openai.com/v1"
-                  description: "OpenAI API URL"
+                  default: 'https://api.openai.com/v1'
+                  description: 'OpenAI API URL'
                 - name: openai_api_key
-                  env: "OPENAI_API_KEY"
+                  env: 'OPENAI_API_KEY'
                   type: string
-                  description: "OpenAI API Key"
+                  description: 'OpenAI API Key'
                   secret: true
                 - name: deepseek_api_url
-                  env: "DEEPSEEK_API_URL"
+                  env: 'DEEPSEEK_API_URL'
                   type: string
-                  default: "https://api.deepseek.com"
-                  description: "DeepSeek API URL"
+                  default: 'https://api.deepseek.com'
+                  description: 'DeepSeek API URL'
                 - name: deepseek_api_key
-                  env: "DEEPSEEK_API_KEY"
+                  env: 'DEEPSEEK_API_KEY'
                   type: string
-                  description: "DeepSeek API Key"
+                  description: 'DeepSeek API Key'
                   secret: true

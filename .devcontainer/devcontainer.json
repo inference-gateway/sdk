@@ -32,20 +32,24 @@
         "githubPullRequests.experimental.chat": true,
         "githubPullRequests.experimental.notificationsView": true,
         "files.insertFinalNewline": true,
+        "github.copilot.enable": {
+          "*": true
+        },
+        "github.copilot.advanced": {
+          "authProvider": "github"
+        },
         "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+        "github.copilot.chat.codeGeneration.instructions": [
+          {
+            "file": ".github/copilot-instructions.md"
+          },
+          {
+            "file": "../README.md"
+          }
+        ],
         "github.copilot.chat.commitMessageGeneration.instructions": [
           {
             "text": "Always use conventional commit message format."
-          }
-        ],
-        "github.copilot.chat.pullRequestDescriptionGeneration.instructions": [
-          {
-            "text": "Always fill the pull request with the following information: \n ## Summary\n <summary of the pull request>\n"
-          }
-        ],
-        "github.copilot.chat.testGeneration.instructions": [
-          {
-            "text": "Always use table-driven tests."
           }
         ],
         "mcp": {
