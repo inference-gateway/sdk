@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.1](https://github.com/inference-gateway/sdk/compare/v1.8.0...v1.8.1) (2025-06-10)
+
+### ♻️ Improvements
+
+* Improve SDK - allow to pass http custom headers ([#10](https://github.com/inference-gateway/sdk/issues/10)) ([654cabc](https://github.com/inference-gateway/sdk/commit/654cabc4ed137b5cfca2dcc3a1d008e8e1be0042))
+
 ## [1.8.0](https://github.com/inference-gateway/sdk/compare/v1.7.1...v1.8.0) (2025-05-26)
 
 ### ✨ Features
