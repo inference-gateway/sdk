@@ -16,7 +16,7 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
@@ -38,7 +38,7 @@ jobs:
 
       - name: Install semantic release and plugins
         run: |
-          npm install -g semantic-release@v24.2.1 \
+          npm install -g semantic-release@v24.2.5 \
             conventional-changelog-cli \
             conventional-changelog-conventionalcommits \
             @semantic-release/changelog \
