@@ -1,8 +1,8 @@
-FROM mcr.microsoft.com/devcontainers/go:1-1.23-bookworm
+FROM mcr.microsoft.com/devcontainers/go:1-1.24-bookworm
 
 ENV ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom \
-    GOLANG_CI_LINT_VERSION=v1.63.4 \
-    TASK_VERSION=v3.41.0
+    GOLANG_CI_LINT_VERSION=v2.1.6 \
+    TASK_VERSION=v3.44.0
 
 # Install common tools
 RUN apt-get update && \
