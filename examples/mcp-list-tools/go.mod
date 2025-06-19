@@ -1,4 +1,4 @@
-module github.com/inference-gateway/examples/tools
+module github.com/inference-gateway/sdk/examples/mcp-list-tools
 
 go 1.24
 
