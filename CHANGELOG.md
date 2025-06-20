@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.3](https://github.com/inference-gateway/sdk/compare/v1.8.2...v1.8.3) (2025-06-20)
+
+### 📚 Documentation
+
+* Improve README ([ece2d30](https://github.com/inference-gateway/sdk/commit/ece2d304cc6c899a1e02a99c96371c6dd54b7f87))
+
 ## [1.8.2](https://github.com/inference-gateway/sdk/compare/v1.8.1...v1.8.2) (2025-06-20)
 
 ### 👷 CI
