@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.2](https://github.com/inference-gateway/sdk/compare/v1.8.1...v1.8.2) (2025-06-20)
+
+### 👷 CI
+
+* Update Go version to 1.24 and add GolangCI Lint step in CI workflow ([4e89580](https://github.com/inference-gateway/sdk/commit/4e8958001d2d639167d82e9cb0333d6f5c634933))
+
+### 📚 Documentation
+
+* Add examples section to README and update MCP Tools link ([2260a2b](https://github.com/inference-gateway/sdk/commit/2260a2be8f60f0f082c9e6eea7b42ae01b72d7b7))
+* Add real time streaming Tools Agent with weather and calculator functionalities ([4cd2ca4](https://github.com/inference-gateway/sdk/commit/4cd2ca445b5564b43e83d65911fd9305ac5fccf9))
+
+### 🔧 Miscellaneous
+
+* Update date in Copilot instructions to reflect current date for up to date research ([0260471](https://github.com/inference-gateway/sdk/commit/0260471eb7793224ce72ce45198f7864c769b71c))
+* Upgrade Go version to 1.24 and update dependencies to v1.8.1 ([78b263b](https://github.com/inference-gateway/sdk/commit/78b263b1d887750efee58065e89190feb2714e55))
+
 ## [1.8.1](https://github.com/inference-gateway/sdk/compare/v1.8.0...v1.8.1) (2025-06-10)
 
 ### ♻️ Improvements
