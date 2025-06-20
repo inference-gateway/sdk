@@ -14,6 +14,7 @@ An SDK written in Go for the [Inference Gateway](https://github.com/inference-ga
     - [Streaming Content](#streaming-content)
     - [Tool-Use](#tool-use)
     - [Health Check](#health-check)
+  - [Examples](#examples)
   - [Supported Providers](#supported-providers)
   - [Documentation](#documentation)
   - [Contributing](#contributing)
@@ -394,6 +395,19 @@ if err != nil {
     log.Fatalf("Health check failed: %v", err)
 }
 ```
+
+## Examples
+
+For more detailed examples and use cases, check out the [examples directory](./examples/). The examples include:
+
+-   **[Generation Example](./examples/generation/)** - Basic content generation examples
+-   **[MCP List Tools Example](./examples/mcp-list-tools/)** - How to list available MCP tools
+-   **[Models Example](./examples/models/)** - How to list and work with different models
+-   **[Stream Example](./examples/stream/)** - Streaming content generation
+-   **[Stream Tools Example](./examples/stream-tools/)** - Advanced streaming with tool usage
+-   **[Tools Example](./examples/tools/)** - Function calling and tool usage
+
+Each example includes its own README with specific instructions and explanations.
 
 ## Supported Providers
 
