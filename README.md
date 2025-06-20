@@ -1,24 +1,41 @@
-# Inference Gateway Go SDK
+<div align="center">
 
-An SDK written in Go for the [Inference Gateway](https://github.com/inference-gateway/inference-gateway).
+# 🚀 Inference Gateway Go SDK
 
-- [Inference Gateway Go SDK](#inference-gateway-go-sdk)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Creating a Client](#creating-a-client)
-    - [Using Custom Headers](#using-custom-headers)
-    - [Listing Models](#listing-models)
-    - [Listing MCP Tools](#listing-mcp-tools)
-    - [Generating Content](#generating-content)
-    - [Using ReasoningFormat](#using-reasoningformat)
-    - [Streaming Content](#streaming-content)
-    - [Tool-Use](#tool-use)
-    - [Health Check](#health-check)
-  - [Examples](#examples)
-  - [Supported Providers](#supported-providers)
-  - [Documentation](#documentation)
-  - [Contributing](#contributing)
-  - [License](#license)
+### A powerful and easy-to-use Go SDK for the Inference Gateway
+
+[![Go Reference](https://pkg.go.dev/badge/github.com/inference-gateway/sdk.svg)](https://pkg.go.dev/github.com/inference-gateway/sdk)
+[![Go Report Card](https://goreportcard.com/badge/github.com/inference-gateway/sdk)](https://goreportcard.com/report/github.com/inference-gateway/sdk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/github/release/inference-gateway/sdk.svg)](https://github.com/inference-gateway/sdk/releases)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/inference-gateway/sdk)](https://golang.org/)
+
+Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • MCP tools support
+
+[Installation](#installation) • [Quick Start](#usage) • [Examples](#examples) • [Documentation](#documentation)
+
+</div>
+
+---
+
+-   [🚀 Inference Gateway Go SDK](#-inference-gateway-go-sdk)
+    -   [A powerful and easy-to-use Go SDK for the Inference Gateway](#a-powerful-and-easy-to-use-go-sdk-for-the-inference-gateway)
+    -   [Installation](#installation)
+    -   [Usage](#usage)
+        -   [Creating a Client](#creating-a-client)
+        -   [Using Custom Headers](#using-custom-headers)
+        -   [Listing Models](#listing-models)
+        -   [Listing MCP Tools](#listing-mcp-tools)
+        -   [Generating Content](#generating-content)
+        -   [Using ReasoningFormat](#using-reasoningformat)
+        -   [Streaming Content](#streaming-content)
+        -   [Tool-Use](#tool-use)
+        -   [Health Check](#health-check)
+    -   [Examples](#examples)
+    -   [Supported Providers](#supported-providers)
+    -   [Documentation](#documentation)
+    -   [Contributing](#contributing)
+    -   [License](#license)
 
 ## Installation
 
