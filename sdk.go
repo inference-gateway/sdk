@@ -219,15 +219,22 @@ func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) *clientIm
 		return c
 	}
 
-	// These headers would need to be supported by the gateway
 	if options.SkipMCP {
 		c.http.Header.Set("X-MCP-Bypass", "true")
+	} else {
+		c.http.Header.Del("X-MCP-Bypass")
 	}
+
 	if options.SkipA2A {
 		c.http.Header.Set("X-A2A-Bypass", "true")
+	} else {
+		c.http.Header.Del("X-A2A-Bypass")
 	}
+
 	if options.DirectProvider {
 		c.http.Header.Set("X-Direct-Provider", "true")
+	} else {
+		c.http.Header.Del("X-Direct-Provider")
 	}
 
 	return c

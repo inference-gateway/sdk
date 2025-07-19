@@ -365,7 +365,6 @@ func TestGenerateContentStream(t *testing.T) {
 			t.Fatalf("Streaming not supported")
 		}
 
-		// Send stream responses as single lines
 		chunk1 := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "llama2","choices": [{"delta": {"content": "Go"},"index": 0,"finish_reason": null}]}`
 		chunk2 := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "llama2","choices": [{"delta": {"content": " is"},"index": 0,"finish_reason": null}]}`
 		chunk3 := `{"id": "chatcmpl-123","object": "chat.completion.chunk","created": 1698819810,"model": "llama2","choices": [{"delta": {"content": " amazing"},"index": 0,"finish_reason": "stop"}]}`
@@ -440,7 +439,7 @@ func TestGenerateContentStream(t *testing.T) {
 	}
 
 	assert.Equal(t, "Go is amazing", content)
-	assert.Equal(t, 4, eventCount) // 3 content chunks + DONE event
+	assert.Equal(t, 4, eventCount)
 	assert.True(t, streamEndReceived)
 }
 
@@ -964,6 +963,270 @@ func TestHeadersInAllRequests(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func TestWithMiddlewareOptions(t *testing.T) {
+	tests := []struct {
+		name            string
+		middlewareOpts  *MiddlewareOptions
+		expectedHeaders map[string]string
+	}{
+		{
+			name:           "nil middleware options",
+			middlewareOpts: nil,
+			expectedHeaders: map[string]string{
+				"X-MCP-Bypass":      "",
+				"X-A2A-Bypass":      "",
+				"X-Direct-Provider": "",
+			},
+		},
+		{
+			name: "skip MCP only",
+			middlewareOpts: &MiddlewareOptions{
+				SkipMCP: true,
+			},
+			expectedHeaders: map[string]string{
+				"X-MCP-Bypass":      "true",
+				"X-A2A-Bypass":      "",
+				"X-Direct-Provider": "",
+			},
+		},
+		{
+			name: "skip A2A only",
+			middlewareOpts: &MiddlewareOptions{
+				SkipA2A: true,
+			},
+			expectedHeaders: map[string]string{
+				"X-MCP-Bypass":      "",
+				"X-A2A-Bypass":      "true",
+				"X-Direct-Provider": "",
+			},
+		},
+		{
+			name: "direct provider only",
+			middlewareOpts: &MiddlewareOptions{
+				DirectProvider: true,
+			},
+			expectedHeaders: map[string]string{
+				"X-MCP-Bypass":      "",
+				"X-A2A-Bypass":      "",
+				"X-Direct-Provider": "true",
+			},
+		},
+		{
+			name: "all middleware options enabled",
+			middlewareOpts: &MiddlewareOptions{
+				SkipMCP:        true,
+				SkipA2A:        true,
+				DirectProvider: true,
+			},
+			expectedHeaders: map[string]string{
+				"X-MCP-Bypass":      "true",
+				"X-A2A-Bypass":      "true",
+				"X-Direct-Provider": "true",
+			},
+		},
+		{
+			name: "mixed middleware options",
+			middlewareOpts: &MiddlewareOptions{
+				SkipMCP:        true,
+				SkipA2A:        false,
+				DirectProvider: true,
+			},
+			expectedHeaders: map[string]string{
+				"X-MCP-Bypass":      "true",
+				"X-A2A-Bypass":      "",
+				"X-Direct-Provider": "true",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				for header, expectedValue := range tt.expectedHeaders {
+					actualValue := r.Header.Get(header)
+					if expectedValue == "" {
+						assert.Empty(t, actualValue, "Header %s should be empty or not present", header)
+					} else {
+						assert.Equal(t, expectedValue, actualValue, "Header %s should have value %s", header, expectedValue)
+					}
+				}
+
+				response := ListModelsResponse{Object: "list", Data: []Model{}}
+				w.Header().Set("Content-Type", "application/json")
+				err := json.NewEncoder(w).Encode(response)
+				assert.NoError(t, err)
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL: baseURL,
+			})
+
+			client = client.WithMiddlewareOptions(tt.middlewareOpts)
+
+			ctx := context.Background()
+			_, err := client.ListModels(ctx)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestMiddlewareOptionsInAllRequests(t *testing.T) {
+	middlewareOpts := &MiddlewareOptions{
+		SkipMCP:        true,
+		SkipA2A:        true,
+		DirectProvider: true,
+	}
+
+	expectedHeaders := map[string]string{
+		"X-MCP-Bypass":      "true",
+		"X-A2A-Bypass":      "true",
+		"X-Direct-Provider": "true",
+	}
+
+	testCases := []struct {
+		name     string
+		endpoint string
+		makeCall func(client Client) error
+	}{
+		{
+			name:     "ListModels",
+			endpoint: "/v1/models",
+			makeCall: func(client Client) error {
+				_, err := client.ListModels(context.Background())
+				return err
+			},
+		},
+		{
+			name:     "ListProviderModels",
+			endpoint: "/v1/models",
+			makeCall: func(client Client) error {
+				_, err := client.ListProviderModels(context.Background(), Openai)
+				return err
+			},
+		},
+		{
+			name:     "ListTools",
+			endpoint: "/v1/mcp/tools",
+			makeCall: func(client Client) error {
+				_, err := client.ListTools(context.Background())
+				return err
+			},
+		},
+		{
+			name:     "GenerateContent",
+			endpoint: "/v1/chat/completions",
+			makeCall: func(client Client) error {
+				_, err := client.GenerateContent(context.Background(), Openai, "gpt-4o", []Message{
+					{Role: User, Content: "test"},
+				})
+				return err
+			},
+		},
+		{
+			name:     "HealthCheck",
+			endpoint: "/v1/health",
+			makeCall: func(client Client) error {
+				return client.HealthCheck(context.Background())
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				for header, expectedValue := range expectedHeaders {
+					actualValue := r.Header.Get(header)
+					assert.Equal(t, expectedValue, actualValue, "Header %s should have value %s", header, expectedValue)
+				}
+
+				switch r.URL.Path {
+				case "/v1/models":
+					response := ListModelsResponse{Object: "list", Data: []Model{}}
+					w.Header().Set("Content-Type", "application/json")
+					err := json.NewEncoder(w).Encode(response)
+					assert.NoError(t, err)
+				case "/v1/mcp/tools":
+					response := ListToolsResponse{Data: []MCPTool{}}
+					w.Header().Set("Content-Type", "application/json")
+					err := json.NewEncoder(w).Encode(response)
+					assert.NoError(t, err)
+				case "/v1/chat/completions":
+					response := CreateChatCompletionResponse{
+						Id:      "test-id",
+						Object:  "chat.completion",
+						Created: 1234567890,
+						Model:   "gpt-4o",
+						Choices: []ChatCompletionChoice{
+							{
+								Index: 0,
+								Message: Message{
+									Role:    Assistant,
+									Content: "Test response",
+								},
+								FinishReason: "stop",
+							},
+						},
+					}
+					w.Header().Set("Content-Type", "application/json")
+					err := json.NewEncoder(w).Encode(response)
+					assert.NoError(t, err)
+				case "/v1/health":
+					w.WriteHeader(http.StatusOK)
+				}
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL: baseURL,
+			})
+
+			client = client.WithMiddlewareOptions(middlewareOpts)
+
+			err := tc.makeCall(client)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestMiddlewareOptionsChaining(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "true", r.Header.Get("X-MCP-Bypass"))
+		assert.Equal(t, "true", r.Header.Get("X-A2A-Bypass"))
+		assert.Equal(t, "", r.Header.Get("X-Direct-Provider"))
+
+		assert.Equal(t, "custom-value", r.Header.Get("X-Custom-Header"))
+
+		response := ListModelsResponse{Object: "list", Data: []Model{}}
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+	})
+
+	client = client.
+		WithHeader("X-Custom-Header", "custom-value").
+		WithMiddlewareOptions(&MiddlewareOptions{
+			SkipMCP:        true,
+			DirectProvider: true,
+		}).
+		WithMiddlewareOptions(&MiddlewareOptions{
+			SkipMCP: true,
+			SkipA2A: true,
+		})
+
+	ctx := context.Background()
+	_, err := client.ListModels(ctx)
+	assert.NoError(t, err)
 }
 
 func stringPtr(s string) *string {
