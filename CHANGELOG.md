@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0](https://github.com/inference-gateway/sdk/compare/v1.8.3...v1.9.0) (2025-07-19)
+
+### ✨ Features
+
+* Add middleware bypass example and support for middleware options ([4d78ae9](https://github.com/inference-gateway/sdk/commit/4d78ae9ce4eda57aafa6a1517fa9226e82a3db03))
+
 ## [1.8.3](https://github.com/inference-gateway/sdk/compare/v1.8.2...v1.8.3) (2025-06-20)
 
 ### 📚 Documentation
