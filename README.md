@@ -10,7 +10,7 @@
 [![Release](https://img.shields.io/github/release/inference-gateway/sdk.svg)](https://github.com/inference-gateway/sdk/releases)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/inference-gateway/sdk)](https://golang.org/)
 
-Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • MCP tools support
+Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • MCP tools support • Middleware control
 
 [Installation](#installation) • [Quick Start](#usage) • [Examples](#examples) • [Documentation](#documentation)
 
@@ -18,24 +18,25 @@ Connect to multiple LLM providers through a unified interface • Stream respons
 
 ---
 
--   [🚀 Inference Gateway Go SDK](#-inference-gateway-go-sdk)
-    -   [A powerful and easy-to-use Go SDK for the Inference Gateway](#a-powerful-and-easy-to-use-go-sdk-for-the-inference-gateway)
-    -   [Installation](#installation)
-    -   [Usage](#usage)
-        -   [Creating a Client](#creating-a-client)
-        -   [Using Custom Headers](#using-custom-headers)
-        -   [Listing Models](#listing-models)
-        -   [Listing MCP Tools](#listing-mcp-tools)
-        -   [Generating Content](#generating-content)
-        -   [Using ReasoningFormat](#using-reasoningformat)
-        -   [Streaming Content](#streaming-content)
-        -   [Tool-Use](#tool-use)
-        -   [Health Check](#health-check)
-    -   [Examples](#examples)
-    -   [Supported Providers](#supported-providers)
-    -   [Documentation](#documentation)
-    -   [Contributing](#contributing)
-    -   [License](#license)
+- [🚀 Inference Gateway Go SDK](#-inference-gateway-go-sdk)
+    - [A powerful and easy-to-use Go SDK for the Inference Gateway](#a-powerful-and-easy-to-use-go-sdk-for-the-inference-gateway)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Creating a Client](#creating-a-client)
+    - [Using Custom Headers](#using-custom-headers)
+    - [Middleware Options](#middleware-options)
+    - [Listing Models](#listing-models)
+    - [Listing MCP Tools](#listing-mcp-tools)
+    - [Generating Content](#generating-content)
+    - [Using ReasoningFormat](#using-reasoningformat)
+    - [Streaming Content](#streaming-content)
+    - [Tool-Use](#tool-use)
+    - [Health Check](#health-check)
+  - [Examples](#examples)
+  - [Supported Providers](#supported-providers)
+  - [Documentation](#documentation)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Installation
 
@@ -118,6 +119,89 @@ client = client.WithHeaders(map[string]string{
 // All subsequent requests will include all these headers
 response, err := client.GenerateContent(ctx, provider, model, messages)
 ```
+
+### Middleware Options
+
+The Inference Gateway supports various middleware layers (MCP tools, A2A agents) that can be bypassed for direct provider access. The SDK provides `WithMiddlewareOptions` to control middleware behavior:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    sdk "github.com/inference-gateway/sdk"
+)
+
+func main() {
+    client := sdk.NewClient(&sdk.ClientOptions{
+        BaseURL: "http://localhost:8080/v1",
+        APIKey:  "your-api-key",
+    })
+
+    ctx := context.Background()
+    messages := []sdk.Message{
+        {Role: sdk.User, Content: "Hello, world!"},
+    }
+
+    // 1. Skip MCP middleware only
+    response1, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
+        SkipMCP: true,
+    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+
+    // 2. Skip A2A (Agent-to-Agent) middleware only
+    response2, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
+        SkipA2A: true,
+    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+
+    // 3. Direct provider access (bypasses all middleware)
+    response3, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
+        DirectProvider: true,
+    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+
+    // 4. Skip both MCP and A2A middleware
+    response4, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
+        SkipMCP: true,
+        SkipA2A: true,
+    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+}
+```
+
+**Middleware Options:**
+
+-   **`SkipMCP`** - Bypasses MCP (Model Context Protocol) middleware processing
+-   **`SkipA2A`** - Bypasses A2A (Agent-to-Agent) middleware processing
+-   **`DirectProvider`** - Routes directly to the provider without any middleware
+
+**Method Chaining:**
+
+Middleware options can be chained with other configuration methods:
+
+```go
+response, err := client.
+    WithHeader("X-Custom-Header", "value").
+    WithMiddlewareOptions(&sdk.MiddlewareOptions{
+        SkipMCP: true,
+        SkipA2A: true,
+    }).
+    GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+```
+
+**Alternative Header Approach:**
+
+You can also control middleware using custom headers directly:
+
+```go
+response, err := client.
+    WithHeader("X-MCP-Bypass", "true").
+    WithHeader("X-A2A-Bypass", "true").
+    WithHeader("X-Direct-Provider", "true").
+    GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+```
+
+> **Note:** Middleware options apply to all subsequent API calls until overridden with a new `WithMiddlewareOptions` call. The gateway must support the corresponding headers for this functionality to work properly.
 
 ### Listing Models
 
@@ -419,6 +503,7 @@ For more detailed examples and use cases, check out the [examples directory](./e
 
 -   **[Generation Example](./examples/generation/)** - Basic content generation examples
 -   **[MCP List Tools Example](./examples/mcp-list-tools/)** - How to list available MCP tools
+-   **[Middleware Bypass Example](./examples/middleware-bypass/)** - How to bypass middleware layers for direct provider access
 -   **[Models Example](./examples/models/)** - How to list and work with different models
 -   **[Stream Example](./examples/stream/)** - Streaming content generation
 -   **[Stream Tools Example](./examples/stream-tools/)** - Advanced streaming with tool usage
