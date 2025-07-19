@@ -61,3 +61,13 @@ type ClientOptions struct {
 	// Headers is a map of custom headers to include with all requests.
 	Headers map[string]string
 }
+
+// MiddlewareOptions represents options for controlling middleware behavior
+type MiddlewareOptions struct {
+	// SkipMCP bypasses MCP middleware processing
+	SkipMCP bool
+	// SkipA2A bypasses A2A middleware processing
+	SkipA2A bool
+	// DirectProvider routes directly to provider without middleware
+	DirectProvider bool
+}

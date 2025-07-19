@@ -19,6 +19,7 @@ type Client interface {
 	WithOptions(options *CreateChatCompletionRequest) *clientImpl
 	WithHeaders(headers map[string]string) *clientImpl
 	WithHeader(name, value string) *clientImpl
+	WithMiddlewareOptions(options *MiddlewareOptions) *clientImpl
 	ListModels(ctx context.Context) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	ListTools(ctx context.Context) (*ListToolsResponse, error)
@@ -193,6 +194,42 @@ func (c *clientImpl) WithHeaders(headers map[string]string) *clientImpl {
 //	resp, err := client.ListModels(ctx)
 func (c *clientImpl) WithHeader(name, value string) *clientImpl {
 	c.http.Header.Set(name, value)
+	return c
+}
+
+// WithMiddlewareOptions sets middleware control options for subsequent API calls.
+//
+// Example:
+//
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
+//	middlewareOpts := &sdk.MiddlewareOptions{
+//		SkipMCP: true,
+//		SkipA2A: true,
+//	}
+//	resp, err := client.WithMiddlewareOptions(middlewareOpts).GenerateContent(ctx, provider, model, messages)
+//
+// Note: This functionality requires the Inference Gateway to support the corresponding headers:
+//   - X-MCP-Bypass: Skip MCP middleware processing
+//   - X-A2A-Bypass: Skip A2A middleware processing
+//   - X-Direct-Provider: Route directly to provider
+func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) *clientImpl {
+	if options == nil {
+		return c
+	}
+
+	// These headers would need to be supported by the gateway
+	if options.SkipMCP {
+		c.http.Header.Set("X-MCP-Bypass", "true")
+	}
+	if options.SkipA2A {
+		c.http.Header.Set("X-A2A-Bypass", "true")
+	}
+	if options.DirectProvider {
+		c.http.Header.Set("X-Direct-Provider", "true")
+	}
+
 	return c
 }
 
