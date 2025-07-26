@@ -2,7 +2,7 @@ module stream-tools-example
 
 go 1.24
 
-require github.com/inference-gateway/sdk v1.8.1
+require github.com/inference-gateway/sdk v0.1.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -12,3 +12,5 @@ require (
 	golang.org/x/net v0.41.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/inference-gateway/sdk => ../..

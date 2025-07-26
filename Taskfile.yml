@@ -20,7 +20,7 @@ tasks:
   tidy:
     desc: Runs go mod tidy
     cmds:
-      - go mod tidy
+      - find . -name go.mod -execdir go mod tidy \;
 
   test:
     desc: Runs go test

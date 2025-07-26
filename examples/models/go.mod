@@ -2,7 +2,7 @@ module github.com/inference-gateway/examples/models
 
 go 1.24
 
-require github.com/inference-gateway/sdk v1.8.1
+require github.com/inference-gateway/sdk v0.1.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
