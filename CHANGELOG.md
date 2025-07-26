@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0](https://github.com/inference-gateway/sdk/compare/v1.9.1...v1.10.0) (2025-07-26)
+
+### ✨ Features
+
+* Add Google Provider ([#12](https://github.com/inference-gateway/sdk/issues/12)) ([f963677](https://github.com/inference-gateway/sdk/commit/f9636774d2e535ac0ebf22ffca1ea1c830b5f009))
+
+### 📚 Documentation
+
+* Add Google provider to supported LLM providers list in README ([b4f6adf](https://github.com/inference-gateway/sdk/commit/b4f6adf7d642d18b5553c1fa4c889f71075a59d1))
+
 ## [1.9.1](https://github.com/inference-gateway/sdk/compare/v1.9.0...v1.9.1) (2025-07-19)
 
 ### 📚 Documentation
