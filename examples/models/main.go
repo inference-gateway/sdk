@@ -63,6 +63,18 @@ func main() {
 	}
 
 	// List models for another provider
+	fmt.Println("\nListing models from Google...")
+	googleModels, err := client.ListProviderModels(ctx, sdk.Google)
+	if err != nil {
+		log.Printf("Error listing Google models: %v", err)
+	} else {
+		fmt.Printf("Provider: %s\n", *googleModels.Provider)
+		for i, model := range googleModels.Data {
+			fmt.Printf("%d. %s\n", i+1, model.Id)
+		}
+	}
+
+	// List models for another provider
 	fmt.Println("\nListing models from Ollama...")
 	ollamaModels, err := client.ListProviderModels(ctx, sdk.Ollama)
 	if err != nil {

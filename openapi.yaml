@@ -202,6 +202,42 @@ paths:
           $ref: '#/components/responses/A2ANotExposed'
         '500':
           $ref: '#/components/responses/InternalError'
+  /a2a/agents/{id}:
+    get:
+      operationId: getAgent
+      tags:
+        - A2A
+      description: |
+        Gets a specific A2A agent by its unique identifier. Only accessible when EXPOSE_A2A is enabled.
+      summary: Gets a specific A2A agent by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the agent
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/A2AAgentCard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/A2ANotExposed'
+        '404':
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /proxy/{provider}/{path}:
     parameters:
       - name: provider
@@ -460,7 +496,7 @@ components:
       bearerFormat: JWT
       description: |
         Authentication is optional by default.
-        To enable authentication, set ENABLE_AUTH to true.
+        To enable authentication, set AUTH_ENABLE to true.
         When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
     Provider:
@@ -473,6 +509,7 @@ components:
         - cohere
         - anthropic
         - deepseek
+        - google
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -490,7 +527,7 @@ components:
         anthropic:
           id: 'anthropic'
           url: 'https://api.anthropic.com/v1'
-          auth_type: 'bearer'
+          auth_type: 'xheader'
           endpoints:
             models:
               name: 'list_models'
@@ -555,6 +592,19 @@ components:
         deepseek:
           id: 'deepseek'
           url: 'https://api.deepseek.com'
+          auth_type: 'bearer'
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        google:
+          id: 'google'
+          url: 'https://generativelanguage.googleapis.com/v1beta/openai'
           auth_type: 'bearer'
           endpoints:
             models:
@@ -740,12 +790,92 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/A2AItem'
+            $ref: '#/components/schemas/A2AAgentCard'
           default: []
           description: Array of available A2A agents
       required:
         - object
         - data
+    A2AAgentCard:
+      description: |-
+        An AgentCard conveys key information:
+        - Overall details (version, name, description, uses)
+        - Skills: A set of capabilities the agent can perform
+        - Default modalities/content types supported by the agent.
+        - Authentication requirements
+      properties:
+        capabilities:
+          additionalProperties: true
+          description: Optional capabilities supported by the agent.
+        defaultInputModes:
+          description: |-
+            The set of interaction modes that the agent supports across all skills. This can be overridden per-skill.
+            Supported media types for input.
+          items:
+            type: string
+          type: array
+        defaultOutputModes:
+          description: Supported media types for output.
+          items:
+            type: string
+          type: array
+        description:
+          description: |-
+            A human-readable description of the agent. Used to assist users and
+            other agents in understanding what the agent can do.
+          type: string
+        documentationUrl:
+          description: A URL to documentation for the agent.
+          type: string
+        iconUrl:
+          description: A URL to an icon for the agent.
+          type: string
+        id:
+          description: Unique identifier for the agent (base64-encoded SHA256 hash of the agent URL).
+          type: string
+        name:
+          description: Human readable name of the agent.
+          type: string
+        provider:
+          additionalProperties: true
+          description: The service provider of the agent
+        security:
+          description: Security requirements for contacting the agent.
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+        securitySchemes:
+          additionalProperties: true
+          description: Security scheme details used for authenticating with this agent.
+          type: object
+        skills:
+          description: Skills are a unit of capability that an agent can perform.
+          items:
+            additionalProperties: true
+          type: array
+        supportsAuthenticatedExtendedCard:
+          description: |-
+            true if the agent supports providing an extended agent card when the user is authenticated.
+            Defaults to false if not specified.
+          type: boolean
+        url:
+          description: A URL to the address the agent is hosted at.
+          type: string
+        version:
+          description: The version of the agent - format is up to the provider.
+          type: string
+      required:
+        - capabilities
+        - defaultInputModes
+        - defaultOutputModes
+        - description
+        - id
+        - name
+        - skills
+        - url
+        - version
+      type: object
     MCPTool:
       type: object
       description: An MCP tool definition
@@ -777,26 +907,6 @@ components:
         - name
         - description
         - server
-    A2AItem:
-      type: object
-      description: An item in the A2A list
-      properties:
-        id:
-          type: string
-          description: The ID of the item
-        name:
-          type: string
-          description: The name of the item
-        description:
-          type: string
-          description: A description of the item
-        url:
-          type: string
-          format: uri
-          description: The URL of the item
-      required:
-        - id
-        - name
     FunctionObject:
       type: object
       properties:
@@ -1237,21 +1347,24 @@ components:
                   type: string
                   default: 'production'
                   description: 'The environment'
-                - name: enable_telemetry
-                  env: 'ENABLE_TELEMETRY'
-                  type: bool
-                  default: 'false'
-                  description: 'Enable telemetry'
-                - name: enable_auth
-                  env: 'ENABLE_AUTH'
-                  type: bool
-                  default: 'false'
-                  description: 'Enable authentication'
                 - name: allowed_models
                   env: 'ALLOWED_MODELS'
                   type: string
                   default: ''
                   description: 'Comma-separated list of models to allow. If empty, all models will be available'
+          - telemetry:
+              title: 'Telemetry'
+              settings:
+                - name: telemetry_enable
+                  env: 'TELEMETRY_ENABLE'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable telemetry'
+                - name: telemetry_metrics_port
+                  env: 'TELEMETRY_METRICS_PORT'
+                  type: string
+                  default: '9464'
+                  description: 'Port for telemetry metrics server'
           - mcp:
               title: 'Model Context Protocol (MCP)'
               settings:
@@ -1299,6 +1412,51 @@ components:
                   type: time.Duration
                   default: '5s'
                   description: 'MCP client request timeout for initialize and tool calls'
+                - name: mcp_max_retries
+                  env: 'MCP_MAX_RETRIES'
+                  type: int
+                  default: '3'
+                  description: 'Maximum number of connection retry attempts'
+                - name: mcp_retry_interval
+                  env: 'MCP_RETRY_INTERVAL'
+                  type: time.Duration
+                  default: '5s'
+                  description: 'Interval between connection retry attempts'
+                - name: mcp_initial_backoff
+                  env: 'MCP_INITIAL_BACKOFF'
+                  type: time.Duration
+                  default: '1s'
+                  description: 'Initial backoff duration for exponential backoff retry'
+                - name: mcp_enable_reconnect
+                  env: 'MCP_ENABLE_RECONNECT'
+                  type: bool
+                  default: 'true'
+                  description: 'Enable automatic reconnection for failed servers'
+                - name: mcp_reconnect_interval
+                  env: 'MCP_RECONNECT_INTERVAL'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Interval between reconnection attempts'
+                - name: mcp_polling_enable
+                  env: 'MCP_POLLING_ENABLE'
+                  type: bool
+                  default: 'true'
+                  description: 'Enable health check polling'
+                - name: mcp_polling_interval
+                  env: 'MCP_POLLING_INTERVAL'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Interval between health check polling requests'
+                - name: mcp_polling_timeout
+                  env: 'MCP_POLLING_TIMEOUT'
+                  type: time.Duration
+                  default: '5s'
+                  description: 'Timeout for individual health check requests'
+                - name: mcp_disable_healthcheck_logs
+                  env: 'MCP_DISABLE_HEALTHCHECK_LOGS'
+                  type: bool
+                  default: 'true'
+                  description: 'Disable health check log messages to reduce noise'
           - a2a:
               title: 'Agent-to-Agent (A2A) Protocol'
               settings:
@@ -1321,22 +1479,77 @@ components:
                   type: time.Duration
                   default: '30s'
                   description: 'A2A client timeout'
-          - oidc:
-              title: 'OpenID Connect'
+                - name: a2a_polling_enable
+                  env: 'A2A_POLLING_ENABLE'
+                  type: bool
+                  default: 'true'
+                  description: 'Enable task status polling'
+                - name: a2a_polling_interval
+                  env: 'A2A_POLLING_INTERVAL'
+                  type: time.Duration
+                  default: '1s'
+                  description: 'Interval between polling requests'
+                - name: a2a_polling_timeout
+                  env: 'A2A_POLLING_TIMEOUT'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Maximum time to wait for task completion'
+                - name: a2a_max_poll_attempts
+                  env: 'A2A_MAX_POLL_ATTEMPTS'
+                  type: int
+                  default: '30'
+                  description: 'Maximum number of polling attempts'
+                - name: a2a_max_retries
+                  env: 'A2A_MAX_RETRIES'
+                  type: int
+                  default: '3'
+                  description: 'Maximum number of connection retry attempts'
+                - name: a2a_retry_interval
+                  env: 'A2A_RETRY_INTERVAL'
+                  type: time.Duration
+                  default: '5s'
+                  description: 'Interval between connection retry attempts'
+                - name: a2a_initial_backoff
+                  env: 'A2A_INITIAL_BACKOFF'
+                  type: time.Duration
+                  default: '1s'
+                  description: 'Initial backoff duration for exponential backoff retry'
+                - name: a2a_enable_reconnect
+                  env: 'A2A_ENABLE_RECONNECT'
+                  type: bool
+                  default: 'true'
+                  description: 'Enable automatic reconnection for failed agents'
+                - name: a2a_reconnect_interval
+                  env: 'A2A_RECONNECT_INTERVAL'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Interval between reconnection attempts'
+                - name: a2a_disable_healthcheck_logs
+                  env: 'A2A_DISABLE_HEALTHCHECK_LOGS'
+                  type: bool
+                  default: 'true'
+                  description: 'Disable health check log messages to reduce noise'
+          - auth:
+              title: 'Authentication'
               settings:
-                - name: issuer_url
-                  env: 'OIDC_ISSUER_URL'
+                - name: auth_enable
+                  env: 'AUTH_ENABLE'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable authentication'
+                - name: auth_oidc_issuer
+                  env: 'AUTH_OIDC_ISSUER'
                   type: string
                   default: 'http://keycloak:8080/realms/inference-gateway-realm'
                   description: 'OIDC issuer URL'
-                - name: client_id
-                  env: 'OIDC_CLIENT_ID'
+                - name: auth_oidc_client_id
+                  env: 'AUTH_OIDC_CLIENT_ID'
                   type: string
                   default: 'inference-gateway-client'
                   description: 'OIDC client ID'
                   secret: true
-                - name: client_secret
-                  env: 'OIDC_CLIENT_SECRET'
+                - name: auth_oidc_client_secret
+                  env: 'AUTH_OIDC_CLIENT_SECRET'
                   type: string
                   description: 'OIDC client secret'
                   secret: true
@@ -1491,4 +1704,14 @@ components:
                   env: 'DEEPSEEK_API_KEY'
                   type: string
                   description: 'DeepSeek API Key'
+                  secret: true
+                - name: google_api_url
+                  env: 'GOOGLE_API_URL'
+                  type: string
+                  default: 'https://generativelanguage.googleapis.com/v1beta/openai'
+                  description: 'Google API URL'
+                - name: google_api_key
+                  env: 'GOOGLE_API_KEY'
+                  type: string
+                  description: 'Google API Key'
                   secret: true
