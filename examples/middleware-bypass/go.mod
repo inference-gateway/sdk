@@ -1,4 +1,4 @@
-module github.com/inference-gateway/sdk/examples/mcp-list-tools
+module github.com/inference-gateway/examples/middleware-bypass
 
 go 1.24
 

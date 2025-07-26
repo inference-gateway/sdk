@@ -51,8 +51,4 @@ func main() {
 		}
 		fmt.Println()
 	}
-
-	if len(tools.Data) == 0 {
-		fmt.Println("No MCP tools available. Make sure EXPOSE_MCP=true is set on the server.")
-	}
 }

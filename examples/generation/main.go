@@ -47,19 +47,37 @@ func main() {
 		},
 		{
 			Role:    sdk.User,
-			Content: "What are the differences between goroutines and threads?",
+			Content: "What are the differences between goroutines and threads? Keep it short.",
 		},
 	}
 
 	fmt.Printf("Generating content using %s %s...\n\n", provider, modelName)
 
 	// Generate content
-	reasoningFormat := "parsed"
-	response, err := client.WithOptions(&sdk.CreateChatCompletionRequest{
-		ReasoningFormat: &reasoningFormat,
-	}).GenerateContent(ctx, provider, modelName, messages)
+	// Note: Reasoning format is only supported by certain models like:
+	// - DeepSeek R1 models (deepseek-r1, deepseek-r1-distill)
+	// - OpenAI o1 models (o1-preview, o1-mini)
+	// Uncomment the following lines if using a reasoning-capable model:
+	//
+	// reasoningFormat := "parsed"
+	// response, err := client.WithOptions(&sdk.CreateChatCompletionRequest{
+	//     ReasoningFormat: &reasoningFormat,
+	// }).GenerateContent(ctx, provider, modelName, messages)
+
+	response, err := client.GenerateContent(ctx, provider, modelName, messages)
 	if err != nil {
-		log.Fatalf("Error generating content: %v", err)
+		log.Printf("Error generating content with %s: %v", provider, err)
+
+		// Suggest alternative providers if Google fails
+		if provider == sdk.Google {
+			log.Printf("Tip: Google's Gemini API can be slow or have connectivity issues.")
+			log.Printf("Try alternative providers like:")
+			log.Printf("  export LLM_PROVIDER=openai")
+			log.Printf("  export LLM_PROVIDER=anthropic")
+			log.Printf("  export LLM_PROVIDER=groq")
+		}
+
+		log.Fatalf("Failed to generate content")
 	}
 
 	// Print the response
