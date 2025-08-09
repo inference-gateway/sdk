@@ -37,6 +37,7 @@ const (
 	Deepseek   Provider = "deepseek"
 	Google     Provider = "google"
 	Groq       Provider = "groq"
+	Mistral    Provider = "mistral"
 	Ollama     Provider = "ollama"
 	Openai     Provider = "openai"
 )

@@ -96,6 +96,11 @@ paths:
                         created: 1718441600
                         owned_by: 'ollama'
                         served_by: 'ollama'
+                      - id: 'mistral/mistral-large-latest'
+                        object: 'model'
+                        created: 1698019200
+                        owned_by: 'mistral'
+                        served_by: 'mistral'
                 singleProvider:
                   summary: Models from a specific provider
                   value:
@@ -415,6 +420,14 @@ components:
                   - role: 'user'
                     content: 'Explain quantum computing'
                 temperature: 0.5
+            mistral:
+              summary: Mistral AI request
+              value:
+                model: 'mistral-large-latest'
+                messages:
+                  - role: 'user'
+                    content: 'Write a Python function to calculate fibonacci numbers'
+                temperature: 0.3
     CreateChatCompletionRequest:
       required: true
       description: |
@@ -489,6 +502,27 @@ components:
                       },
                     ],
                 }
+            mistral:
+              summary: Mistral AI response
+              value:
+                {
+                  'id': 'cmpl-123',
+                  'object': 'chat.completion',
+                  'created': 1677652288,
+                  'model': 'mistral-large-latest',
+                  'choices':
+                    [
+                      {
+                        'index': 0,
+                        'message':
+                          {
+                            'role': 'assistant',
+                            'content': 'def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)',
+                          },
+                        'finish_reason': 'stop',
+                      },
+                    ],
+                }
   securitySchemes:
     bearerAuth:
       type: http
@@ -510,6 +544,7 @@ components:
         - anthropic
         - deepseek
         - google
+        - mistral
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -605,6 +640,19 @@ components:
         google:
           id: 'google'
           url: 'https://generativelanguage.googleapis.com/v1beta/openai'
+          auth_type: 'bearer'
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        mistral:
+          id: 'mistral'
+          url: 'https://api.mistral.ai/v1'
           auth_type: 'bearer'
           endpoints:
             models:
@@ -1352,6 +1400,16 @@ components:
                   type: string
                   default: ''
                   description: 'Comma-separated list of models to allow. If empty, all models will be available'
+                - name: debug_content_truncate_words
+                  env: 'DEBUG_CONTENT_TRUNCATE_WORDS'
+                  type: int
+                  default: '10'
+                  description: 'Number of words to truncate per content section in debug logs (development mode only)'
+                - name: debug_max_messages
+                  env: 'DEBUG_MAX_MESSAGES'
+                  type: int
+                  default: '100'
+                  description: 'Maximum number of messages to show in debug logs (development mode only)'
           - telemetry:
               title: 'Telemetry'
               settings:
@@ -1529,6 +1587,20 @@ components:
                   type: bool
                   default: 'true'
                   description: 'Disable health check log messages to reduce noise'
+                - name: a2a_service_discovery_enable
+                  env: 'A2A_SERVICE_DISCOVERY_ENABLE'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable Kubernetes service discovery for A2A agents'
+                - name: a2a_service_discovery_namespace
+                  env: 'A2A_SERVICE_DISCOVERY_NAMESPACE'
+                  type: string
+                  description: 'Kubernetes namespace to search for A2A services (empty means current namespace)'
+                - name: a2a_service_discovery_polling_interval
+                  env: 'A2A_SERVICE_DISCOVERY_POLLING_INTERVAL'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Interval between service discovery polling requests'
           - auth:
               title: 'Authentication'
               settings:
@@ -1714,4 +1786,14 @@ components:
                   env: 'GOOGLE_API_KEY'
                   type: string
                   description: 'Google API Key'
+                  secret: true
+                - name: mistral_api_url
+                  env: 'MISTRAL_API_URL'
+                  type: string
+                  default: 'https://api.mistral.ai/v1'
+                  description: 'Mistral API URL'
+                - name: mistral_api_key
+                  env: 'MISTRAL_API_KEY'
+                  type: string
+                  description: 'Mistral API Key'
                   secret: true
