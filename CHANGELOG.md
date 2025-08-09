@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0](https://github.com/inference-gateway/sdk/compare/v1.10.0...v1.11.0) (2025-08-09)
+
+### ✨ Features
+
+* **providers:** Add Mistral AI provider support ([#16](https://github.com/inference-gateway/sdk/issues/16)) ([202cd9a](https://github.com/inference-gateway/sdk/commit/202cd9aa06e4f9d3c6cae3ab35803628df76e72a)), closes [#15](https://github.com/inference-gateway/sdk/issues/15)
+
+### 👷 CI
+
+* Add Claude Code GitHub Workflow ([#13](https://github.com/inference-gateway/sdk/issues/13)) ([8bb2237](https://github.com/inference-gateway/sdk/commit/8bb2237836de996966c9bb4f6f380b82fefd918c))
+
+### 📚 Documentation
+
+* Simplify CLAUDE.md by consolidating commands and development guidelines ([50b02c5](https://github.com/inference-gateway/sdk/commit/50b02c5c6d2d9f504643b6d926bab20f0b3e8aac))
+
+### 🔧 Miscellaneous
+
+* Add issue templates for bug reports, feature requests, and refactor requests ([#14](https://github.com/inference-gateway/sdk/issues/14)) ([9d3371b](https://github.com/inference-gateway/sdk/commit/9d3371bc4d275aa6228748275450623ce2bd68db))
+
+### 📦 Miscellaneous
+
+* Add initial Flox configuration files for SDK environment ([fafcba4](https://github.com/inference-gateway/sdk/commit/fafcba4460da88bd20dd98566f51dc7b3988441f))
+
 ## [1.10.0](https://github.com/inference-gateway/sdk/compare/v1.9.1...v1.10.0) (2025-07-26)
 
 ### ✨ Features
