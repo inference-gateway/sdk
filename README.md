@@ -523,6 +523,7 @@ The SDK supports the following LLM providers:
 -   Cohere (sdk.Cohere)
 -   Anthropic (sdk.Anthropic)
 -   Google (sdk.Google)
+-   Mistral AI (sdk.Mistral)
 
 ## Documentation
 
