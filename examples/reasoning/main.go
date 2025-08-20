@@ -12,6 +12,24 @@ import (
 	sdk "github.com/inference-gateway/sdk"
 )
 
+// isReasoningModel checks if the given model supports reasoning capabilities
+func isReasoningModel(provider sdk.Provider, model string) bool {
+	reasoningModels := map[sdk.Provider][]string{
+		sdk.Deepseek: {"deepseek-reasoner"},
+		// Add more providers and their reasoning models here as they become available
+		// Example: sdk.Openai: {"o1", "o1-preview", "o1-mini"},
+	}
+
+	if models, exists := reasoningModels[provider]; exists {
+		for _, reasoningModel := range models {
+			if model == reasoningModel {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func main() {
 	// Environment setup - specifically configured for DeepSeek Reasoner
 	apiURL := os.Getenv("INFERENCE_GATEWAY_URL")
@@ -34,6 +52,11 @@ func main() {
 	client := sdk.NewClient(&sdk.ClientOptions{BaseURL: apiURL})
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
+
+	// Validate that the selected model supports reasoning
+	if !isReasoningModel(provider, modelName) {
+		log.Fatalf("Error: Model '%s' from provider '%s' does not support reasoning capabilities. Please use a reasoning model like 'deepseek-reasoner'.", modelName, provider)
+	}
 
 	// Conversation setup with prompts that encourage step-by-step reasoning
 	conversationHistory := []sdk.Message{
