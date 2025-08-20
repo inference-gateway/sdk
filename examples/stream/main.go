@@ -82,7 +82,11 @@ func main() {
 					}
 
 					for _, choice := range streamResponse.Choices {
-						if choice.Delta.Reasoning != nil {
+						// Handle reasoning (both reasoning and reasoning_content fields)
+						hasReasoning := (choice.Delta.Reasoning != nil && *choice.Delta.Reasoning != "") ||
+							(choice.Delta.ReasoningContent != nil && *choice.Delta.ReasoningContent != "")
+
+						if hasReasoning {
 							if !isThinking {
 								// Start thinking animation if we weren't already thinking
 								isThinking = true
@@ -91,9 +95,14 @@ func main() {
 							}
 
 							// Store and display the reasoning content with special formatting
+							// Handle both reasoning and reasoning_content fields
 							if choice.Delta.Reasoning != nil && *choice.Delta.Reasoning != "" {
 								reasoningText += *choice.Delta.Reasoning
 								fmt.Printf("\033[90m%s\033[0m", *choice.Delta.Reasoning)
+							}
+							if choice.Delta.ReasoningContent != nil && *choice.Delta.ReasoningContent != "" {
+								reasoningText += *choice.Delta.ReasoningContent
+								fmt.Printf("\033[90m%s\033[0m", *choice.Delta.ReasoningContent)
 							}
 
 						} else if choice.Delta.Content != "" {
