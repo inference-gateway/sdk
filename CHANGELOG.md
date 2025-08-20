@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.1](https://github.com/inference-gateway/sdk/compare/v1.11.0...v1.11.1) (2025-08-20)
+
+### 📚 Documentation
+
+* **examples:** Add ReasoningContent field support in streaming examples ([#18](https://github.com/inference-gateway/sdk/issues/18)) ([0212d7d](https://github.com/inference-gateway/sdk/commit/0212d7df0c3e4ca5d94e9875f32676934a1f43eb)), closes [#17](https://github.com/inference-gateway/sdk/issues/17)
+
 ## [1.11.0](https://github.com/inference-gateway/sdk/compare/v1.10.0...v1.11.0) (2025-08-09)
 
 ### ✨ Features
