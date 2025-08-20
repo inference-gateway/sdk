@@ -396,6 +396,14 @@ for event := range events {
 
             // Process each choice in the response
             for _, choice := range streamResponse.Choices {
+                // Handle reasoning content (both reasoning and reasoning_content fields)
+                if choice.Delta.Reasoning != nil && *choice.Delta.Reasoning != "" {
+                    fmt.Printf("💭 Reasoning: %s\n", *choice.Delta.Reasoning)
+                }
+                if choice.Delta.ReasoningContent != nil && *choice.Delta.ReasoningContent != "" {
+                    fmt.Printf("💭 Reasoning: %s\n", *choice.Delta.ReasoningContent)
+                }
+                
                 if choice.Delta.Content != "" {
                     // Just print the content as it comes in
                     fmt.Print(choice.Delta.Content)
