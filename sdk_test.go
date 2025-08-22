@@ -826,7 +826,7 @@ func TestWithHeaders(t *testing.T) {
 				"X-Override": "withHeader",
 			},
 			expectedHeaders: map[string]string{
-				"X-Override": "withHeader", // Last one wins
+				"X-Override": "withHeader",
 			},
 		},
 	}
