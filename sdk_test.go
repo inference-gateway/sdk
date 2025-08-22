@@ -826,7 +826,7 @@ func TestWithHeaders(t *testing.T) {
 				"X-Override": "withHeader",
 			},
 			expectedHeaders: map[string]string{
-				"X-Override": "withHeader", // Last one wins
+				"X-Override": "withHeader",
 			},
 		},
 	}
@@ -1453,6 +1453,72 @@ func TestCalculateBackoff(t *testing.T) {
 	}
 }
 
+func TestParseRetryAfter(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected time.Duration
+		ok       bool
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: 0,
+			ok:       false,
+		},
+		{
+			name:     "seconds as integer",
+			input:    "120",
+			expected: 120 * time.Second,
+			ok:       true,
+		},
+		{
+			name:     "seconds as decimal",
+			input:    "1.5",
+			expected: 1500 * time.Millisecond,
+			ok:       true,
+		},
+		{
+			name:     "zero seconds",
+			input:    "0",
+			expected: 0,
+			ok:       true,
+		},
+		{
+			name:     "invalid format",
+			input:    "invalid",
+			expected: 0,
+			ok:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			duration, ok := parseRetryAfter(tt.input)
+			assert.Equal(t, tt.ok, ok, "parseRetryAfter(%q) ok = %v, want %v", tt.input, ok, tt.ok)
+			if ok {
+				assert.Equal(t, tt.expected, duration, "parseRetryAfter(%q) = %v, want %v", tt.input, duration, tt.expected)
+			}
+		})
+	}
+
+	t.Run("http-date future", func(t *testing.T) {
+		futureTime := time.Now().Add(30 * time.Second)
+		httpDate := futureTime.UTC().Format(http.TimeFormat)
+		duration, ok := parseRetryAfter(httpDate)
+		assert.True(t, ok, "parseRetryAfter with future HTTP-date should return true")
+		assert.InDelta(t, 30*time.Second, duration, float64(1*time.Second), "Duration should be approximately 30 seconds")
+	})
+
+	t.Run("http-date past", func(t *testing.T) {
+		pastTime := time.Now().Add(-30 * time.Second)
+		httpDate := pastTime.UTC().Format(http.TimeFormat)
+		duration, ok := parseRetryAfter(httpDate)
+		assert.False(t, ok, "parseRetryAfter with past HTTP-date should return false")
+		assert.Equal(t, time.Duration(0), duration, "Duration for past date should be 0")
+	})
+}
+
 func TestIsRetryableStatusCode(t *testing.T) {
 	defaultConfig := getDefaultRetryConfig()
 
@@ -1465,12 +1531,12 @@ func TestIsRetryableStatusCode(t *testing.T) {
 		{401, false},
 		{403, false},
 		{404, false},
-		{408, true}, // Request Timeout
-		{429, true}, // Too Many Requests
-		{500, true}, // Internal Server Error
-		{502, true}, // Bad Gateway
-		{503, true}, // Service Unavailable
-		{504, true}, // Gateway Timeout
+		{408, true},
+		{429, true},
+		{500, true},
+		{502, true},
+		{503, true},
+		{504, true},
 	}
 
 	for _, tt := range tests {
@@ -1729,6 +1795,137 @@ func TestRetryWithCustomStatusCodesAndCallback(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRetryAfterHeader(t *testing.T) {
+	tests := []struct {
+		name             string
+		retryAfterValues []string
+		expectedDelays   []time.Duration
+		tolerance        time.Duration
+	}{
+		{
+			name:             "retry with seconds in header",
+			retryAfterValues: []string{"2", "1", ""},
+			expectedDelays:   []time.Duration{2 * time.Second, 1 * time.Second},
+			tolerance:        100 * time.Millisecond,
+		},
+		{
+			name:             "retry with decimal seconds",
+			retryAfterValues: []string{"0.5", ""},
+			expectedDelays:   []time.Duration{500 * time.Millisecond},
+			tolerance:        100 * time.Millisecond,
+		},
+		{
+			name:             "no retry-after header falls back to exponential backoff",
+			retryAfterValues: []string{"", "", ""},
+			expectedDelays:   []time.Duration{2 * time.Second, 4 * time.Second},
+			tolerance:        100 * time.Millisecond,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			callCount := 0
+			retryDelays := []time.Duration{}
+			lastRequestTime := time.Now()
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if callCount > 0 {
+					retryDelays = append(retryDelays, time.Since(lastRequestTime))
+				}
+				lastRequestTime = time.Now()
+
+				if callCount < len(tt.retryAfterValues)-1 {
+					if tt.retryAfterValues[callCount] != "" {
+						w.Header().Set("Retry-After", tt.retryAfterValues[callCount])
+					}
+					w.WriteHeader(http.StatusTooManyRequests)
+					err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Rate limited")})
+					assert.NoError(t, err)
+				} else {
+					w.WriteHeader(http.StatusOK)
+					response := ListModelsResponse{Object: "list", Data: []Model{}}
+					err := json.NewEncoder(w).Encode(response)
+					assert.NoError(t, err)
+				}
+				callCount++
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL: baseURL,
+				RetryConfig: &RetryConfig{
+					Enabled:           true,
+					MaxAttempts:       len(tt.retryAfterValues),
+					InitialBackoffSec: 2,
+					MaxBackoffSec:     30,
+					BackoffMultiplier: 2,
+				},
+			})
+
+			ctx := context.Background()
+			_, err := client.ListModels(ctx)
+
+			assert.NoError(t, err)
+			assert.Equal(t, len(tt.retryAfterValues), callCount)
+			assert.Len(t, retryDelays, len(tt.expectedDelays))
+
+			for i, expectedDelay := range tt.expectedDelays {
+				assert.InDelta(t, expectedDelay, retryDelays[i], float64(tt.tolerance),
+					"Retry delay %d should be approximately %v, got %v", i+1, expectedDelay, retryDelays[i])
+			}
+		})
+	}
+}
+
+func TestRetryAfterHeaderWithHTTPDate(t *testing.T) {
+	callCount := 0
+	var actualDelay time.Duration
+	lastRequestTime := time.Now()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if callCount > 0 {
+			actualDelay = time.Since(lastRequestTime)
+		}
+		lastRequestTime = time.Now()
+
+		if callCount == 0 {
+			futureTime := time.Now().Add(3 * time.Second)
+			w.Header().Set("Retry-After", futureTime.UTC().Format(http.TimeFormat))
+			w.WriteHeader(http.StatusTooManyRequests)
+			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Rate limited")})
+			assert.NoError(t, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			response := ListModelsResponse{Object: "list", Data: []Model{}}
+			err := json.NewEncoder(w).Encode(response)
+			assert.NoError(t, err)
+		}
+		callCount++
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+		RetryConfig: &RetryConfig{
+			Enabled:           true,
+			MaxAttempts:       3,
+			InitialBackoffSec: 1,
+			MaxBackoffSec:     10,
+			BackoffMultiplier: 2,
+		},
+	})
+
+	ctx := context.Background()
+	_, err := client.ListModels(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, callCount)
+	assert.InDelta(t, 3*time.Second, actualDelay, float64(1*time.Second),
+		"Retry delay should be approximately 3 seconds based on HTTP-date header")
 }
 
 func TestRetryConfigWithNilCallback(t *testing.T) {

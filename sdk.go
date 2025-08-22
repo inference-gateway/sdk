@@ -175,6 +175,27 @@ func NewClient(options *ClientOptions) Client {
 	}
 }
 
+// parseRetryAfter parses the Retry-After header and returns the delay duration
+// The header can be either a delay in seconds or an HTTP-date
+func parseRetryAfter(retryAfter string) (time.Duration, bool) {
+	if retryAfter == "" {
+		return 0, false
+	}
+
+	if seconds, err := time.ParseDuration(retryAfter + "s"); err == nil {
+		return seconds, true
+	}
+
+	if retryTime, err := http.ParseTime(retryAfter); err == nil {
+		delay := time.Until(retryTime)
+		if delay > 0 {
+			return delay, true
+		}
+	}
+
+	return 0, false
+}
+
 // executeWithRetry executes an HTTP request with retry logic
 func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*resty.Response, error)) (*resty.Response, error) {
 	if !c.retryConfig.Enabled {
@@ -186,7 +207,17 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*rest
 
 	for attempt := 0; attempt < c.retryConfig.MaxAttempts; attempt++ {
 		if attempt > 0 {
-			delay := calculateBackoff(attempt, c.retryConfig)
+			var delay time.Duration
+
+			if resp != nil && resp.StatusCode() == 429 {
+				if retryAfterDelay, ok := parseRetryAfter(resp.Header().Get("Retry-After")); ok {
+					delay = retryAfterDelay
+				} else {
+					delay = calculateBackoff(attempt, c.retryConfig)
+				}
+			} else {
+				delay = calculateBackoff(attempt, c.retryConfig)
+			}
 
 			if c.retryConfig.OnRetry != nil {
 				c.retryConfig.OnRetry(attempt, lastErr, delay)
