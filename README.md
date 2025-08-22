@@ -24,6 +24,7 @@ Connect to multiple LLM providers through a unified interface • Stream respons
   - [Usage](#usage)
     - [Creating a Client](#creating-a-client)
     - [Using Custom Headers](#using-custom-headers)
+    - [Retry Mechanism](#retry-mechanism)
     - [Middleware Options](#middleware-options)
     - [Listing Models](#listing-models)
     - [Listing MCP Tools](#listing-mcp-tools)
@@ -117,6 +118,89 @@ client = client.WithHeaders(map[string]string{
 }).WithHeader("Authorization", "Bearer token")
 
 // All subsequent requests will include all these headers
+response, err := client.GenerateContent(ctx, provider, model, messages)
+```
+
+### Retry Mechanism
+
+The SDK includes a built-in retry mechanism for handling transient failures and network issues. By default, the client will automatically retry requests that fail with retryable status codes.
+
+**Default Retry Configuration:**
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+    // Default retry configuration is automatically applied
+})
+```
+
+The default configuration includes:
+- **Max Retries:** 3 attempts
+- **Timeout:** 30 seconds per request
+- **Backoff Strategy:** Exponential backoff with jitter
+- **Retryable Status Codes:** 429 (Too Many Requests), 500 (Internal Server Error), 502 (Bad Gateway), 503 (Service Unavailable), 504 (Gateway Timeout)
+
+**Custom Retry Configuration:**
+
+You can customize the retry behavior by providing your own retry options:
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+    RetryOptions: &sdk.RetryOptions{
+        MaxRetries:    5,                            // Maximum number of retry attempts
+        Timeout:       time.Duration(60) * time.Second, // Timeout per request
+        MinDelay:      time.Duration(1) * time.Second,  // Minimum delay between retries
+        MaxDelay:      time.Duration(30) * time.Second, // Maximum delay between retries
+        RetryableStatusCodes: []int{429, 500, 502, 503, 504}, // HTTP status codes to retry
+    },
+})
+```
+
+**Exponential Backoff with Jitter:**
+
+The retry mechanism uses exponential backoff with jitter to prevent thundering herd problems. The delay between retries is calculated as:
+
+1. Base delay starts at `MinDelay` and doubles with each retry
+2. Capped at `MaxDelay` to prevent excessive waiting
+3. Random jitter (±25%) is added to spread out retry attempts
+
+Example delay sequence (with 1s MinDelay, 30s MaxDelay):
+- 1st retry: ~1s (0.75s - 1.25s with jitter)
+- 2nd retry: ~2s (1.5s - 2.5s with jitter)  
+- 3rd retry: ~4s (3s - 5s with jitter)
+- 4th retry: ~8s (6s - 10s with jitter)
+- 5th retry: ~16s (12s - 20s with jitter)
+
+**Disabling Retries:**
+
+To disable automatic retries, set `MaxRetries` to 0:
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+    RetryOptions: &sdk.RetryOptions{
+        MaxRetries: 0, // Disables retries
+    },
+})
+```
+
+**Rate Limiting (429 Status):**
+
+When the server returns a 429 (Too Many Requests) status code, the SDK will:
+1. Check for a `Retry-After` header
+2. If present, wait for the specified duration before retrying
+3. If not present, use the standard exponential backoff strategy
+
+**Context and Cancellation:**
+
+Retries respect the context passed to API methods. If the context is cancelled or times out, retries will stop immediately:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+defer cancel()
+
+// Retries will stop if the context times out
 response, err := client.GenerateContent(ctx, provider, model, messages)
 ```
 

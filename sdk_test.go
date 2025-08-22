@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -507,6 +508,9 @@ func TestHealthCheck_Error(t *testing.T) {
 	baseURL := server.URL + "/v1"
 	client := NewClient(&ClientOptions{
 		BaseURL: baseURL,
+		RetryConfig: &RetryConfig{
+			Enabled: false,
+		},
 	})
 
 	ctx := context.Background()
@@ -822,7 +826,7 @@ func TestWithHeaders(t *testing.T) {
 				"X-Override": "withHeader",
 			},
 			expectedHeaders: map[string]string{
-				"X-Override": "withHeader", // Last one wins
+				"X-Override": "withHeader",
 			},
 		},
 	}
@@ -1235,4 +1239,730 @@ func stringPtr(s string) *string {
 
 func providerPtr(p Provider) *Provider {
 	return &p
+}
+
+func TestRetryLogic(t *testing.T) {
+	tests := []struct {
+		name          string
+		retryConfig   *RetryConfig
+		statusCodes   []int
+		networkErrors []bool
+		expectedCalls int
+		expectedError bool
+	}{
+		{
+			name: "no retry on success",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{200},
+			networkErrors: []bool{false},
+			expectedCalls: 1,
+			expectedError: false,
+		},
+		{
+			name: "retry on 500 error",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{500, 500, 200},
+			networkErrors: []bool{false, false, false},
+			expectedCalls: 3,
+			expectedError: false,
+		},
+		{
+			name: "retry on 503 error",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{503, 503, 200},
+			networkErrors: []bool{false, false, false},
+			expectedCalls: 3,
+			expectedError: false,
+		},
+		{
+			name: "retry on 429 error",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{429, 429, 200},
+			networkErrors: []bool{false, false, false},
+			expectedCalls: 3,
+			expectedError: false,
+		},
+		{
+			name: "max attempts exhausted",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{500, 500, 500},
+			networkErrors: []bool{false, false, false},
+			expectedCalls: 3,
+			expectedError: true,
+		},
+		{
+			name: "no retry on 400 error",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{400},
+			networkErrors: []bool{false},
+			expectedCalls: 1,
+			expectedError: true,
+		},
+		{
+			name: "retry disabled",
+			retryConfig: &RetryConfig{
+				Enabled: false,
+			},
+			statusCodes:   []int{500},
+			networkErrors: []bool{false},
+			expectedCalls: 1,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			callCount := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if callCount < len(tt.statusCodes) {
+					w.WriteHeader(tt.statusCodes[callCount])
+					if tt.statusCodes[callCount] == 200 {
+						response := ListModelsResponse{Object: "list", Data: []Model{}}
+						err := json.NewEncoder(w).Encode(response)
+						assert.NoError(t, err)
+					} else {
+						err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+						assert.NoError(t, err)
+					}
+				}
+				callCount++
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL:     baseURL,
+				RetryConfig: tt.retryConfig,
+			})
+
+			ctx := context.Background()
+			_, err := client.ListModels(ctx)
+
+			assert.Equal(t, tt.expectedCalls, callCount)
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestRetryConfigDefaults(t *testing.T) {
+	client := NewClient(&ClientOptions{
+		BaseURL: "http://localhost:8080/v1",
+	})
+
+	clientImpl, ok := client.(*clientImpl)
+	require.True(t, ok)
+	require.NotNil(t, clientImpl.retryConfig)
+
+	assert.True(t, clientImpl.retryConfig.Enabled)
+	assert.Equal(t, 3, clientImpl.retryConfig.MaxAttempts)
+	assert.Equal(t, 2, clientImpl.retryConfig.InitialBackoffSec)
+	assert.Equal(t, 30, clientImpl.retryConfig.MaxBackoffSec)
+	assert.Equal(t, 2, clientImpl.retryConfig.BackoffMultiplier)
+}
+
+func TestCustomRetryConfig(t *testing.T) {
+	customConfig := &RetryConfig{
+		Enabled:           false,
+		MaxAttempts:       5,
+		InitialBackoffSec: 1,
+		MaxBackoffSec:     60,
+		BackoffMultiplier: 3,
+	}
+
+	client := NewClient(&ClientOptions{
+		BaseURL:     "http://localhost:8080/v1",
+		RetryConfig: customConfig,
+	})
+
+	clientImpl, ok := client.(*clientImpl)
+	require.True(t, ok)
+	require.NotNil(t, clientImpl.retryConfig)
+
+	assert.False(t, clientImpl.retryConfig.Enabled)
+	assert.Equal(t, 5, clientImpl.retryConfig.MaxAttempts)
+	assert.Equal(t, 1, clientImpl.retryConfig.InitialBackoffSec)
+	assert.Equal(t, 60, clientImpl.retryConfig.MaxBackoffSec)
+	assert.Equal(t, 3, clientImpl.retryConfig.BackoffMultiplier)
+}
+
+func TestCalculateBackoff(t *testing.T) {
+	config := &RetryConfig{
+		InitialBackoffSec: 2,
+		MaxBackoffSec:     30,
+		BackoffMultiplier: 2,
+	}
+
+	tests := []struct {
+		attempt  int
+		expected time.Duration
+	}{
+		{0, 0},
+		{1, 2 * time.Second},
+		{2, 4 * time.Second},
+		{3, 8 * time.Second},
+		{4, 16 * time.Second},
+		{5, 30 * time.Second},
+		{6, 30 * time.Second},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("attempt_%d", tt.attempt), func(t *testing.T) {
+			result := calculateBackoff(tt.attempt, config)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestParseRetryAfter(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected time.Duration
+		ok       bool
+	}{
+		{
+			name:     "empty string",
+			input:    "",
+			expected: 0,
+			ok:       false,
+		},
+		{
+			name:     "seconds as integer",
+			input:    "120",
+			expected: 120 * time.Second,
+			ok:       true,
+		},
+		{
+			name:     "seconds as decimal",
+			input:    "1.5",
+			expected: 1500 * time.Millisecond,
+			ok:       true,
+		},
+		{
+			name:     "zero seconds",
+			input:    "0",
+			expected: 0,
+			ok:       true,
+		},
+		{
+			name:     "invalid format",
+			input:    "invalid",
+			expected: 0,
+			ok:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			duration, ok := parseRetryAfter(tt.input)
+			assert.Equal(t, tt.ok, ok, "parseRetryAfter(%q) ok = %v, want %v", tt.input, ok, tt.ok)
+			if ok {
+				assert.Equal(t, tt.expected, duration, "parseRetryAfter(%q) = %v, want %v", tt.input, duration, tt.expected)
+			}
+		})
+	}
+
+	t.Run("http-date future", func(t *testing.T) {
+		futureTime := time.Now().Add(30 * time.Second)
+		httpDate := futureTime.UTC().Format(http.TimeFormat)
+		duration, ok := parseRetryAfter(httpDate)
+		assert.True(t, ok, "parseRetryAfter with future HTTP-date should return true")
+		assert.InDelta(t, 30*time.Second, duration, float64(1*time.Second), "Duration should be approximately 30 seconds")
+	})
+
+	t.Run("http-date past", func(t *testing.T) {
+		pastTime := time.Now().Add(-30 * time.Second)
+		httpDate := pastTime.UTC().Format(http.TimeFormat)
+		duration, ok := parseRetryAfter(httpDate)
+		assert.False(t, ok, "parseRetryAfter with past HTTP-date should return false")
+		assert.Equal(t, time.Duration(0), duration, "Duration for past date should be 0")
+	})
+}
+
+func TestIsRetryableStatusCode(t *testing.T) {
+	defaultConfig := getDefaultRetryConfig()
+
+	tests := []struct {
+		statusCode int
+		expected   bool
+	}{
+		{200, false},
+		{400, false},
+		{401, false},
+		{403, false},
+		{404, false},
+		{408, true},
+		{429, true},
+		{500, true},
+		{502, true},
+		{503, true},
+		{504, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("status_%d", tt.statusCode), func(t *testing.T) {
+			result := isRetryableStatusCode(tt.statusCode, defaultConfig)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestRetryWithContext(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.WriteHeader(http.StatusInternalServerError)
+		err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+		RetryConfig: &RetryConfig{
+			Enabled:           true,
+			MaxAttempts:       5,
+			InitialBackoffSec: 2,
+			MaxBackoffSec:     10,
+			BackoffMultiplier: 2,
+		},
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	_, err := client.ListModels(ctx)
+
+	assert.Error(t, err)
+	assert.GreaterOrEqual(t, callCount, 1)
+	assert.LessOrEqual(t, callCount, 5)
+}
+
+func TestCustomRetryableStatusCodes(t *testing.T) {
+	tests := []struct {
+		name              string
+		customStatusCodes []int
+		statusCode        int
+		expected          bool
+	}{
+		{
+			name:              "custom codes include 418",
+			customStatusCodes: []int{418, 422},
+			statusCode:        418,
+			expected:          true,
+		},
+		{
+			name:              "custom codes exclude 500",
+			customStatusCodes: []int{418, 422},
+			statusCode:        500,
+			expected:          false,
+		},
+		{
+			name:              "custom codes include 422",
+			customStatusCodes: []int{418, 422},
+			statusCode:        422,
+			expected:          true,
+		},
+		{
+			name:              "custom codes exclude 200",
+			customStatusCodes: []int{418, 422},
+			statusCode:        200,
+			expected:          false,
+		},
+		{
+			name:              "empty custom codes use defaults",
+			customStatusCodes: []int{},
+			statusCode:        500,
+			expected:          true,
+		},
+		{
+			name:              "nil custom codes use defaults",
+			customStatusCodes: nil,
+			statusCode:        500,
+			expected:          true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &RetryConfig{
+				RetryableStatusCodes: tt.customStatusCodes,
+			}
+			result := isRetryableStatusCode(tt.statusCode, config)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestRetryCallback(t *testing.T) {
+	var callbackCalls []struct {
+		attempt int
+		err     error
+		delay   time.Duration
+	}
+
+	retryConfig := &RetryConfig{
+		Enabled:           true,
+		MaxAttempts:       3,
+		InitialBackoffSec: 1,
+		MaxBackoffSec:     10,
+		BackoffMultiplier: 2,
+		OnRetry: func(attempt int, err error, delay time.Duration) {
+			callbackCalls = append(callbackCalls, struct {
+				attempt int
+				err     error
+				delay   time.Duration
+			}{attempt, err, delay})
+		},
+	}
+
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if callCount < 2 {
+			w.WriteHeader(http.StatusInternalServerError)
+			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+			assert.NoError(t, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			response := ListModelsResponse{Object: "list", Data: []Model{}}
+			err := json.NewEncoder(w).Encode(response)
+			assert.NoError(t, err)
+		}
+		callCount++
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL:     baseURL,
+		RetryConfig: retryConfig,
+	})
+
+	ctx := context.Background()
+	_, err := client.ListModels(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 3, callCount)
+	assert.Len(t, callbackCalls, 2)
+
+	assert.Equal(t, 1, callbackCalls[0].attempt)
+	assert.Contains(t, callbackCalls[0].err.Error(), "HTTP 500")
+	assert.Equal(t, 1*time.Second, callbackCalls[0].delay)
+
+	assert.Equal(t, 2, callbackCalls[1].attempt)
+	assert.Contains(t, callbackCalls[1].err.Error(), "HTTP 500")
+	assert.Equal(t, 2*time.Second, callbackCalls[1].delay)
+}
+
+func TestRetryWithCustomStatusCodesAndCallback(t *testing.T) {
+	var callbackCalls []struct {
+		attempt int
+		err     error
+		delay   time.Duration
+	}
+
+	retryConfig := &RetryConfig{
+		Enabled:              true,
+		MaxAttempts:          3,
+		InitialBackoffSec:    1,
+		MaxBackoffSec:        10,
+		BackoffMultiplier:    2,
+		RetryableStatusCodes: []int{418, 503},
+		OnRetry: func(attempt int, err error, delay time.Duration) {
+			callbackCalls = append(callbackCalls, struct {
+				attempt int
+				err     error
+				delay   time.Duration
+			}{attempt, err, delay})
+		},
+	}
+
+	tests := []struct {
+		name           string
+		statusCodes    []int
+		expectRetries  bool
+		expectedCalls  int
+		callbackCounts int
+	}{
+		{
+			name:           "retry on custom 418 status code",
+			statusCodes:    []int{418, 418, 200},
+			expectRetries:  true,
+			expectedCalls:  3,
+			callbackCounts: 2,
+		},
+		{
+			name:           "retry on custom 503 status code",
+			statusCodes:    []int{503, 200},
+			expectRetries:  true,
+			expectedCalls:  2,
+			callbackCounts: 1,
+		},
+		{
+			name:           "no retry on non-custom 500 status code",
+			statusCodes:    []int{500},
+			expectRetries:  false,
+			expectedCalls:  1,
+			callbackCounts: 0,
+		},
+		{
+			name:           "no retry on 400 status code",
+			statusCodes:    []int{400},
+			expectRetries:  false,
+			expectedCalls:  1,
+			callbackCounts: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			callbackCalls = nil
+			callCount := 0
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if callCount < len(tt.statusCodes) {
+					w.WriteHeader(tt.statusCodes[callCount])
+					if tt.statusCodes[callCount] == 200 {
+						response := ListModelsResponse{Object: "list", Data: []Model{}}
+						err := json.NewEncoder(w).Encode(response)
+						assert.NoError(t, err)
+					} else {
+						err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+						assert.NoError(t, err)
+					}
+				}
+				callCount++
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL:     baseURL,
+				RetryConfig: retryConfig,
+			})
+
+			ctx := context.Background()
+			_, err := client.ListModels(ctx)
+
+			assert.Equal(t, tt.expectedCalls, callCount)
+			assert.Len(t, callbackCalls, tt.callbackCounts)
+
+			if tt.expectRetries && tt.statusCodes[len(tt.statusCodes)-1] == 200 {
+				assert.NoError(t, err)
+			} else if !tt.expectRetries || tt.statusCodes[len(tt.statusCodes)-1] != 200 {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestRetryAfterHeader(t *testing.T) {
+	tests := []struct {
+		name             string
+		retryAfterValues []string
+		expectedDelays   []time.Duration
+		tolerance        time.Duration
+	}{
+		{
+			name:             "retry with seconds in header",
+			retryAfterValues: []string{"2", "1", ""},
+			expectedDelays:   []time.Duration{2 * time.Second, 1 * time.Second},
+			tolerance:        100 * time.Millisecond,
+		},
+		{
+			name:             "retry with decimal seconds",
+			retryAfterValues: []string{"0.5", ""},
+			expectedDelays:   []time.Duration{500 * time.Millisecond},
+			tolerance:        100 * time.Millisecond,
+		},
+		{
+			name:             "no retry-after header falls back to exponential backoff",
+			retryAfterValues: []string{"", "", ""},
+			expectedDelays:   []time.Duration{2 * time.Second, 4 * time.Second},
+			tolerance:        100 * time.Millisecond,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			callCount := 0
+			retryDelays := []time.Duration{}
+			lastRequestTime := time.Now()
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if callCount > 0 {
+					retryDelays = append(retryDelays, time.Since(lastRequestTime))
+				}
+				lastRequestTime = time.Now()
+
+				if callCount < len(tt.retryAfterValues)-1 {
+					if tt.retryAfterValues[callCount] != "" {
+						w.Header().Set("Retry-After", tt.retryAfterValues[callCount])
+					}
+					w.WriteHeader(http.StatusTooManyRequests)
+					err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Rate limited")})
+					assert.NoError(t, err)
+				} else {
+					w.WriteHeader(http.StatusOK)
+					response := ListModelsResponse{Object: "list", Data: []Model{}}
+					err := json.NewEncoder(w).Encode(response)
+					assert.NoError(t, err)
+				}
+				callCount++
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL: baseURL,
+				RetryConfig: &RetryConfig{
+					Enabled:           true,
+					MaxAttempts:       len(tt.retryAfterValues),
+					InitialBackoffSec: 2,
+					MaxBackoffSec:     30,
+					BackoffMultiplier: 2,
+				},
+			})
+
+			ctx := context.Background()
+			_, err := client.ListModels(ctx)
+
+			assert.NoError(t, err)
+			assert.Equal(t, len(tt.retryAfterValues), callCount)
+			assert.Len(t, retryDelays, len(tt.expectedDelays))
+
+			for i, expectedDelay := range tt.expectedDelays {
+				assert.InDelta(t, expectedDelay, retryDelays[i], float64(tt.tolerance),
+					"Retry delay %d should be approximately %v, got %v", i+1, expectedDelay, retryDelays[i])
+			}
+		})
+	}
+}
+
+func TestRetryAfterHeaderWithHTTPDate(t *testing.T) {
+	callCount := 0
+	var actualDelay time.Duration
+	lastRequestTime := time.Now()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if callCount > 0 {
+			actualDelay = time.Since(lastRequestTime)
+		}
+		lastRequestTime = time.Now()
+
+		if callCount == 0 {
+			futureTime := time.Now().Add(3 * time.Second)
+			w.Header().Set("Retry-After", futureTime.UTC().Format(http.TimeFormat))
+			w.WriteHeader(http.StatusTooManyRequests)
+			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Rate limited")})
+			assert.NoError(t, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			response := ListModelsResponse{Object: "list", Data: []Model{}}
+			err := json.NewEncoder(w).Encode(response)
+			assert.NoError(t, err)
+		}
+		callCount++
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+		RetryConfig: &RetryConfig{
+			Enabled:           true,
+			MaxAttempts:       3,
+			InitialBackoffSec: 1,
+			MaxBackoffSec:     10,
+			BackoffMultiplier: 2,
+		},
+	})
+
+	ctx := context.Background()
+	_, err := client.ListModels(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, callCount)
+	assert.InDelta(t, 3*time.Second, actualDelay, float64(1*time.Second),
+		"Retry delay should be approximately 3 seconds based on HTTP-date header")
+}
+
+func TestRetryConfigWithNilCallback(t *testing.T) {
+	retryConfig := &RetryConfig{
+		Enabled:           true,
+		MaxAttempts:       2,
+		InitialBackoffSec: 1,
+		MaxBackoffSec:     10,
+		BackoffMultiplier: 2,
+		OnRetry:           nil,
+	}
+
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if callCount == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+			assert.NoError(t, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			response := ListModelsResponse{Object: "list", Data: []Model{}}
+			err := json.NewEncoder(w).Encode(response)
+			assert.NoError(t, err)
+		}
+		callCount++
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL:     baseURL,
+		RetryConfig: retryConfig,
+	})
+
+	ctx := context.Background()
+	_, err := client.ListModels(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2, callCount)
 }

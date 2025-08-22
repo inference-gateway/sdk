@@ -2,6 +2,71 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0-rc.2](https://github.com/inference-gateway/sdk/compare/v1.12.0-rc.1...v1.12.0-rc.2) (2025-08-22)
+
+### ✨ Features
+
+* Add Retry Mechanism section to README and implement parseRetryAfter function with tests also for rate-limiting retries ([ce74bad](https://github.com/inference-gateway/sdk/commit/ce74badc6a0b04b66e1972157535319b3050fdca))
+
+## [1.12.0-rc.1](https://github.com/inference-gateway/sdk/compare/v1.11.1...v1.12.0-rc.1) (2025-08-22)
+
+### ✨ Features
+
+* **retry:** Add configurable status codes and callback mechanism ([1d3cefa](https://github.com/inference-gateway/sdk/commit/1d3cefa4a8264fea954267cc8abc29c5a90e2f17))
+* **retry:** Add retry logic with exponential backoff for HTTP requests ([0d1a57a](https://github.com/inference-gateway/sdk/commit/0d1a57af0b55bcffa4b70f6e790f71707f521960))
+
+### ♻️ Improvements
+
+* **retry:** Clean up comments ([b5a32db](https://github.com/inference-gateway/sdk/commit/b5a32db07aa88e943ed893e0607b8aaba2cf29dc))
+* **retry:** Remove comments from retryable status code tests for clarity ([5948350](https://github.com/inference-gateway/sdk/commit/59483508e16dc5e4dcb73ad6ce6aa5a01b73432f))
+* **retry:** Remove redundant comments in isRetryableStatusCode function ([930dc15](https://github.com/inference-gateway/sdk/commit/930dc1577df93ab6e2238d969e42157a80c78c0f))
+
+### 🐛 Bug Fixes
+
+* **headers:** Remove redundant comment in TestWithHeaders ([468f356](https://github.com/inference-gateway/sdk/commit/468f35616933900d946c9e2dfa76d47c314aa792))
+
+### 🔧 Miscellaneous
+
+* **release:** 🔖 1.12.0-rc.1 [skip ci] ([d36f1ab](https://github.com/inference-gateway/sdk/commit/d36f1ab08f77789e67db018f825b9ae5965793c8))
+* Remove redundant comments ([fbbe49f](https://github.com/inference-gateway/sdk/commit/fbbe49fc51cd74db5f9414655bef0558c5e1b0a4))
+* Testing the release ([#22](https://github.com/inference-gateway/sdk/issues/22)) ([05b9687](https://github.com/inference-gateway/sdk/commit/05b9687049680fafeeb95d153b2ebc9b7e2be055))
+
+## [1.12.0-rc.1](https://github.com/inference-gateway/sdk/compare/v1.11.1...v1.12.0-rc.1) (2025-08-22)
+
+### ✨ Features
+
+* **retry:** Add configurable status codes and callback mechanism ([1d3cefa](https://github.com/inference-gateway/sdk/commit/1d3cefa4a8264fea954267cc8abc29c5a90e2f17))
+* **retry:** Add retry logic with exponential backoff for HTTP requests ([0d1a57a](https://github.com/inference-gateway/sdk/commit/0d1a57af0b55bcffa4b70f6e790f71707f521960))
+
+### ♻️ Improvements
+
+* **retry:** Clean up comments ([b5a32db](https://github.com/inference-gateway/sdk/commit/b5a32db07aa88e943ed893e0607b8aaba2cf29dc))
+
+### 🐛 Bug Fixes
+
+* **headers:** Remove redundant comment in TestWithHeaders ([a6a6cbb](https://github.com/inference-gateway/sdk/commit/a6a6cbbc8f69eb6f5cfe8b1d2fcc1e33527dc9e9))
+
+### 🔧 Miscellaneous
+
+* Remove redundant comments ([fbbe49f](https://github.com/inference-gateway/sdk/commit/fbbe49fc51cd74db5f9414655bef0558c5e1b0a4))
+* Testing the release ([#22](https://github.com/inference-gateway/sdk/issues/22)) ([05b9687](https://github.com/inference-gateway/sdk/commit/05b9687049680fafeeb95d153b2ebc9b7e2be055))
+
+## [1.12.0-rc.1](https://github.com/inference-gateway/sdk/compare/v1.11.1...v1.12.0-rc.1) (2025-08-22)
+
+### ✨ Features
+
+* **retry:** Add configurable status codes and callback mechanism ([1d3cefa](https://github.com/inference-gateway/sdk/commit/1d3cefa4a8264fea954267cc8abc29c5a90e2f17))
+* **retry:** Add retry logic with exponential backoff for HTTP requests ([0d1a57a](https://github.com/inference-gateway/sdk/commit/0d1a57af0b55bcffa4b70f6e790f71707f521960))
+
+### ♻️ Improvements
+
+* **retry:** Clean up comments ([b5a32db](https://github.com/inference-gateway/sdk/commit/b5a32db07aa88e943ed893e0607b8aaba2cf29dc))
+* **tests:** Remove unnecessary blank line in TestIsRetryableStatusCode ([223ab26](https://github.com/inference-gateway/sdk/commit/223ab2679d3cfdc3080f3f1e4d5588cccf573bf9))
+
+### 🔧 Miscellaneous
+
+* Remove redundant comments ([fbbe49f](https://github.com/inference-gateway/sdk/commit/fbbe49fc51cd74db5f9414655bef0558c5e1b0a4))
+
 ## [1.11.1](https://github.com/inference-gateway/sdk/compare/v1.11.0...v1.11.1) (2025-08-20)
 
 ### 📚 Documentation

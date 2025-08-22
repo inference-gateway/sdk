@@ -60,6 +60,28 @@ type ClientOptions struct {
 	Tools *[]ChatCompletionTool
 	// Headers is a map of custom headers to include with all requests.
 	Headers map[string]string
+	// RetryConfig is the retry configuration for HTTP requests.
+	RetryConfig *RetryConfig
+}
+
+// RetryConfig represents the retry configuration for HTTP requests
+type RetryConfig struct {
+	// Enabled controls whether retry logic is enabled
+	Enabled bool
+	// MaxAttempts is the maximum number of retry attempts (including initial request)
+	MaxAttempts int
+	// InitialBackoffSec is the initial backoff delay in seconds
+	InitialBackoffSec int
+	// MaxBackoffSec is the maximum backoff delay in seconds
+	MaxBackoffSec int
+	// BackoffMultiplier is the multiplier for exponential backoff
+	BackoffMultiplier int
+	// RetryableStatusCodes is a custom list of HTTP status codes that should trigger a retry.
+	// If nil or empty, uses default status codes (408, 429, 500, 502, 503, 504)
+	RetryableStatusCodes []int
+	// OnRetry is called before each retry attempt with attempt number, error, and delay.
+	// The attempt number starts from 1 for the first retry (after initial request fails)
+	OnRetry func(attempt int, err error, delay time.Duration)
 }
 
 // MiddlewareOptions represents options for controlling middleware behavior
