@@ -71,7 +71,18 @@ func isRetryableError(err error) bool {
 }
 
 // isRetryableStatusCode determines if an HTTP status code should trigger a retry
-func isRetryableStatusCode(statusCode int) bool {
+func isRetryableStatusCode(statusCode int, config *RetryConfig) bool {
+	// Use custom status codes if provided
+	if len(config.RetryableStatusCodes) > 0 {
+		for _, code := range config.RetryableStatusCodes {
+			if statusCode == code {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Use default status codes
 	switch statusCode {
 	case
 		http.StatusRequestTimeout,      // 408
@@ -179,6 +190,11 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*rest
 		if attempt > 0 {
 			delay := calculateBackoff(attempt, c.retryConfig)
 
+			// Call OnRetry callback if provided
+			if c.retryConfig.OnRetry != nil {
+				c.retryConfig.OnRetry(attempt, lastErr, delay)
+			}
+
 			select {
 			case <-ctx.Done():
 				return nil, ctx.Err()
@@ -189,13 +205,13 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*rest
 		resp, lastErr = request()
 
 		if lastErr == nil {
-			if !resp.IsError() || !isRetryableStatusCode(resp.StatusCode()) {
+			if !resp.IsError() || !isRetryableStatusCode(resp.StatusCode(), c.retryConfig) {
 				return resp, nil
 			}
 			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode())
 		}
 
-		if !isRetryableError(lastErr) && (resp == nil || !isRetryableStatusCode(resp.StatusCode())) {
+		if !isRetryableError(lastErr) && (resp == nil || !isRetryableStatusCode(resp.StatusCode(), c.retryConfig)) {
 			break
 		}
 

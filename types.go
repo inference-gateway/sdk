@@ -76,6 +76,12 @@ type RetryConfig struct {
 	MaxBackoffSec int
 	// BackoffMultiplier is the multiplier for exponential backoff
 	BackoffMultiplier int
+	// RetryableStatusCodes is a custom list of HTTP status codes that should trigger a retry.
+	// If nil or empty, uses default status codes (408, 429, 500, 502, 503, 504)
+	RetryableStatusCodes []int
+	// OnRetry is called before each retry attempt with attempt number, error, and delay.
+	// The attempt number starts from 1 for the first retry (after initial request fails)
+	OnRetry func(attempt int, err error, delay time.Duration)
 }
 
 // MiddlewareOptions represents options for controlling middleware behavior

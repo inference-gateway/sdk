@@ -1454,6 +1454,8 @@ func TestCalculateBackoff(t *testing.T) {
 }
 
 func TestIsRetryableStatusCode(t *testing.T) {
+	defaultConfig := getDefaultRetryConfig()
+	
 	tests := []struct {
 		statusCode int
 		expected   bool
@@ -1473,7 +1475,7 @@ func TestIsRetryableStatusCode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("status_%d", tt.statusCode), func(t *testing.T) {
-			result := isRetryableStatusCode(tt.statusCode)
+			result := isRetryableStatusCode(tt.statusCode, defaultConfig)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -1509,4 +1511,263 @@ func TestRetryWithContext(t *testing.T) {
 	assert.Error(t, err)
 	assert.GreaterOrEqual(t, callCount, 1)
 	assert.LessOrEqual(t, callCount, 5)
+}
+
+func TestCustomRetryableStatusCodes(t *testing.T) {
+	tests := []struct {
+		name              string
+		customStatusCodes []int
+		statusCode        int
+		expected          bool
+	}{
+		{
+			name:              "custom codes include 418",
+			customStatusCodes: []int{418, 422},
+			statusCode:        418,
+			expected:          true,
+		},
+		{
+			name:              "custom codes exclude 500",
+			customStatusCodes: []int{418, 422},
+			statusCode:        500,
+			expected:          false,
+		},
+		{
+			name:              "custom codes include 422",
+			customStatusCodes: []int{418, 422},
+			statusCode:        422,
+			expected:          true,
+		},
+		{
+			name:              "custom codes exclude 200",
+			customStatusCodes: []int{418, 422},
+			statusCode:        200,
+			expected:          false,
+		},
+		{
+			name:              "empty custom codes use defaults",
+			customStatusCodes: []int{},
+			statusCode:        500,
+			expected:          true,
+		},
+		{
+			name:              "nil custom codes use defaults",
+			customStatusCodes: nil,
+			statusCode:        500,
+			expected:          true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &RetryConfig{
+				RetryableStatusCodes: tt.customStatusCodes,
+			}
+			result := isRetryableStatusCode(tt.statusCode, config)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestRetryCallback(t *testing.T) {
+	var callbackCalls []struct {
+		attempt int
+		err     error
+		delay   time.Duration
+	}
+
+	retryConfig := &RetryConfig{
+		Enabled:           true,
+		MaxAttempts:       3,
+		InitialBackoffSec: 1,
+		MaxBackoffSec:     10,
+		BackoffMultiplier: 2,
+		OnRetry: func(attempt int, err error, delay time.Duration) {
+			callbackCalls = append(callbackCalls, struct {
+				attempt int
+				err     error
+				delay   time.Duration
+			}{attempt, err, delay})
+		},
+	}
+
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if callCount < 2 {
+			w.WriteHeader(http.StatusInternalServerError)
+			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+			assert.NoError(t, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			response := ListModelsResponse{Object: "list", Data: []Model{}}
+			err := json.NewEncoder(w).Encode(response)
+			assert.NoError(t, err)
+		}
+		callCount++
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL:     baseURL,
+		RetryConfig: retryConfig,
+	})
+
+	ctx := context.Background()
+	_, err := client.ListModels(ctx)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 3, callCount)
+	assert.Len(t, callbackCalls, 2) // Two retries after initial failure
+
+	// Verify callback calls
+	assert.Equal(t, 1, callbackCalls[0].attempt)
+	assert.Contains(t, callbackCalls[0].err.Error(), "HTTP 500")
+	assert.Equal(t, 1*time.Second, callbackCalls[0].delay)
+
+	assert.Equal(t, 2, callbackCalls[1].attempt)
+	assert.Contains(t, callbackCalls[1].err.Error(), "HTTP 500")
+	assert.Equal(t, 2*time.Second, callbackCalls[1].delay)
+}
+
+func TestRetryWithCustomStatusCodesAndCallback(t *testing.T) {
+	var callbackCalls []struct {
+		attempt int
+		err     error
+		delay   time.Duration
+	}
+
+	retryConfig := &RetryConfig{
+		Enabled:              true,
+		MaxAttempts:          3,
+		InitialBackoffSec:    1,
+		MaxBackoffSec:        10,
+		BackoffMultiplier:    2,
+		RetryableStatusCodes: []int{418, 503}, // Custom codes: I'm a teapot and Service Unavailable
+		OnRetry: func(attempt int, err error, delay time.Duration) {
+			callbackCalls = append(callbackCalls, struct {
+				attempt int
+				err     error
+				delay   time.Duration
+			}{attempt, err, delay})
+		},
+	}
+
+	tests := []struct {
+		name           string
+		statusCodes    []int
+		expectRetries  bool
+		expectedCalls  int
+		callbackCounts int
+	}{
+		{
+			name:           "retry on custom 418 status code",
+			statusCodes:    []int{418, 418, 200},
+			expectRetries:  true,
+			expectedCalls:  3,
+			callbackCounts: 2,
+		},
+		{
+			name:           "retry on custom 503 status code",
+			statusCodes:    []int{503, 200},
+			expectRetries:  true,
+			expectedCalls:  2,
+			callbackCounts: 1,
+		},
+		{
+			name:           "no retry on non-custom 500 status code",
+			statusCodes:    []int{500},
+			expectRetries:  false,
+			expectedCalls:  1,
+			callbackCounts: 0,
+		},
+		{
+			name:           "no retry on 400 status code",
+			statusCodes:    []int{400},
+			expectRetries:  false,
+			expectedCalls:  1,
+			callbackCounts: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			callbackCalls = nil // Reset callback calls
+			callCount := 0
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if callCount < len(tt.statusCodes) {
+					w.WriteHeader(tt.statusCodes[callCount])
+					if tt.statusCodes[callCount] == 200 {
+						response := ListModelsResponse{Object: "list", Data: []Model{}}
+						err := json.NewEncoder(w).Encode(response)
+						assert.NoError(t, err)
+					} else {
+						err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+						assert.NoError(t, err)
+					}
+				}
+				callCount++
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL:     baseURL,
+				RetryConfig: retryConfig,
+			})
+
+			ctx := context.Background()
+			_, err := client.ListModels(ctx)
+
+			assert.Equal(t, tt.expectedCalls, callCount)
+			assert.Len(t, callbackCalls, tt.callbackCounts)
+
+			if tt.expectRetries && tt.statusCodes[len(tt.statusCodes)-1] == 200 {
+				assert.NoError(t, err)
+			} else if !tt.expectRetries || tt.statusCodes[len(tt.statusCodes)-1] != 200 {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+func TestRetryConfigWithNilCallback(t *testing.T) {
+	retryConfig := &RetryConfig{
+		Enabled:           true,
+		MaxAttempts:       2,
+		InitialBackoffSec: 1,
+		MaxBackoffSec:     10,
+		BackoffMultiplier: 2,
+		OnRetry:           nil, // Explicitly nil callback
+	}
+
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if callCount == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+			assert.NoError(t, err)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			response := ListModelsResponse{Object: "list", Data: []Model{}}
+			err := json.NewEncoder(w).Encode(response)
+			assert.NoError(t, err)
+		}
+		callCount++
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL:     baseURL,
+		RetryConfig: retryConfig,
+	})
+
+	ctx := context.Background()
+	_, err := client.ListModels(ctx)
+
+	// Should work without callback
+	assert.NoError(t, err)
+	assert.Equal(t, 2, callCount)
 }
