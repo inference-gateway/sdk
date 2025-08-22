@@ -190,7 +190,6 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*rest
 		if attempt > 0 {
 			delay := calculateBackoff(attempt, c.retryConfig)
 
-			// Call OnRetry callback if provided
 			if c.retryConfig.OnRetry != nil {
 				c.retryConfig.OnRetry(attempt, lastErr, delay)
 			}

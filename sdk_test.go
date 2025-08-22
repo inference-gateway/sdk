@@ -1618,9 +1618,8 @@ func TestRetryCallback(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 3, callCount)
-	assert.Len(t, callbackCalls, 2) // Two retries after initial failure
+	assert.Len(t, callbackCalls, 2)
 
-	// Verify callback calls
 	assert.Equal(t, 1, callbackCalls[0].attempt)
 	assert.Contains(t, callbackCalls[0].err.Error(), "HTTP 500")
 	assert.Equal(t, 1*time.Second, callbackCalls[0].delay)
@@ -1643,7 +1642,7 @@ func TestRetryWithCustomStatusCodesAndCallback(t *testing.T) {
 		InitialBackoffSec:    1,
 		MaxBackoffSec:        10,
 		BackoffMultiplier:    2,
-		RetryableStatusCodes: []int{418, 503}, // Custom codes: I'm a teapot and Service Unavailable
+		RetryableStatusCodes: []int{418, 503},
 		OnRetry: func(attempt int, err error, delay time.Duration) {
 			callbackCalls = append(callbackCalls, struct {
 				attempt int
@@ -1692,7 +1691,7 @@ func TestRetryWithCustomStatusCodesAndCallback(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			callbackCalls = nil // Reset callback calls
+			callbackCalls = nil
 			callCount := 0
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1739,7 +1738,7 @@ func TestRetryConfigWithNilCallback(t *testing.T) {
 		InitialBackoffSec: 1,
 		MaxBackoffSec:     10,
 		BackoffMultiplier: 2,
-		OnRetry:           nil, // Explicitly nil callback
+		OnRetry:           nil,
 	}
 
 	callCount := 0
@@ -1767,7 +1766,6 @@ func TestRetryConfigWithNilCallback(t *testing.T) {
 	ctx := context.Background()
 	_, err := client.ListModels(ctx)
 
-	// Should work without callback
 	assert.NoError(t, err)
 	assert.Equal(t, 2, callCount)
 }
