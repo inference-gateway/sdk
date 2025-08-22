@@ -1465,12 +1465,12 @@ func TestIsRetryableStatusCode(t *testing.T) {
 		{401, false},
 		{403, false},
 		{404, false},
-		{408, true}, // Request Timeout
-		{429, true}, // Too Many Requests
-		{500, true}, // Internal Server Error
-		{502, true}, // Bad Gateway
-		{503, true}, // Service Unavailable
-		{504, true}, // Gateway Timeout
+		{408, true},
+		{429, true},
+		{500, true},
+		{502, true},
+		{503, true},
+		{504, true},
 	}
 
 	for _, tt := range tests {
