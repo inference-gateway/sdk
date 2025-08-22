@@ -1455,7 +1455,7 @@ func TestCalculateBackoff(t *testing.T) {
 
 func TestIsRetryableStatusCode(t *testing.T) {
 	defaultConfig := getDefaultRetryConfig()
-	
+
 	tests := []struct {
 		statusCode int
 		expected   bool
