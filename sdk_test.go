@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -507,6 +508,10 @@ func TestHealthCheck_Error(t *testing.T) {
 	baseURL := server.URL + "/v1"
 	client := NewClient(&ClientOptions{
 		BaseURL: baseURL,
+		// Disable retry for this test to get the original error message
+		RetryConfig: &RetryConfig{
+			Enabled: false,
+		},
 	})
 
 	ctx := context.Background()
@@ -1235,4 +1240,275 @@ func stringPtr(s string) *string {
 
 func providerPtr(p Provider) *Provider {
 	return &p
+}
+
+func TestRetryLogic(t *testing.T) {
+	tests := []struct {
+		name           string
+		retryConfig    *RetryConfig
+		statusCodes    []int
+		networkErrors  []bool
+		expectedCalls  int
+		expectedError  bool
+	}{
+		{
+			name: "no retry on success",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{200},
+			networkErrors: []bool{false},
+			expectedCalls: 1,
+			expectedError: false,
+		},
+		{
+			name: "retry on 500 error",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{500, 500, 200},
+			networkErrors: []bool{false, false, false},
+			expectedCalls: 3,
+			expectedError: false,
+		},
+		{
+			name: "retry on 503 error",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{503, 503, 200},
+			networkErrors: []bool{false, false, false},
+			expectedCalls: 3,
+			expectedError: false,
+		},
+		{
+			name: "retry on 429 error",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{429, 429, 200},
+			networkErrors: []bool{false, false, false},
+			expectedCalls: 3,
+			expectedError: false,
+		},
+		{
+			name: "max attempts exhausted",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{500, 500, 500},
+			networkErrors: []bool{false, false, false},
+			expectedCalls: 3,
+			expectedError: true,
+		},
+		{
+			name: "no retry on 400 error",
+			retryConfig: &RetryConfig{
+				Enabled:           true,
+				MaxAttempts:       3,
+				InitialBackoffSec: 1,
+				MaxBackoffSec:     10,
+				BackoffMultiplier: 2,
+			},
+			statusCodes:   []int{400},
+			networkErrors: []bool{false},
+			expectedCalls: 1,
+			expectedError: true,
+		},
+		{
+			name: "retry disabled",
+			retryConfig: &RetryConfig{
+				Enabled: false,
+			},
+			statusCodes:   []int{500},
+			networkErrors: []bool{false},
+			expectedCalls: 1,
+			expectedError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			callCount := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if callCount < len(tt.statusCodes) {
+					w.WriteHeader(tt.statusCodes[callCount])
+					if tt.statusCodes[callCount] == 200 {
+						response := ListModelsResponse{Object: "list", Data: []Model{}}
+						err := json.NewEncoder(w).Encode(response)
+						assert.NoError(t, err)
+					} else {
+						err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+						assert.NoError(t, err)
+					}
+				}
+				callCount++
+			}))
+			defer server.Close()
+
+			baseURL := server.URL + "/v1"
+			client := NewClient(&ClientOptions{
+				BaseURL:     baseURL,
+				RetryConfig: tt.retryConfig,
+			})
+
+			ctx := context.Background()
+			_, err := client.ListModels(ctx)
+
+			assert.Equal(t, tt.expectedCalls, callCount)
+			if tt.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestRetryConfigDefaults(t *testing.T) {
+	client := NewClient(&ClientOptions{
+		BaseURL: "http://localhost:8080/v1",
+	})
+
+	clientImpl, ok := client.(*clientImpl)
+	require.True(t, ok)
+	require.NotNil(t, clientImpl.retryConfig)
+
+	assert.True(t, clientImpl.retryConfig.Enabled)
+	assert.Equal(t, 3, clientImpl.retryConfig.MaxAttempts)
+	assert.Equal(t, 2, clientImpl.retryConfig.InitialBackoffSec)
+	assert.Equal(t, 30, clientImpl.retryConfig.MaxBackoffSec)
+	assert.Equal(t, 2, clientImpl.retryConfig.BackoffMultiplier)
+}
+
+func TestCustomRetryConfig(t *testing.T) {
+	customConfig := &RetryConfig{
+		Enabled:           false,
+		MaxAttempts:       5,
+		InitialBackoffSec: 1,
+		MaxBackoffSec:     60,
+		BackoffMultiplier: 3,
+	}
+
+	client := NewClient(&ClientOptions{
+		BaseURL:     "http://localhost:8080/v1",
+		RetryConfig: customConfig,
+	})
+
+	clientImpl, ok := client.(*clientImpl)
+	require.True(t, ok)
+	require.NotNil(t, clientImpl.retryConfig)
+
+	assert.False(t, clientImpl.retryConfig.Enabled)
+	assert.Equal(t, 5, clientImpl.retryConfig.MaxAttempts)
+	assert.Equal(t, 1, clientImpl.retryConfig.InitialBackoffSec)
+	assert.Equal(t, 60, clientImpl.retryConfig.MaxBackoffSec)
+	assert.Equal(t, 3, clientImpl.retryConfig.BackoffMultiplier)
+}
+
+func TestCalculateBackoff(t *testing.T) {
+	config := &RetryConfig{
+		InitialBackoffSec: 2,
+		MaxBackoffSec:     30,
+		BackoffMultiplier: 2,
+	}
+
+	tests := []struct {
+		attempt  int
+		expected time.Duration
+	}{
+		{0, 0},
+		{1, 2 * time.Second},
+		{2, 4 * time.Second},
+		{3, 8 * time.Second},
+		{4, 16 * time.Second},
+		{5, 30 * time.Second}, // Capped at MaxBackoffSec
+		{6, 30 * time.Second}, // Capped at MaxBackoffSec
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("attempt_%d", tt.attempt), func(t *testing.T) {
+			result := calculateBackoff(tt.attempt, config)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestIsRetryableStatusCode(t *testing.T) {
+	tests := []struct {
+		statusCode int
+		expected   bool
+	}{
+		{200, false},
+		{400, false},
+		{401, false},
+		{403, false},
+		{404, false},
+		{408, true},  // Request Timeout
+		{429, true},  // Too Many Requests
+		{500, true},  // Internal Server Error
+		{502, true},  // Bad Gateway
+		{503, true},  // Service Unavailable
+		{504, true},  // Gateway Timeout
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("status_%d", tt.statusCode), func(t *testing.T) {
+			result := isRetryableStatusCode(tt.statusCode)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestRetryWithContext(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.WriteHeader(http.StatusInternalServerError)
+		err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+		RetryConfig: &RetryConfig{
+			Enabled:           true,
+			MaxAttempts:       5,
+			InitialBackoffSec: 2,
+			MaxBackoffSec:     10,
+			BackoffMultiplier: 2,
+		},
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	_, err := client.ListModels(ctx)
+
+	assert.Error(t, err)
+	// Should have attempted at least once but been cancelled before all retries
+	assert.GreaterOrEqual(t, callCount, 1)
+	assert.LessOrEqual(t, callCount, 5)
 }

@@ -6,7 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
+	"net"
+	"net/http"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
@@ -28,13 +33,97 @@ type Client interface {
 	HealthCheck(ctx context.Context) error
 }
 
+// isRetryableError determines if an error should trigger a retry
+func isRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Network errors
+	if netErr, ok := err.(net.Error); ok {
+		if netErr.Timeout() {
+			return true
+		}
+	}
+
+	// Specific network error types
+	if opErr, ok := err.(*net.OpError); ok {
+		if opErr.Op == "dial" || opErr.Op == "read" {
+			return true
+		}
+		if sysErr, ok := opErr.Err.(*syscall.Errno); ok {
+			return *sysErr == syscall.ECONNREFUSED || *sysErr == syscall.ECONNRESET
+		}
+	}
+
+	// DNS errors
+	if _, ok := err.(*net.DNSError); ok {
+		return true
+	}
+
+	// Context timeout (but not cancellation)
+	if err == context.DeadlineExceeded {
+		return true
+	}
+
+	// IO errors
+	errStr := err.Error()
+	return strings.Contains(errStr, "connection refused") ||
+		strings.Contains(errStr, "connection reset") ||
+		strings.Contains(errStr, "timeout") ||
+		strings.Contains(errStr, "EOF") ||
+		strings.Contains(errStr, "timeout awaiting response headers")
+}
+
+// isRetryableStatusCode determines if an HTTP status code should trigger a retry
+func isRetryableStatusCode(statusCode int) bool {
+	switch statusCode {
+	case http.StatusRequestTimeout,        // 408
+		http.StatusTooManyRequests,        // 429
+		http.StatusInternalServerError,    // 500
+		http.StatusBadGateway,            // 502
+		http.StatusServiceUnavailable,    // 503
+		http.StatusGatewayTimeout:        // 504
+		return true
+	default:
+		return false
+	}
+}
+
+// calculateBackoff calculates the backoff delay for exponential backoff
+func calculateBackoff(attempt int, config *RetryConfig) time.Duration {
+	if attempt == 0 {
+		return 0
+	}
+
+	backoff := float64(config.InitialBackoffSec) * math.Pow(float64(config.BackoffMultiplier), float64(attempt-1))
+	
+	if backoff > float64(config.MaxBackoffSec) {
+		backoff = float64(config.MaxBackoffSec)
+	}
+
+	return time.Duration(backoff) * time.Second
+}
+
+// getDefaultRetryConfig returns the default retry configuration
+func getDefaultRetryConfig() *RetryConfig {
+	return &RetryConfig{
+		Enabled:           true,
+		MaxAttempts:       3,
+		InitialBackoffSec: 2,
+		MaxBackoffSec:     30,
+		BackoffMultiplier: 2,
+	}
+}
+
 // clientImpl represents the concrete implementation of the SDK client
 type clientImpl struct {
-	baseURL string        // Base URL of the Inference Gateway API
-	http    *resty.Client // HTTP client for making requests
-	token   string        // Authentication token
-	tools   *[]ChatCompletionTool
-	options *CreateChatCompletionRequest // Custom request options
+	baseURL     string                   // Base URL of the Inference Gateway API
+	http        *resty.Client            // HTTP client for making requests
+	token       string                   // Authentication token
+	tools       *[]ChatCompletionTool
+	options     *CreateChatCompletionRequest // Custom request options
+	retryConfig *RetryConfig            // Retry configuration
 }
 
 // NewClient creates a new SDK client with the specified options.
@@ -69,13 +158,67 @@ func NewClient(options *ClientOptions) Client {
 		client.SetHeaders(options.Headers)
 	}
 
-	return &clientImpl{
-		baseURL: options.BaseURL,
-		http:    client,
-		token:   options.APIKey,
-		tools:   options.Tools,
-		options: nil, // Initialize options to nil
+	// Configure retry settings
+	retryConfig := options.RetryConfig
+	if retryConfig == nil {
+		retryConfig = getDefaultRetryConfig()
 	}
+
+	return &clientImpl{
+		baseURL:     options.BaseURL,
+		http:        client,
+		token:       options.APIKey,
+		tools:       options.Tools,
+		options:     nil, // Initialize options to nil
+		retryConfig: retryConfig,
+	}
+}
+
+// executeWithRetry executes an HTTP request with retry logic
+func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*resty.Response, error)) (*resty.Response, error) {
+	if !c.retryConfig.Enabled {
+		return request()
+	}
+
+	var lastErr error
+	var resp *resty.Response
+
+	for attempt := 0; attempt < c.retryConfig.MaxAttempts; attempt++ {
+		// Calculate and wait for backoff delay (except for first attempt)
+		if attempt > 0 {
+			delay := calculateBackoff(attempt, c.retryConfig)
+			
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		// Execute the request
+		resp, lastErr = request()
+
+		// If no error, check if we should retry based on status code
+		if lastErr == nil {
+			if !resp.IsError() || !isRetryableStatusCode(resp.StatusCode()) {
+				return resp, nil
+			}
+			// Convert HTTP error status to error for retry logic
+			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode())
+		}
+
+		// Check if we should retry this error
+		if !isRetryableError(lastErr) && (resp == nil || !isRetryableStatusCode(resp.StatusCode())) {
+			break
+		}
+
+		// Don't retry if context is cancelled
+		if ctx.Err() != nil {
+			return resp, lastErr
+		}
+	}
+
+	return resp, lastErr
 }
 
 // WithAuthToken sets the authentication token for the client.
@@ -254,10 +397,12 @@ func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) *clientIm
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
 func (c *clientImpl) ListModels(ctx context.Context) (*ListModelsResponse, error) {
-	resp, err := c.http.R().
-		SetContext(ctx).
-		SetResult(&ListModelsResponse{}).
-		Get(fmt.Sprintf("%s/models", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetResult(&ListModelsResponse{}).
+			Get(fmt.Sprintf("%s/models", c.baseURL))
+	})
 
 	if err != nil {
 		return &ListModelsResponse{}, err
@@ -290,10 +435,12 @@ func (c *clientImpl) ListModels(ctx context.Context) (*ListModelsResponse, error
 //	fmt.Printf("Provider: %s", resp.Provider)
 //	fmt.Printf("Available models: %+v\n", resp.Data)
 func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error) {
-	resp, err := c.http.R().
-		SetContext(ctx).
-		SetResult(&ListModelsResponse{}).
-		Get(fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider))
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetResult(&ListModelsResponse{}).
+			Get(fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider))
+	})
 
 	if err != nil {
 		return nil, err
@@ -338,10 +485,12 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) 
 //	}
 //	fmt.Printf("Available tools: %+v\n", tools.Data)
 func (c *clientImpl) ListTools(ctx context.Context) (*ListToolsResponse, error) {
-	resp, err := c.http.R().
-		SetContext(ctx).
-		SetResult(&ListToolsResponse{}).
-		Get(fmt.Sprintf("%s/mcp/tools", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetResult(&ListToolsResponse{}).
+			Get(fmt.Sprintf("%s/mcp/tools", c.baseURL))
+	})
 
 	if err != nil {
 		return nil, err
@@ -431,12 +580,14 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 		queryParams["provider"] = string(provider)
 	}
 
-	resp, err := c.http.R().
-		SetContext(ctx).
-		SetQueryParams(queryParams).
-		SetBody(request).
-		SetResult(&CreateChatCompletionResponse{}).
-		Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetQueryParams(queryParams).
+			SetBody(request).
+			SetResult(&CreateChatCompletionResponse{}).
+			Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
+	})
 
 	if err != nil {
 		return nil, err
@@ -544,13 +695,14 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 		queryParams["provider"] = string(provider)
 	}
 
-	req := c.http.R().
-		SetContext(ctx).
-		SetQueryParams(queryParams).
-		SetBody(request).
-		SetDoNotParseResponse(true)
-
-	resp, err := req.Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetQueryParams(queryParams).
+			SetBody(request).
+			SetDoNotParseResponse(true).
+			Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
+	})
 	if err != nil {
 		close(eventChan)
 		return eventChan, err
@@ -651,9 +803,11 @@ func boolPtr(b bool) *bool {
 //	    log.Fatalf("Health check failed: %v", err)
 //	}
 func (c *clientImpl) HealthCheck(ctx context.Context) error {
-	resp, err := c.http.R().
-		SetContext(ctx).
-		Get(fmt.Sprintf("%s/health", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			Get(fmt.Sprintf("%s/health", c.baseURL))
+	})
 
 	if err != nil {
 		return err

@@ -60,6 +60,22 @@ type ClientOptions struct {
 	Tools *[]ChatCompletionTool
 	// Headers is a map of custom headers to include with all requests.
 	Headers map[string]string
+	// RetryConfig is the retry configuration for HTTP requests.
+	RetryConfig *RetryConfig
+}
+
+// RetryConfig represents the retry configuration for HTTP requests
+type RetryConfig struct {
+	// Enabled controls whether retry logic is enabled
+	Enabled bool
+	// MaxAttempts is the maximum number of retry attempts (including initial request)
+	MaxAttempts int
+	// InitialBackoffSec is the initial backoff delay in seconds
+	InitialBackoffSec int
+	// MaxBackoffSec is the maximum backoff delay in seconds
+	MaxBackoffSec int
+	// BackoffMultiplier is the multiplier for exponential backoff
+	BackoffMultiplier int
 }
 
 // MiddlewareOptions represents options for controlling middleware behavior
