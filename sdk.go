@@ -72,7 +72,6 @@ func isRetryableError(err error) bool {
 
 // isRetryableStatusCode determines if an HTTP status code should trigger a retry
 func isRetryableStatusCode(statusCode int, config *RetryConfig) bool {
-	// Use custom status codes if provided
 	if len(config.RetryableStatusCodes) > 0 {
 		for _, code := range config.RetryableStatusCodes {
 			if statusCode == code {
@@ -82,7 +81,6 @@ func isRetryableStatusCode(statusCode int, config *RetryConfig) bool {
 		return false
 	}
 
-	// Use default status codes
 	switch statusCode {
 	case
 		http.StatusRequestTimeout,      // 408
