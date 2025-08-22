@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0](https://github.com/inference-gateway/sdk/compare/v1.11.1...v1.12.0) (2025-08-22)
+
+### ✨ Features
+
+* **retry:** Add retry logic with exponential backoff for HTTP requests ([#20](https://github.com/inference-gateway/sdk/issues/20)) ([b4a0ddb](https://github.com/inference-gateway/sdk/commit/b4a0ddb3a00d05ec54a1d70b3184f863307b9dbb)), closes [#22](https://github.com/inference-gateway/sdk/issues/22)
+
 ## [1.12.0-rc.2](https://github.com/inference-gateway/sdk/compare/v1.12.0-rc.1...v1.12.0-rc.2) (2025-08-22)
 
 ### ✨ Features
