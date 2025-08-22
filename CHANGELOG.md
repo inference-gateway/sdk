@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0-rc.2](https://github.com/inference-gateway/sdk/compare/v1.12.0-rc.1...v1.12.0-rc.2) (2025-08-22)
+
+### ✨ Features
+
+* Add Retry Mechanism section to README and implement parseRetryAfter function with tests also for rate-limiting retries ([ce74bad](https://github.com/inference-gateway/sdk/commit/ce74badc6a0b04b66e1972157535319b3050fdca))
+
 ## [1.12.0-rc.1](https://github.com/inference-gateway/sdk/compare/v1.11.1...v1.12.0-rc.1) (2025-08-22)
 
 ### ✨ Features
