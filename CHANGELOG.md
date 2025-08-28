@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.0](https://github.com/inference-gateway/sdk/compare/v1.12.0...v1.13.0) (2025-08-28)
+
+### ✨ Features
+
+* **a2a:** Add functions to list and fetch A2A agents ([#25](https://github.com/inference-gateway/sdk/issues/25)) ([7af9c99](https://github.com/inference-gateway/sdk/commit/7af9c991e2349fe68d1a9cb96f7097e3cc21e411)), closes [#24](https://github.com/inference-gateway/sdk/issues/24)
+
 ## [1.12.0](https://github.com/inference-gateway/sdk/compare/v1.11.1...v1.12.0) (2025-08-22)
 
 ### ✨ Features
