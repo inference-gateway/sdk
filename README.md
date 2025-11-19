@@ -10,7 +10,7 @@
 [![Release](https://img.shields.io/github/release/inference-gateway/sdk.svg)](https://github.com/inference-gateway/sdk/releases)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/inference-gateway/sdk)](https://golang.org/)
 
-Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • MCP tools support • Middleware control
+Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • Vision support • MCP tools support • Middleware control
 
 [Installation](#installation) • [Quick Start](#usage) • [Examples](#examples) • [Documentation](#documentation)
 
@@ -29,6 +29,7 @@ Connect to multiple LLM providers through a unified interface • Stream respons
     - [Listing Models](#listing-models)
     - [Listing MCP Tools](#listing-mcp-tools)
     - [Generating Content](#generating-content)
+    - [Vision Support](#vision-support)
     - [Using ReasoningFormat](#using-reasoningformat)
     - [Streaming Content](#streaming-content)
     - [Tool-Use](#tool-use)
@@ -386,6 +387,105 @@ if chatCompletion.Choices[0].Message.Reasoning != nil {
     fmt.Printf("Reasoning: %s\n", *chatCompletion.Choices[0].Message.Reasoning)
 }
 ```
+
+### Vision Support
+
+The SDK supports multimodal messages with images for vision-capable models like GPT-4 Vision. You can include images via URLs or base64-encoded data.
+
+#### Simple Text Message (Backward Compatible)
+
+```go
+// Create a simple text message
+textMessage, err := sdk.NewTextMessage(sdk.User, "What is Go programming language?")
+if err != nil {
+    log.Fatal(err)
+}
+
+response, err := client.GenerateContent(
+    context.Background(),
+    sdk.Openai,
+    "gpt-4o",
+    []sdk.Message{textMessage},
+)
+```
+
+#### Vision Message with Image URL
+
+```go
+// Create content parts with text and image
+var contentParts []sdk.ContentPart
+
+// Add text part
+textPart, err := sdk.NewTextContentPart("What is in this image?")
+if err != nil {
+    log.Fatal(err)
+}
+contentParts = append(contentParts, textPart)
+
+// Add image part (auto detail level by default)
+imagePart, err := sdk.NewImageContentPart(
+    "https://example.com/image.jpg",
+    nil, // detail level: nil for auto, or &sdk.High, &sdk.Low
+)
+if err != nil {
+    log.Fatal(err)
+}
+contentParts = append(contentParts, imagePart)
+
+// Create vision message
+visionMessage, err := sdk.NewVisionMessage(sdk.User, contentParts)
+if err != nil {
+    log.Fatal(err)
+}
+
+response, err := client.GenerateContent(
+    context.Background(),
+    sdk.Openai,
+    "gpt-4o",
+    []sdk.Message{visionMessage},
+)
+```
+
+#### Vision Message with Base64 Encoded Image
+
+```go
+// Use high detail level for better image analysis
+highDetail := sdk.High
+imagePart, err := sdk.NewImageContentPart(
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+    &highDetail,
+)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+#### Multiple Images in One Message
+
+```go
+var contentParts []sdk.ContentPart
+
+// Add text
+textPart, _ := sdk.NewTextContentPart("Compare these images:")
+contentParts = append(contentParts, textPart)
+
+// Add first image
+image1, _ := sdk.NewImageContentPart("https://example.com/image1.jpg", nil)
+contentParts = append(contentParts, image1)
+
+// Add second image
+image2, _ := sdk.NewImageContentPart("https://example.com/image2.jpg", nil)
+contentParts = append(contentParts, image2)
+
+visionMessage, _ := sdk.NewVisionMessage(sdk.User, contentParts)
+```
+
+**Image Detail Levels:**
+- `nil` or `&sdk.Auto`: Automatic detail level (default)
+- `&sdk.Low`: Lower resolution, faster and cheaper
+- `&sdk.High`: Higher resolution, better quality but more expensive
+
+For a complete example, see [examples/vision/main.go](examples/vision/main.go).
 
 ### Using ReasoningFormat
 

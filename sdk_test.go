@@ -13,6 +13,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test helper functions
+
+// newTextContent creates Message_Content from text for inline use.
+func newTextContent(text string) Message_Content {
+	var content Message_Content
+	if err := content.FromMessageContent0(text); err != nil {
+		panic(fmt.Sprintf("failed to create text content: %v", err))
+	}
+	return content
+}
+
 func TestNewClient(t *testing.T) {
 	client := NewClient(&ClientOptions{
 		BaseURL: "http://localhost:8080/v1",
@@ -259,7 +270,7 @@ func TestGenerateContent(t *testing.T) {
 					Index: 0,
 					Message: Message{
 						Role:    Assistant,
-						Content: "Go is a programming language designed by Google engineers in 2007. It's known for its simplicity, efficiency, and strong support for concurrency.",
+						Content: newTextContent("Go is a programming language designed by Google engineers in 2007. It's known for its simplicity, efficiency, and strong support for concurrency."),
 					},
 					FinishReason: Stop,
 				},
@@ -290,11 +301,11 @@ func TestGenerateContent(t *testing.T) {
 		[]Message{
 			{
 				Role:    System,
-				Content: "You are a helpful assistant.",
+				Content: newTextContent("You are a helpful assistant."),
 			},
 			{
 				Role:    User,
-				Content: "What is Go?",
+				Content: newTextContent("What is Go?"),
 			},
 		},
 	)
@@ -305,7 +316,12 @@ func TestGenerateContent(t *testing.T) {
 	assert.Equal(t, "gpt-4o", response.Model)
 	assert.Len(t, response.Choices, 1)
 	assert.Equal(t, Assistant, response.Choices[0].Message.Role)
-	assert.Contains(t, response.Choices[0].Message.Content, "Go is a programming language")
+
+	// Extract text content from Message_Content
+	responseText, err := response.Choices[0].Message.Content.AsMessageContent0()
+	assert.NoError(t, err)
+	assert.Contains(t, responseText, "Go is a programming language")
+
 	assert.Equal(t, Stop, response.Choices[0].FinishReason)
 	assert.NotNil(t, response.Usage)
 	assert.Equal(t, int64(67), response.Usage.TotalTokens)
@@ -334,7 +350,7 @@ func TestGenerateContent_APIError(t *testing.T) {
 		[]Message{
 			{
 				Role:    User,
-				Content: "What is Go?",
+				Content: newTextContent("What is Go?"),
 			},
 		},
 	)
@@ -400,11 +416,11 @@ func TestGenerateContentStream(t *testing.T) {
 		[]Message{
 			{
 				Role:    System,
-				Content: "You are a helpful assistant.",
+				Content: newTextContent("You are a helpful assistant."),
 			},
 			{
 				Role:    User,
-				Content: "What is Go?",
+				Content: newTextContent("What is Go?"),
 			},
 		},
 	)
@@ -467,7 +483,7 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 		[]Message{
 			{
 				Role:    User,
-				Content: "What is Go?",
+				Content: newTextContent("What is Go?"),
 			},
 		},
 	)
@@ -536,7 +552,7 @@ func TestWithOptions(t *testing.T) {
 			provider: Openai,
 			model:    "openai/gpt-4o",
 			messages: []Message{
-				{Role: User, Content: "Hello"},
+				{Role: User, Content: newTextContent("Hello")},
 			},
 			options:     nil,
 			isStreaming: false,
@@ -557,7 +573,7 @@ func TestWithOptions(t *testing.T) {
 							Index: 0,
 							Message: Message{
 								Role:    Assistant,
-								Content: "Hello there!",
+								Content: newTextContent("Hello there!"),
 							},
 							FinishReason: Stop,
 						},
@@ -570,7 +586,7 @@ func TestWithOptions(t *testing.T) {
 			provider: Anthropic,
 			model:    "anthropic/claude-3-opus-20240229",
 			messages: []Message{
-				{Role: User, Content: "What is the square root of 144?"},
+				{Role: User, Content: newTextContent("What is the square root of 144?")},
 			},
 			options: &CreateChatCompletionRequest{
 				ReasoningFormat: stringPtr("parsed"),
@@ -595,7 +611,7 @@ func TestWithOptions(t *testing.T) {
 							Index: 0,
 							Message: Message{
 								Role:             Assistant,
-								Content:          "The square root of 144 is 12.",
+								Content:          newTextContent("The square root of 144 is 12."),
 								ReasoningContent: &reasoningContent,
 								Reasoning:        &reasoningContent,
 							},
@@ -610,7 +626,7 @@ func TestWithOptions(t *testing.T) {
 			provider: Anthropic,
 			model:    "anthropic/claude-3-opus-20240229",
 			messages: []Message{
-				{Role: User, Content: "What is the square root of 144?"},
+				{Role: User, Content: newTextContent("What is the square root of 144?")},
 			},
 			options: &CreateChatCompletionRequest{
 				ReasoningFormat: stringPtr("raw"),
@@ -634,7 +650,7 @@ func TestWithOptions(t *testing.T) {
 							Index: 0,
 							Message: Message{
 								Role:    Assistant,
-								Content: "<think>\nI need to calculate the square root of 144. \n\nThe square root of a number is a value that, when multiplied by itself, gives the original number.\n\nFor 144:\n√144 = x means x² = 144\n\n12² = 144 because 12 × 12 = 144\n\nTherefore, √144 = 12\n</think>\n\nThe square root of 144 is 12.",
+								Content: newTextContent("<think>\nI need to calculate the square root of 144. \n\nThe square root of a number is a value that, when multiplied by itself, gives the original number.\n\nFor 144:\n√144 = x means x² = 144\n\n12² = 144 because 12 × 12 = 144\n\nTherefore, √144 = 12\n</think>\n\nThe square root of 144 is 12."),
 							},
 							FinishReason: Stop,
 						},
@@ -647,7 +663,7 @@ func TestWithOptions(t *testing.T) {
 			provider: Ollama,
 			model:    "ollama/llama2",
 			messages: []Message{
-				{Role: User, Content: "Tell me about streaming"},
+				{Role: User, Content: newTextContent("Tell me about streaming")},
 			},
 			options: &CreateChatCompletionRequest{
 				Stream: boolPtr(false),
@@ -913,7 +929,7 @@ func TestHeadersInAllRequests(t *testing.T) {
 			name:     "GenerateContent",
 			endpoint: "/v1/chat/completions",
 			makeCall: func(client Client) error {
-				_, err := client.GenerateContent(context.Background(), Openai, "gpt-4o", []Message{{Role: User, Content: "test"}})
+				_, err := client.GenerateContent(context.Background(), Openai, "gpt-4o", []Message{{Role: User, Content: newTextContent("test")}})
 				return err
 			},
 		},
@@ -948,7 +964,7 @@ func TestHeadersInAllRequests(t *testing.T) {
 						Choices: []ChatCompletionChoice{{
 							Index:        0,
 							FinishReason: Stop,
-							Message:      Message{Role: Assistant, Content: "test response"},
+							Message:      Message{Role: Assistant, Content: newTextContent("test response")},
 						}},
 					}
 					err := json.NewEncoder(w).Encode(response)
@@ -1125,7 +1141,7 @@ func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 			endpoint: "/v1/chat/completions",
 			makeCall: func(client Client) error {
 				_, err := client.GenerateContent(context.Background(), Openai, "gpt-4o", []Message{
-					{Role: User, Content: "test"},
+					{Role: User, Content: newTextContent("test")},
 				})
 				return err
 			},
@@ -1169,7 +1185,7 @@ func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 								Index: 0,
 								Message: Message{
 									Role:    Assistant,
-									Content: "Test response",
+									Content: newTextContent("Test response"),
 								},
 								FinishReason: "stop",
 							},

@@ -93,3 +93,88 @@ type MiddlewareOptions struct {
 	// DirectProvider routes directly to provider without middleware
 	DirectProvider bool
 }
+
+// A2AAgentCard conveys key information about an A2A agent.
+// NOTE: This type is maintained for backward compatibility as it was removed from the OpenAPI spec.
+type A2AAgentCard struct {
+	// Capabilities Optional capabilities supported by the agent.
+	Capabilities map[string]interface{} `json:"capabilities"`
+	// DefaultInputModes The set of interaction modes that the agent supports across all skills.
+	DefaultInputModes []string `json:"defaultInputModes"`
+	// DefaultOutputModes Supported media types for output.
+	DefaultOutputModes []string `json:"defaultOutputModes"`
+	// Description A human-readable description of the agent.
+	Description string `json:"description"`
+	// DocumentationUrl A URL to documentation for the agent.
+	DocumentationUrl *string `json:"documentationUrl,omitempty"`
+	// IconUrl A URL to an icon for the agent.
+	IconUrl *string `json:"iconUrl,omitempty"`
+	// Id Unique identifier for the agent.
+	Id string `json:"id"`
+	// Name Human readable name of the agent.
+	Name string `json:"name"`
+	// Provider The service provider of the agent
+	Provider *map[string]interface{} `json:"provider,omitempty"`
+	// Security Security requirements for contacting the agent.
+	Security *[]map[string]interface{} `json:"security,omitempty"`
+	// SecuritySchemes Security scheme details used for authenticating with this agent.
+	SecuritySchemes *map[string]interface{} `json:"securitySchemes,omitempty"`
+	// Skills Skills are a unit of capability that an agent can perform.
+	Skills []map[string]interface{} `json:"skills"`
+	// SupportsAuthenticatedExtendedCard true if the agent supports providing an extended agent card.
+	SupportsAuthenticatedExtendedCard *bool `json:"supportsAuthenticatedExtendedCard,omitempty"`
+	// Url A URL to the address the agent is hosted at.
+	Url string `json:"url"`
+	// Version The version of the agent.
+	Version string `json:"version"`
+}
+
+// ListAgentsResponse represents the response structure for listing A2A agents.
+// NOTE: This type is maintained for backward compatibility as it was removed from the OpenAPI spec.
+type ListAgentsResponse struct {
+	// Data Array of available A2A agents
+	Data []A2AAgentCard `json:"data"`
+	// Object Always "list"
+	Object string `json:"object"`
+}
+
+// Helper functions for working with vision messages
+
+// NewTextMessage creates a message with text content (backward compatible).
+func NewTextMessage(role MessageRole, text string) (Message, error) {
+	var msg Message
+	msg.Role = role
+	err := msg.Content.FromMessageContent0(text)
+	return msg, err
+}
+
+// NewVisionMessage creates a message with multimodal content (text + images).
+func NewVisionMessage(role MessageRole, parts []ContentPart) (Message, error) {
+	var msg Message
+	msg.Role = role
+	err := msg.Content.FromMessageContent1(parts)
+	return msg, err
+}
+
+// NewTextContentPart creates a text content part for multimodal messages.
+func NewTextContentPart(text string) (ContentPart, error) {
+	var part ContentPart
+	err := part.FromTextContentPart(TextContentPart{
+		Type: Text,
+		Text: text,
+	})
+	return part, err
+}
+
+// NewImageContentPart creates an image content part for multimodal messages.
+func NewImageContentPart(imageURL string, detail *ImageURLDetail) (ContentPart, error) {
+	var part ContentPart
+	err := part.FromImageContentPart(ImageContentPart{
+		Type: ImageUrl,
+		ImageUrl: ImageURL{
+			Url:    imageURL,
+			Detail: detail,
+		},
+	})
+	return part, err
+}
