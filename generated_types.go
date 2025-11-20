@@ -281,7 +281,7 @@ type MCPTool struct {
 
 // Message Message structure for provider requests
 type Message struct {
-	Content string `json:"content"`
+	Content Message_Content `json:"content"`
 
 	// Reasoning The reasoning of the chunk message. Same as reasoning_content.
 	Reasoning *string `json:"reasoning,omitempty"`
@@ -623,32 +623,4 @@ func (t Message_Content) MarshalJSON() ([]byte, error) {
 func (t *Message_Content) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
-}
-
-// A2A types - temporarily preserved for backward compatibility
-// These types were removed from the OpenAPI spec but are kept here to maintain existing tests
-
-// A2AAgentCard An AgentCard conveys key information
-type A2AAgentCard struct {
-	Capabilities                      map[string]interface{}   `json:"capabilities"`
-	DefaultInputModes                 []string                 `json:"defaultInputModes"`
-	DefaultOutputModes                []string                 `json:"defaultOutputModes"`
-	Description                       string                   `json:"description"`
-	DocumentationUrl                  *string                  `json:"documentationUrl,omitempty"`
-	IconUrl                           *string                  `json:"iconUrl,omitempty"`
-	Id                                string                   `json:"id"`
-	Name                              string                   `json:"name"`
-	Provider                          *map[string]interface{}  `json:"provider,omitempty"`
-	Security                          *[]map[string]interface{} `json:"security,omitempty"`
-	SecuritySchemes                   *map[string]interface{}  `json:"securitySchemes,omitempty"`
-	Skills                            []map[string]interface{} `json:"skills"`
-	SupportsAuthenticatedExtendedCard *bool                    `json:"supportsAuthenticatedExtendedCard,omitempty"`
-	Url                               string                   `json:"url"`
-	Version                           string                   `json:"version"`
-}
-
-// ListAgentsResponse Response structure for listing A2A agents
-type ListAgentsResponse struct {
-	Data   []A2AAgentCard `json:"data"`
-	Object string         `json:"object"`
 }

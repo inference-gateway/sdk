@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Test helper functions - using the public NewMessageContent helper
+
 func TestNewClient(t *testing.T) {
 	client := NewClient(&ClientOptions{
 		BaseURL: "http://localhost:8080/v1",
@@ -259,7 +261,7 @@ func TestGenerateContent(t *testing.T) {
 					Index: 0,
 					Message: Message{
 						Role:    Assistant,
-						Content: "Go is a programming language designed by Google engineers in 2007. It's known for its simplicity, efficiency, and strong support for concurrency.",
+						Content: NewMessageContent("Go is a programming language designed by Google engineers in 2007. It's known for its simplicity, efficiency, and strong support for concurrency."),
 					},
 					FinishReason: Stop,
 				},
@@ -290,11 +292,11 @@ func TestGenerateContent(t *testing.T) {
 		[]Message{
 			{
 				Role:    System,
-				Content: "You are a helpful assistant.",
+				Content: NewMessageContent("You are a helpful assistant."),
 			},
 			{
 				Role:    User,
-				Content: "What is Go?",
+				Content: NewMessageContent("What is Go?"),
 			},
 		},
 	)
@@ -305,7 +307,12 @@ func TestGenerateContent(t *testing.T) {
 	assert.Equal(t, "gpt-4o", response.Model)
 	assert.Len(t, response.Choices, 1)
 	assert.Equal(t, Assistant, response.Choices[0].Message.Role)
-	assert.Contains(t, response.Choices[0].Message.Content, "Go is a programming language")
+
+	// Extract text content from Message_Content
+	responseText, err := response.Choices[0].Message.Content.AsMessageContent0()
+	assert.NoError(t, err)
+	assert.Contains(t, responseText, "Go is a programming language")
+
 	assert.Equal(t, Stop, response.Choices[0].FinishReason)
 	assert.NotNil(t, response.Usage)
 	assert.Equal(t, int64(67), response.Usage.TotalTokens)
@@ -334,7 +341,7 @@ func TestGenerateContent_APIError(t *testing.T) {
 		[]Message{
 			{
 				Role:    User,
-				Content: "What is Go?",
+				Content: NewMessageContent("What is Go?"),
 			},
 		},
 	)
@@ -400,11 +407,11 @@ func TestGenerateContentStream(t *testing.T) {
 		[]Message{
 			{
 				Role:    System,
-				Content: "You are a helpful assistant.",
+				Content: NewMessageContent("You are a helpful assistant."),
 			},
 			{
 				Role:    User,
-				Content: "What is Go?",
+				Content: NewMessageContent("What is Go?"),
 			},
 		},
 	)
@@ -467,7 +474,7 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 		[]Message{
 			{
 				Role:    User,
-				Content: "What is Go?",
+				Content: NewMessageContent("What is Go?"),
 			},
 		},
 	)
@@ -536,7 +543,7 @@ func TestWithOptions(t *testing.T) {
 			provider: Openai,
 			model:    "openai/gpt-4o",
 			messages: []Message{
-				{Role: User, Content: "Hello"},
+				{Role: User, Content: NewMessageContent("Hello")},
 			},
 			options:     nil,
 			isStreaming: false,
@@ -557,7 +564,7 @@ func TestWithOptions(t *testing.T) {
 							Index: 0,
 							Message: Message{
 								Role:    Assistant,
-								Content: "Hello there!",
+								Content: NewMessageContent("Hello there!"),
 							},
 							FinishReason: Stop,
 						},
@@ -570,7 +577,7 @@ func TestWithOptions(t *testing.T) {
 			provider: Anthropic,
 			model:    "anthropic/claude-3-opus-20240229",
 			messages: []Message{
-				{Role: User, Content: "What is the square root of 144?"},
+				{Role: User, Content: NewMessageContent("What is the square root of 144?")},
 			},
 			options: &CreateChatCompletionRequest{
 				ReasoningFormat: stringPtr("parsed"),
@@ -595,7 +602,7 @@ func TestWithOptions(t *testing.T) {
 							Index: 0,
 							Message: Message{
 								Role:             Assistant,
-								Content:          "The square root of 144 is 12.",
+								Content:          NewMessageContent("The square root of 144 is 12."),
 								ReasoningContent: &reasoningContent,
 								Reasoning:        &reasoningContent,
 							},
@@ -610,7 +617,7 @@ func TestWithOptions(t *testing.T) {
 			provider: Anthropic,
 			model:    "anthropic/claude-3-opus-20240229",
 			messages: []Message{
-				{Role: User, Content: "What is the square root of 144?"},
+				{Role: User, Content: NewMessageContent("What is the square root of 144?")},
 			},
 			options: &CreateChatCompletionRequest{
 				ReasoningFormat: stringPtr("raw"),
@@ -634,7 +641,7 @@ func TestWithOptions(t *testing.T) {
 							Index: 0,
 							Message: Message{
 								Role:    Assistant,
-								Content: "<think>\nI need to calculate the square root of 144. \n\nThe square root of a number is a value that, when multiplied by itself, gives the original number.\n\nFor 144:\n√144 = x means x² = 144\n\n12² = 144 because 12 × 12 = 144\n\nTherefore, √144 = 12\n</think>\n\nThe square root of 144 is 12.",
+								Content: NewMessageContent("<think>\nI need to calculate the square root of 144. \n\nThe square root of a number is a value that, when multiplied by itself, gives the original number.\n\nFor 144:\n√144 = x means x² = 144\n\n12² = 144 because 12 × 12 = 144\n\nTherefore, √144 = 12\n</think>\n\nThe square root of 144 is 12."),
 							},
 							FinishReason: Stop,
 						},
@@ -647,7 +654,7 @@ func TestWithOptions(t *testing.T) {
 			provider: Ollama,
 			model:    "ollama/llama2",
 			messages: []Message{
-				{Role: User, Content: "Tell me about streaming"},
+				{Role: User, Content: NewMessageContent("Tell me about streaming")},
 			},
 			options: &CreateChatCompletionRequest{
 				Stream: boolPtr(false),
@@ -913,7 +920,7 @@ func TestHeadersInAllRequests(t *testing.T) {
 			name:     "GenerateContent",
 			endpoint: "/v1/chat/completions",
 			makeCall: func(client Client) error {
-				_, err := client.GenerateContent(context.Background(), Openai, "gpt-4o", []Message{{Role: User, Content: "test"}})
+				_, err := client.GenerateContent(context.Background(), Openai, "gpt-4o", []Message{{Role: User, Content: NewMessageContent("test")}})
 				return err
 			},
 		},
@@ -948,7 +955,7 @@ func TestHeadersInAllRequests(t *testing.T) {
 						Choices: []ChatCompletionChoice{{
 							Index:        0,
 							FinishReason: Stop,
-							Message:      Message{Role: Assistant, Content: "test response"},
+							Message:      Message{Role: Assistant, Content: NewMessageContent("test response")},
 						}},
 					}
 					err := json.NewEncoder(w).Encode(response)
@@ -980,7 +987,6 @@ func TestWithMiddlewareOptions(t *testing.T) {
 			middlewareOpts: nil,
 			expectedHeaders: map[string]string{
 				"X-MCP-Bypass":      "",
-				"X-A2A-Bypass":      "",
 				"X-Direct-Provider": "",
 			},
 		},
@@ -991,18 +997,6 @@ func TestWithMiddlewareOptions(t *testing.T) {
 			},
 			expectedHeaders: map[string]string{
 				"X-MCP-Bypass":      "true",
-				"X-A2A-Bypass":      "",
-				"X-Direct-Provider": "",
-			},
-		},
-		{
-			name: "skip A2A only",
-			middlewareOpts: &MiddlewareOptions{
-				SkipA2A: true,
-			},
-			expectedHeaders: map[string]string{
-				"X-MCP-Bypass":      "",
-				"X-A2A-Bypass":      "true",
 				"X-Direct-Provider": "",
 			},
 		},
@@ -1013,7 +1007,6 @@ func TestWithMiddlewareOptions(t *testing.T) {
 			},
 			expectedHeaders: map[string]string{
 				"X-MCP-Bypass":      "",
-				"X-A2A-Bypass":      "",
 				"X-Direct-Provider": "true",
 			},
 		},
@@ -1021,12 +1014,10 @@ func TestWithMiddlewareOptions(t *testing.T) {
 			name: "all middleware options enabled",
 			middlewareOpts: &MiddlewareOptions{
 				SkipMCP:        true,
-				SkipA2A:        true,
 				DirectProvider: true,
 			},
 			expectedHeaders: map[string]string{
 				"X-MCP-Bypass":      "true",
-				"X-A2A-Bypass":      "true",
 				"X-Direct-Provider": "true",
 			},
 		},
@@ -1034,12 +1025,10 @@ func TestWithMiddlewareOptions(t *testing.T) {
 			name: "mixed middleware options",
 			middlewareOpts: &MiddlewareOptions{
 				SkipMCP:        true,
-				SkipA2A:        false,
 				DirectProvider: true,
 			},
 			expectedHeaders: map[string]string{
 				"X-MCP-Bypass":      "true",
-				"X-A2A-Bypass":      "",
 				"X-Direct-Provider": "true",
 			},
 		},
@@ -1081,13 +1070,11 @@ func TestWithMiddlewareOptions(t *testing.T) {
 func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 	middlewareOpts := &MiddlewareOptions{
 		SkipMCP:        true,
-		SkipA2A:        true,
 		DirectProvider: true,
 	}
 
 	expectedHeaders := map[string]string{
 		"X-MCP-Bypass":      "true",
-		"X-A2A-Bypass":      "true",
 		"X-Direct-Provider": "true",
 	}
 
@@ -1125,7 +1112,7 @@ func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 			endpoint: "/v1/chat/completions",
 			makeCall: func(client Client) error {
 				_, err := client.GenerateContent(context.Background(), Openai, "gpt-4o", []Message{
-					{Role: User, Content: "test"},
+					{Role: User, Content: NewMessageContent("test")},
 				})
 				return err
 			},
@@ -1169,7 +1156,7 @@ func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 								Index: 0,
 								Message: Message{
 									Role:    Assistant,
-									Content: "Test response",
+									Content: NewMessageContent("Test response"),
 								},
 								FinishReason: "stop",
 							},
@@ -1200,7 +1187,6 @@ func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 func TestMiddlewareOptionsChaining(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "true", r.Header.Get("X-MCP-Bypass"))
-		assert.Equal(t, "true", r.Header.Get("X-A2A-Bypass"))
 		assert.Equal(t, "", r.Header.Get("X-Direct-Provider"))
 
 		assert.Equal(t, "custom-value", r.Header.Get("X-Custom-Header"))
@@ -1225,7 +1211,6 @@ func TestMiddlewareOptionsChaining(t *testing.T) {
 		}).
 		WithMiddlewareOptions(&MiddlewareOptions{
 			SkipMCP: true,
-			SkipA2A: true,
 		})
 
 	ctx := context.Background()
@@ -2038,7 +2023,7 @@ func TestOllamaCloudProvider(t *testing.T) {
 						Index: 0,
 						Message: Message{
 							Role:    Assistant,
-							Content: "Hello! I'm an AI assistant powered by Ollama Cloud. How can I help you today?",
+							Content: NewMessageContent("Hello! I'm an AI assistant powered by Ollama Cloud. How can I help you today?"),
 						},
 						FinishReason: Stop,
 					},
@@ -2063,7 +2048,7 @@ func TestOllamaCloudProvider(t *testing.T) {
 
 		ctx := context.Background()
 		messages := []Message{
-			{Role: User, Content: "Hello"},
+			{Role: User, Content: NewMessageContent("Hello")},
 		}
 
 		response, err := client.GenerateContent(ctx, OllamaCloud, "ollama_cloud/gpt-oss:20b", messages)
@@ -2073,6 +2058,9 @@ func TestOllamaCloudProvider(t *testing.T) {
 		assert.Equal(t, "chatcmpl-test-ollama-cloud", response.Id)
 		assert.Equal(t, "ollama_cloud/gpt-oss:20b", response.Model)
 		assert.Len(t, response.Choices, 1)
-		assert.Equal(t, "Hello! I'm an AI assistant powered by Ollama Cloud. How can I help you today?", response.Choices[0].Message.Content)
+
+		responseText, err := response.Choices[0].Message.Content.AsMessageContent0()
+		assert.NoError(t, err)
+		assert.Equal(t, "Hello! I'm an AI assistant powered by Ollama Cloud. How can I help you today?", responseText)
 	})
 }

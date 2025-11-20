@@ -10,7 +10,7 @@
 [![Release](https://img.shields.io/github/release/inference-gateway/sdk.svg)](https://github.com/inference-gateway/sdk/releases)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/inference-gateway/sdk)](https://golang.org/)
 
-Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • MCP tools support • Middleware control
+Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • Vision support • MCP tools support • Middleware control
 
 [Installation](#installation) • [Quick Start](#usage) • [Examples](#examples) • [Documentation](#documentation)
 
@@ -29,6 +29,7 @@ Connect to multiple LLM providers through a unified interface • Stream respons
     - [Listing Models](#listing-models)
     - [Listing MCP Tools](#listing-mcp-tools)
     - [Generating Content](#generating-content)
+    - [Vision Support](#vision-support)
     - [Using ReasoningFormat](#using-reasoningformat)
     - [Streaming Content](#streaming-content)
     - [Tool-Use](#tool-use)
@@ -206,7 +207,7 @@ response, err := client.GenerateContent(ctx, provider, model, messages)
 
 ### Middleware Options
 
-The Inference Gateway supports various middleware layers (MCP tools, A2A agents) that can be bypassed for direct provider access. The SDK provides `WithMiddlewareOptions` to control middleware behavior:
+The Inference Gateway supports various middleware layers (MCP tools) that can be bypassed for direct provider access. The SDK provides `WithMiddlewareOptions` to control middleware behavior:
 
 ```go
 package main
@@ -227,7 +228,7 @@ func main() {
 
     ctx := context.Background()
     messages := []sdk.Message{
-        {Role: sdk.User, Content: "Hello, world!"},
+        {Role: sdk.User, Content: sdk.NewMessageContent("Hello, world!")},
     }
 
     // 1. Skip MCP middleware only
@@ -235,20 +236,14 @@ func main() {
         SkipMCP: true,
     }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 
-    // 2. Skip A2A (Agent-to-Agent) middleware only
-    response2, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
-        SkipA2A: true,
-    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
-
-    // 3. Direct provider access (bypasses all middleware)
+    // 2. Direct provider access (bypasses all middleware)
     response3, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
         DirectProvider: true,
     }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 
-    // 4. Skip both MCP and A2A middleware
+    // 3. Skip MCP middleware
     response4, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
         SkipMCP: true,
-        SkipA2A: true,
     }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 }
 ```
@@ -256,7 +251,6 @@ func main() {
 **Middleware Options:**
 
 -   **`SkipMCP`** - Bypasses MCP (Model Context Protocol) middleware processing
--   **`SkipA2A`** - Bypasses A2A (Agent-to-Agent) middleware processing
 -   **`DirectProvider`** - Routes directly to the provider without any middleware
 
 **Method Chaining:**
@@ -268,7 +262,6 @@ response, err := client.
     WithHeader("X-Custom-Header", "value").
     WithMiddlewareOptions(&sdk.MiddlewareOptions{
         SkipMCP: true,
-        SkipA2A: true,
     }).
     GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 ```
@@ -280,7 +273,6 @@ You can also control middleware using custom headers directly:
 ```go
 response, err := client.
     WithHeader("X-MCP-Bypass", "true").
-    WithHeader("X-A2A-Bypass", "true").
     WithHeader("X-Direct-Provider", "true").
     GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 ```
@@ -360,11 +352,11 @@ response, err := client.GenerateContent(
     []sdk.Message{
         {
             Role:    sdk.System,
-            Content: "You are a helpful assistant.",
+            Content: sdk.NewMessageContent("You are a helpful assistant."),
         },
         {
             Role:    sdk.User,
-            Content: "What is Go?",
+            Content: sdk.NewMessageContent("What is Go?"),
         },
     },
 )
@@ -387,6 +379,105 @@ if chatCompletion.Choices[0].Message.Reasoning != nil {
 }
 ```
 
+### Vision Support
+
+The SDK supports multimodal messages with images for vision-capable models like GPT-4 Vision. You can include images via URLs or base64-encoded data.
+
+#### Simple Text Message (Backward Compatible)
+
+```go
+// Create a simple text message
+textMessage, err := sdk.NewTextMessage(sdk.User, "What is Go programming language?")
+if err != nil {
+    log.Fatal(err)
+}
+
+response, err := client.GenerateContent(
+    context.Background(),
+    sdk.Openai,
+    "gpt-4o",
+    []sdk.Message{textMessage},
+)
+```
+
+#### Vision Message with Image URL
+
+```go
+// Create content parts with text and image
+var contentParts []sdk.ContentPart
+
+// Add text part
+textPart, err := sdk.NewTextContentPart("What is in this image?")
+if err != nil {
+    log.Fatal(err)
+}
+contentParts = append(contentParts, textPart)
+
+// Add image part (auto detail level by default)
+imagePart, err := sdk.NewImageContentPart(
+    "https://example.com/image.jpg",
+    nil, // detail level: nil for auto, or &sdk.High, &sdk.Low
+)
+if err != nil {
+    log.Fatal(err)
+}
+contentParts = append(contentParts, imagePart)
+
+// Create vision message
+visionMessage, err := sdk.NewImageMessage(sdk.User, contentParts)
+if err != nil {
+    log.Fatal(err)
+}
+
+response, err := client.GenerateContent(
+    context.Background(),
+    sdk.Openai,
+    "gpt-4o",
+    []sdk.Message{visionMessage},
+)
+```
+
+#### Vision Message with Base64 Encoded Image
+
+```go
+// Use high detail level for better image analysis
+highDetail := sdk.High
+imagePart, err := sdk.NewImageContentPart(
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+    &highDetail,
+)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+#### Multiple Images in One Message
+
+```go
+var contentParts []sdk.ContentPart
+
+// Add text
+textPart, _ := sdk.NewTextContentPart("Compare these images:")
+contentParts = append(contentParts, textPart)
+
+// Add first image
+image1, _ := sdk.NewImageContentPart("https://example.com/image1.jpg", nil)
+contentParts = append(contentParts, image1)
+
+// Add second image
+image2, _ := sdk.NewImageContentPart("https://example.com/image2.jpg", nil)
+contentParts = append(contentParts, image2)
+
+visionMessage, _ := sdk.NewImageMessage(sdk.User, contentParts)
+```
+
+**Image Detail Levels:**
+- `nil` or `&sdk.Auto`: Automatic detail level (default)
+- `&sdk.Low`: Lower resolution, faster and cheaper
+- `&sdk.High`: Higher resolution, better quality but more expensive
+
+For a complete example, see [examples/vision/main.go](examples/vision/main.go).
+
 ### Using ReasoningFormat
 
 You can enable reasoning capabilities by setting the ReasoningFormat parameter in your request:
@@ -402,11 +493,11 @@ ctx := context.Background()
 messages := []sdk.Message{
     {
         Role:    sdk.System,
-        Content: "You are a helpful assistant. Please include your reasoning for complex questions.",
+        Content: sdk.NewMessageContent("You are a helpful assistant. Please include your reasoning for complex questions."),
     },
     {
         Role:    sdk.User,
-        Content: "What is the square root of 144 and why?",
+        Content: sdk.NewMessageContent("What is the square root of 144 and why?"),
     },
 }
 
@@ -450,11 +541,11 @@ events, err := client.GenerateContentStream(
     []sdk.Message{
         {
             Role:    sdk.System,
-            Content: "You are a helpful assistant.",
+            Content: sdk.NewMessageContent("You are a helpful assistant."),
         },
         {
             Role:    sdk.User,
-            Content: "What is Go?",
+            Content: sdk.NewMessageContent("What is Go?"),
         },
     },
 )

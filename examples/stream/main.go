@@ -44,11 +44,11 @@ func main() {
 	messages := []sdk.Message{
 		{
 			Role:    sdk.System,
-			Content: "You are a creative storyteller. Write engaging short stories.",
+			Content: sdk.NewMessageContent("You are a creative storyteller. Write engaging short stories."),
 		},
 		{
 			Role:    sdk.User,
-			Content: "Write a short story about a programmer who discovers an AI that can predict the future.",
+			Content: sdk.NewMessageContent("Write a short story about a programmer who discovers an AI that can predict the future."),
 		},
 	}
 

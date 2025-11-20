@@ -43,11 +43,11 @@ func main() {
 	messages := []sdk.Message{
 		{
 			Role:    sdk.System,
-			Content: "You are a helpful assistant with expertise in Go programming.",
+			Content: sdk.NewMessageContent("You are a helpful assistant with expertise in Go programming."),
 		},
 		{
 			Role:    sdk.User,
-			Content: "What are the differences between goroutines and threads? Keep it short.",
+			Content: sdk.NewMessageContent("What are the differences between goroutines and threads? Keep it short."),
 		},
 	}
 

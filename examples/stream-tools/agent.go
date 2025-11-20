@@ -180,15 +180,15 @@ func main() {
 	conversationHistory := []sdk.Message{
 		{
 			Role:    sdk.System,
-			Content: "You are a helpful assistant with access to weather information and a calculator. Always use proper JSON format for function calls.",
+			Content: sdk.NewMessageContent("You are a helpful assistant with access to weather information and a calculator. Always use proper JSON format for function calls."),
 		},
 	}
 
 	// Simulate a queue of hard-coded user's inputs / requests
 	// Normally you would let the user type in the input, but for simplicity and deterministic example we simulate it
 	messageQueue := []sdk.Message{
-		{Role: sdk.User, Content: "What's the weather in San Francisco and what's 15 multiplied by 7?"},
-		{Role: sdk.User, Content: "Now calculate 100 divided by 5"},
+		{Role: sdk.User, Content: sdk.NewMessageContent("What's the weather in San Francisco and what's 15 multiplied by 7?")},
+		{Role: sdk.User, Content: sdk.NewMessageContent("Now calculate 100 divided by 5")},
 	}
 
 	fmt.Printf("🤖 Starting agent conversation with %s %s...\n\n", provider, modelName)
