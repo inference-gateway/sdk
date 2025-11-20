@@ -28,7 +28,9 @@ type Client interface {
 	ListModels(ctx context.Context) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	ListTools(ctx context.Context) (*ListToolsResponse, error)
+	// Deprecated: A2A functionality has been removed from the OpenAPI spec
 	ListAgents(ctx context.Context) (*ListAgentsResponse, error)
+	// Deprecated: A2A functionality has been removed from the OpenAPI spec
 	GetAgent(ctx context.Context, id string) (*A2AAgentCard, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
@@ -552,20 +554,7 @@ func (c *clientImpl) ListTools(ctx context.Context) (*ListToolsResponse, error) 
 }
 
 // ListAgents returns all available A2A agents.
-// Only accessible when EXPOSE_A2A is enabled on the server.
-//
-// Example:
-//
-//	client := sdk.NewClient(&sdk.ClientOptions{
-//		BaseURL: "http://localhost:8080/v1",
-//		APIKey: "your-api-key",
-//	})
-//	ctx := context.Background()
-//	agents, err := client.ListAgents(ctx)
-//	if err != nil {
-//	    log.Fatalf("Error listing agents: %v", err)
-//	}
-//	fmt.Printf("Available agents: %+v\n", agents.Data)
+// Deprecated: A2A functionality has been removed from the OpenAPI spec and this method will be removed in a future version.
 func (c *clientImpl) ListAgents(ctx context.Context) (*ListAgentsResponse, error) {
 	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
 		return c.http.R().
@@ -602,20 +591,7 @@ func (c *clientImpl) ListAgents(ctx context.Context) (*ListAgentsResponse, error
 }
 
 // GetAgent returns a specific A2A agent by its unique identifier.
-// Only accessible when EXPOSE_A2A is enabled on the server.
-//
-// Example:
-//
-//	client := sdk.NewClient(&sdk.ClientOptions{
-//		BaseURL: "http://localhost:8080/v1",
-//		APIKey: "your-api-key",
-//	})
-//	ctx := context.Background()
-//	agent, err := client.GetAgent(ctx, "agent-id-123")
-//	if err != nil {
-//	    log.Fatalf("Error getting agent: %v", err)
-//	}
-//	fmt.Printf("Agent details: %+v\n", agent)
+// Deprecated: A2A functionality has been removed from the OpenAPI spec and this method will be removed in a future version.
 func (c *clientImpl) GetAgent(ctx context.Context, id string) (*A2AAgentCard, error) {
 	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
 		return c.http.R().

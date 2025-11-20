@@ -2396,3 +2396,113 @@ func TestA2AWithTimeout(t *testing.T) {
 	}
 }
 
+func TestOllamaCloudProvider(t *testing.T) {
+	t.Run("ListProviderModels for Ollama Cloud", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/v1/models", r.URL.Path, "Path should be /v1/models")
+			assert.Equal(t, http.MethodGet, r.Method, "Method should be GET")
+			assert.Equal(t, "ollama_cloud", r.URL.Query().Get("provider"), "Provider should be ollama_cloud")
+
+			response := ListModelsResponse{
+				Provider: providerPtr(OllamaCloud),
+				Object:   "list",
+				Data: []Model{
+					{
+						Id:       "ollama_cloud/gpt-oss:20b",
+						Object:   "model",
+						Created:  1730419200,
+						OwnedBy:  "ollama_cloud",
+						ServedBy: OllamaCloud,
+					},
+					{
+						Id:       "ollama_cloud/llama3.3:70b",
+						Object:   "model",
+						Created:  1730419200,
+						OwnedBy:  "ollama_cloud",
+						ServedBy: OllamaCloud,
+					},
+				},
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			err := json.NewEncoder(w).Encode(response)
+			assert.NoError(t, err)
+		}))
+		defer server.Close()
+
+		baseURL := server.URL + "/v1"
+		client := NewClient(&ClientOptions{
+			BaseURL: baseURL,
+		})
+
+		ctx := context.Background()
+		models, err := client.ListProviderModels(ctx, OllamaCloud)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, models)
+		assert.Equal(t, OllamaCloud, *models.Provider)
+		assert.Len(t, models.Data, 2)
+		assert.Equal(t, "ollama_cloud/gpt-oss:20b", models.Data[0].Id)
+		assert.Equal(t, "ollama_cloud/llama3.3:70b", models.Data[1].Id)
+	})
+
+	t.Run("GenerateContent with Ollama Cloud", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/v1/chat/completions", r.URL.Path, "Path should be /v1/chat/completions")
+			assert.Equal(t, http.MethodPost, r.Method, "Method should be POST")
+			assert.Equal(t, "ollama_cloud", r.URL.Query().Get("provider"), "Provider should be ollama_cloud")
+
+			var req CreateChatCompletionRequest
+			err := json.NewDecoder(r.Body).Decode(&req)
+			assert.NoError(t, err)
+			assert.Equal(t, "ollama_cloud/gpt-oss:20b", req.Model)
+
+			response := CreateChatCompletionResponse{
+				Id:      "chatcmpl-test-ollama-cloud",
+				Object:  "chat.completion",
+				Created: 1730419200,
+				Model:   "ollama_cloud/gpt-oss:20b",
+				Choices: []ChatCompletionChoice{
+					{
+						Index: 0,
+						Message: Message{
+							Role:    Assistant,
+							Content: "Hello! I'm an AI assistant powered by Ollama Cloud. How can I help you today?",
+						},
+						FinishReason: Stop,
+					},
+				},
+				Usage: &CompletionUsage{
+					PromptTokens:     10,
+					CompletionTokens: 20,
+					TotalTokens:      30,
+				},
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			err = json.NewEncoder(w).Encode(response)
+			assert.NoError(t, err)
+		}))
+		defer server.Close()
+
+		baseURL := server.URL + "/v1"
+		client := NewClient(&ClientOptions{
+			BaseURL: baseURL,
+		})
+
+		ctx := context.Background()
+		messages := []Message{
+			{Role: User, Content: "Hello"},
+		}
+
+		response, err := client.GenerateContent(ctx, OllamaCloud, "ollama_cloud/gpt-oss:20b", messages)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, response)
+		assert.Equal(t, "chatcmpl-test-ollama-cloud", response.Id)
+		assert.Equal(t, "ollama_cloud/gpt-oss:20b", response.Model)
+		assert.Len(t, response.Choices, 1)
+		assert.Equal(t, "Hello! I'm an AI assistant powered by Ollama Cloud. How can I help you today?", response.Choices[0].Message.Content)
+	})
+}
+
