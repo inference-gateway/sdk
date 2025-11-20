@@ -308,7 +308,7 @@ func TestGenerateContent(t *testing.T) {
 	assert.Len(t, response.Choices, 1)
 	assert.Equal(t, Assistant, response.Choices[0].Message.Role)
 
-	// Extract text content from Message_Content
+	// Extract text content from MessageContent
 	responseText, err := response.Choices[0].Message.Content.AsMessageContent0()
 	assert.NoError(t, err)
 	assert.Contains(t, responseText, "Go is a programming language")

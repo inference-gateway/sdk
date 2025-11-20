@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### ⚠ BREAKING CHANGES
 
-* **vision:** Message.Content is now Message_Content type instead of string.
+* **vision:** Message.Content is now MessageContent type instead of string.
 Use helper functions or .FromMessageContent0() / .AsMessageContent0() methods.
 
 Supports:

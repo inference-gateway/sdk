@@ -281,7 +281,7 @@ type MCPTool struct {
 
 // Message Message structure for provider requests
 type Message struct {
-	Content Message_Content `json:"content"`
+	Content MessageContent `json:"content"`
 
 	// Reasoning The reasoning of the chunk message. Same as reasoning_content.
 	Reasoning *string `json:"reasoning,omitempty"`
@@ -301,8 +301,8 @@ type MessageContent0 = string
 // MessageContent1 Array of content parts for multimodal messages
 type MessageContent1 = []ContentPart
 
-// Message_Content defines model for Message.Content.
-type Message_Content struct {
+// MessageContent defines model for Message.Content.
+type MessageContent struct {
 	union json.RawMessage
 }
 
@@ -563,22 +563,22 @@ func (t *ContentPart) UnmarshalJSON(b []byte) error {
 	return err
 }
 
-// AsMessageContent0 returns the union data inside the Message_Content as a MessageContent0
-func (t Message_Content) AsMessageContent0() (MessageContent0, error) {
+// AsMessageContent0 returns the union data inside the MessageContent as a MessageContent0
+func (t MessageContent) AsMessageContent0() (MessageContent0, error) {
 	var body MessageContent0
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromMessageContent0 overwrites any union data inside the Message_Content as the provided MessageContent0
-func (t *Message_Content) FromMessageContent0(v MessageContent0) error {
+// FromMessageContent0 overwrites any union data inside the MessageContent as the provided MessageContent0
+func (t *MessageContent) FromMessageContent0(v MessageContent0) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeMessageContent0 performs a merge with any union data inside the Message_Content, using the provided MessageContent0
-func (t *Message_Content) MergeMessageContent0(v MessageContent0) error {
+// MergeMessageContent0 performs a merge with any union data inside the MessageContent, using the provided MessageContent0
+func (t *MessageContent) MergeMessageContent0(v MessageContent0) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -589,22 +589,22 @@ func (t *Message_Content) MergeMessageContent0(v MessageContent0) error {
 	return err
 }
 
-// AsMessageContent1 returns the union data inside the Message_Content as a MessageContent1
-func (t Message_Content) AsMessageContent1() (MessageContent1, error) {
+// AsMessageContent1 returns the union data inside the MessageContent as a MessageContent1
+func (t MessageContent) AsMessageContent1() (MessageContent1, error) {
 	var body MessageContent1
 	err := json.Unmarshal(t.union, &body)
 	return body, err
 }
 
-// FromMessageContent1 overwrites any union data inside the Message_Content as the provided MessageContent1
-func (t *Message_Content) FromMessageContent1(v MessageContent1) error {
+// FromMessageContent1 overwrites any union data inside the MessageContent as the provided MessageContent1
+func (t *MessageContent) FromMessageContent1(v MessageContent1) error {
 	b, err := json.Marshal(v)
 	t.union = b
 	return err
 }
 
-// MergeMessageContent1 performs a merge with any union data inside the Message_Content, using the provided MessageContent1
-func (t *Message_Content) MergeMessageContent1(v MessageContent1) error {
+// MergeMessageContent1 performs a merge with any union data inside the MessageContent, using the provided MessageContent1
+func (t *MessageContent) MergeMessageContent1(v MessageContent1) error {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return err
@@ -615,12 +615,12 @@ func (t *Message_Content) MergeMessageContent1(v MessageContent1) error {
 	return err
 }
 
-func (t Message_Content) MarshalJSON() ([]byte, error) {
+func (t MessageContent) MarshalJSON() ([]byte, error) {
 	b, err := t.union.MarshalJSON()
 	return b, err
 }
 
-func (t *Message_Content) UnmarshalJSON(b []byte) error {
+func (t *MessageContent) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
