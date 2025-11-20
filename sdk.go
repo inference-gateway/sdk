@@ -28,10 +28,6 @@ type Client interface {
 	ListModels(ctx context.Context) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	ListTools(ctx context.Context) (*ListToolsResponse, error)
-	// Deprecated: A2A functionality has been removed from the OpenAPI spec
-	ListAgents(ctx context.Context) (*ListAgentsResponse, error)
-	// Deprecated: A2A functionality has been removed from the OpenAPI spec
-	GetAgent(ctx context.Context, id string) (*A2AAgentCard, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
 	HealthCheck(ctx context.Context) error
@@ -546,80 +542,6 @@ func (c *clientImpl) ListTools(ctx context.Context) (*ListToolsResponse, error) 
 	}
 
 	result, ok := resp.Result().(*ListToolsResponse)
-	if !ok || result == nil {
-		return nil, fmt.Errorf("failed to parse response")
-	}
-
-	return result, nil
-}
-
-// ListAgents returns all available A2A agents.
-// Deprecated: A2A functionality has been removed from the OpenAPI spec and this method will be removed in a future version.
-func (c *clientImpl) ListAgents(ctx context.Context) (*ListAgentsResponse, error) {
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetResult(&ListAgentsResponse{}).
-			Get(fmt.Sprintf("%s/a2a/agents", c.baseURL))
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errorResp Error
-		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-		}
-
-		errMsg := fmt.Sprintf("failed to list A2A agents, status code: %d", resp.StatusCode())
-
-		if len(resp.Body()) > 0 {
-			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
-		}
-
-		return nil, fmt.Errorf("%s", errMsg)
-	}
-
-	result, ok := resp.Result().(*ListAgentsResponse)
-	if !ok || result == nil {
-		return nil, fmt.Errorf("failed to parse response")
-	}
-
-	return result, nil
-}
-
-// GetAgent returns a specific A2A agent by its unique identifier.
-// Deprecated: A2A functionality has been removed from the OpenAPI spec and this method will be removed in a future version.
-func (c *clientImpl) GetAgent(ctx context.Context, id string) (*A2AAgentCard, error) {
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetResult(&A2AAgentCard{}).
-			Get(fmt.Sprintf("%s/a2a/agents/%s", c.baseURL, id))
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errorResp Error
-		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-		}
-
-		errMsg := fmt.Sprintf("failed to get A2A agent, status code: %d", resp.StatusCode())
-
-		if len(resp.Body()) > 0 {
-			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
-		}
-
-		return nil, fmt.Errorf("%s", errMsg)
-	}
-
-	result, ok := resp.Result().(*A2AAgentCard)
 	if !ok || result == nil {
 		return nil, fmt.Errorf("failed to parse response")
 	}
