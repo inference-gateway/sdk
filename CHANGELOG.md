@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.0](https://github.com/inference-gateway/sdk/compare/v1.13.0...v1.14.0) (2025-11-20)
+
+### ⚠ BREAKING CHANGES
+
+* **vision:** Message.Content is now Message_Content type instead of string.
+Use helper functions or .FromMessageContent0() / .AsMessageContent0() methods.
+
+Supports:
+- Image URLs (https://)
+- Base64-encoded images (data:image/...)
+- Multiple images per message
+- Image detail levels (auto, low, high)
+
+### ✨ Features
+
+* **provider:** Add support for Ollama Cloud ([#31](https://github.com/inference-gateway/sdk/issues/31)) ([31aaaf8](https://github.com/inference-gateway/sdk/commit/31aaaf8f339e29aeb1b4dd6aee24acfe0afc4e08))
+* **vision:** Add image URL support for vision models ([#29](https://github.com/inference-gateway/sdk/issues/29)) ([b4cc118](https://github.com/inference-gateway/sdk/commit/b4cc118ab71feedcec2fd494e2d86c6575caa580)), closes [#26](https://github.com/inference-gateway/sdk/issues/26)
+
+### 👷 CI
+
+* Update Claude Code CI ([#27](https://github.com/inference-gateway/sdk/issues/27)) ([babade6](https://github.com/inference-gateway/sdk/commit/babade6b4d13114f9cc33c8245bcde73a7ee39a6))
+
+### 🔧 Miscellaneous
+
+* Delete .github/workflows/claude-code-review.yml ([#28](https://github.com/inference-gateway/sdk/issues/28)) ([9b75d24](https://github.com/inference-gateway/sdk/commit/9b75d244b8667205140c3264f0786aa1ed71806a))
+
 ## [1.13.0](https://github.com/inference-gateway/sdk/compare/v1.12.0...v1.13.0) (2025-08-28)
 
 ### ✨ Features
