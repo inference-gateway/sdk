@@ -97,15 +97,15 @@ type MiddlewareOptions struct {
 
 // Helper functions for working with vision messages
 
-// NewMessageContent creates Message_Content from either a string or []ContentPart.
+// NewMessageContent creates MessageContent from either a string or []ContentPart.
 // This provides backward compatibility similar to OpenAI's SDK pattern.
 //
 // Usage:
 //
 //	content := NewMessageContent("Hello world")              // string
 //	content := NewMessageContent([]ContentPart{...})         // multimodal
-func NewMessageContent[T string | []ContentPart](value T) Message_Content {
-	var content Message_Content
+func NewMessageContent[T string | []ContentPart](value T) MessageContent {
+	var content MessageContent
 	var err error
 
 	switch v := any(value).(type) {
