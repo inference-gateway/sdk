@@ -49,15 +49,16 @@ const (
 
 // Defines values for Provider.
 const (
-	Anthropic  Provider = "anthropic"
-	Cloudflare Provider = "cloudflare"
-	Cohere     Provider = "cohere"
-	Deepseek   Provider = "deepseek"
-	Google     Provider = "google"
-	Groq       Provider = "groq"
-	Mistral    Provider = "mistral"
-	Ollama     Provider = "ollama"
-	Openai     Provider = "openai"
+	Anthropic   Provider = "anthropic"
+	Cloudflare  Provider = "cloudflare"
+	Cohere      Provider = "cohere"
+	Deepseek    Provider = "deepseek"
+	Google      Provider = "google"
+	Groq        Provider = "groq"
+	Mistral     Provider = "mistral"
+	Ollama      Provider = "ollama"
+	OllamaCloud Provider = "ollama_cloud"
+	Openai      Provider = "openai"
 )
 
 // Defines values for SSEventEvent.

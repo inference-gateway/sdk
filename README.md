@@ -708,6 +708,7 @@ Each example includes its own README with specific instructions and explanations
 The SDK supports the following LLM providers:
 
 -   Ollama (sdk.Ollama)
+-   Ollama Cloud (sdk.OllamaCloud)
 -   Groq (sdk.Groq)
 -   OpenAI (sdk.Openai)
 -   DeepSeek (sdk.Deepseek)
