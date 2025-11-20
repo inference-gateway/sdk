@@ -1,5 +1,5 @@
 version = 1
+
 [install]
 go.pkg-path = "go"
-go.version = "^1.24"
-
+go.version = "^1.25.2"

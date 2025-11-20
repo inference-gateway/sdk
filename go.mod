@@ -1,6 +1,6 @@
 module github.com/inference-gateway/sdk
 
-go 1.24
+go 1.25.2
 
 require (
 	github.com/go-resty/resty/v2 v2.16.3

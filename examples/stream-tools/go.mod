@@ -1,6 +1,6 @@
 module stream-tools-example
 
-go 1.24
+go 1.25.2
 
 require github.com/inference-gateway/sdk v0.1.0
 
