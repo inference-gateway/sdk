@@ -379,13 +379,11 @@ func (c *clientImpl) WithHeader(name, value string) *clientImpl {
 //	})
 //	middlewareOpts := &sdk.MiddlewareOptions{
 //		SkipMCP: true,
-//		SkipA2A: true,
 //	}
 //	resp, err := client.WithMiddlewareOptions(middlewareOpts).GenerateContent(ctx, provider, model, messages)
 //
 // Note: This functionality requires the Inference Gateway to support the corresponding headers:
 //   - X-MCP-Bypass: Skip MCP middleware processing
-//   - X-A2A-Bypass: Skip A2A middleware processing
 //   - X-Direct-Provider: Route directly to provider
 func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) *clientImpl {
 	if options == nil {
@@ -396,12 +394,6 @@ func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) *clientIm
 		c.http.Header.Set("X-MCP-Bypass", "true")
 	} else {
 		c.http.Header.Del("X-MCP-Bypass")
-	}
-
-	if options.SkipA2A {
-		c.http.Header.Set("X-A2A-Bypass", "true")
-	} else {
-		c.http.Header.Del("X-A2A-Bypass")
 	}
 
 	if options.DirectProvider {

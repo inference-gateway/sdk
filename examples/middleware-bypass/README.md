@@ -1,6 +1,6 @@
 # Middleware Bypass Example
 
-This example demonstrates how to bypass MCP (Model Context Protocol) and A2A (Agent-to-Agent) middlewares when making requests through the Inference Gateway SDK.
+This example demonstrates how to bypass MCP (Model Context Protocol) middleware when making requests through the Inference Gateway SDK.
 
 ## Overview
 
@@ -9,7 +9,6 @@ The Inference Gateway supports several types of middleware that can process requ
 ## Middleware Types
 
 -   **MCP Middleware**: Handles Model Context Protocol integration
--   **A2A Middleware**: Manages Agent-to-Agent communication
 
 ## Bypass Methods
 
@@ -29,10 +28,9 @@ response, err := client.
 ```
 
 ```go
-// Bypass both MCP and A2A middleware
+// Bypass both MCP middleware
 middlewareOpts := &sdk.MiddlewareOptions{
     SkipMCP: true,
-    SkipA2A: true,
 }
 
 response, err := client.
@@ -58,14 +56,12 @@ Alternatively, you can use custom headers directly:
 ```go
 response, err := client.
     WithHeader("X-MCP-Bypass", "true").
-    WithHeader("X-A2A-Bypass", "true").
     GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 ```
 
 ## Supported Headers
 
 -   `X-MCP-Bypass: true` - Bypasses MCP middleware processing
--   `X-A2A-Bypass: true` - Bypasses A2A middleware processing
 -   `X-Direct-Provider: true` - Routes directly to provider without any middleware
 
 ## When to Use Middleware Bypass

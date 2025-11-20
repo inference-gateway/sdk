@@ -96,11 +96,11 @@ func main() {
 	messages := []sdk.Message{
 		{
 			Role:    sdk.System,
-			Content: "You are a helpful weather assistant.",
+			Content: sdk.NewMessageContent("You are a helpful weather assistant."),
 		},
 		{
 			Role:    sdk.User,
-			Content: "What's the weather like in San Francisco right now?",
+			Content: sdk.NewMessageContent("What's the weather like in San Francisco right now?"),
 		},
 	}
 
@@ -151,7 +151,7 @@ func main() {
 		updatedMessages := append(messages, response.Choices[0].Message)
 		updatedMessages = append(updatedMessages, sdk.Message{
 			Role:       sdk.Tool,
-			Content:    string(weatherJSON),
+			Content:    sdk.NewMessageContent(string(weatherJSON)),
 			ToolCallId: &toolCall.Id,
 		})
 

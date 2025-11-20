@@ -207,7 +207,7 @@ response, err := client.GenerateContent(ctx, provider, model, messages)
 
 ### Middleware Options
 
-The Inference Gateway supports various middleware layers (MCP tools, A2A agents) that can be bypassed for direct provider access. The SDK provides `WithMiddlewareOptions` to control middleware behavior:
+The Inference Gateway supports various middleware layers (MCP tools) that can be bypassed for direct provider access. The SDK provides `WithMiddlewareOptions` to control middleware behavior:
 
 ```go
 package main
@@ -228,7 +228,7 @@ func main() {
 
     ctx := context.Background()
     messages := []sdk.Message{
-        {Role: sdk.User, Content: "Hello, world!"},
+        {Role: sdk.User, Content: sdk.NewMessageContent("Hello, world!")},
     }
 
     // 1. Skip MCP middleware only
@@ -236,20 +236,14 @@ func main() {
         SkipMCP: true,
     }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 
-    // 2. Skip A2A (Agent-to-Agent) middleware only
-    response2, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
-        SkipA2A: true,
-    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
-
-    // 3. Direct provider access (bypasses all middleware)
+    // 2. Direct provider access (bypasses all middleware)
     response3, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
         DirectProvider: true,
     }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 
-    // 4. Skip both MCP and A2A middleware
+    // 3. Skip MCP middleware
     response4, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
         SkipMCP: true,
-        SkipA2A: true,
     }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 }
 ```
@@ -257,7 +251,6 @@ func main() {
 **Middleware Options:**
 
 -   **`SkipMCP`** - Bypasses MCP (Model Context Protocol) middleware processing
--   **`SkipA2A`** - Bypasses A2A (Agent-to-Agent) middleware processing
 -   **`DirectProvider`** - Routes directly to the provider without any middleware
 
 **Method Chaining:**
@@ -269,7 +262,6 @@ response, err := client.
     WithHeader("X-Custom-Header", "value").
     WithMiddlewareOptions(&sdk.MiddlewareOptions{
         SkipMCP: true,
-        SkipA2A: true,
     }).
     GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 ```
@@ -281,7 +273,6 @@ You can also control middleware using custom headers directly:
 ```go
 response, err := client.
     WithHeader("X-MCP-Bypass", "true").
-    WithHeader("X-A2A-Bypass", "true").
     WithHeader("X-Direct-Provider", "true").
     GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 ```
@@ -361,11 +352,11 @@ response, err := client.GenerateContent(
     []sdk.Message{
         {
             Role:    sdk.System,
-            Content: "You are a helpful assistant.",
+            Content: sdk.NewMessageContent("You are a helpful assistant."),
         },
         {
             Role:    sdk.User,
-            Content: "What is Go?",
+            Content: sdk.NewMessageContent("What is Go?"),
         },
     },
 )
@@ -433,7 +424,7 @@ if err != nil {
 contentParts = append(contentParts, imagePart)
 
 // Create vision message
-visionMessage, err := sdk.NewVisionMessage(sdk.User, contentParts)
+visionMessage, err := sdk.NewImageMessage(sdk.User, contentParts)
 if err != nil {
     log.Fatal(err)
 }
@@ -477,7 +468,7 @@ contentParts = append(contentParts, image1)
 image2, _ := sdk.NewImageContentPart("https://example.com/image2.jpg", nil)
 contentParts = append(contentParts, image2)
 
-visionMessage, _ := sdk.NewVisionMessage(sdk.User, contentParts)
+visionMessage, _ := sdk.NewImageMessage(sdk.User, contentParts)
 ```
 
 **Image Detail Levels:**
@@ -502,11 +493,11 @@ ctx := context.Background()
 messages := []sdk.Message{
     {
         Role:    sdk.System,
-        Content: "You are a helpful assistant. Please include your reasoning for complex questions.",
+        Content: sdk.NewMessageContent("You are a helpful assistant. Please include your reasoning for complex questions."),
     },
     {
         Role:    sdk.User,
-        Content: "What is the square root of 144 and why?",
+        Content: sdk.NewMessageContent("What is the square root of 144 and why?"),
     },
 }
 
@@ -550,11 +541,11 @@ events, err := client.GenerateContentStream(
     []sdk.Message{
         {
             Role:    sdk.System,
-            Content: "You are a helpful assistant.",
+            Content: sdk.NewMessageContent("You are a helpful assistant."),
         },
         {
             Role:    sdk.User,
-            Content: "What is Go?",
+            Content: sdk.NewMessageContent("What is Go?"),
         },
     },
 )

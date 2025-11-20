@@ -64,7 +64,7 @@ func main() {
 	contentParts = append(contentParts, imagePart)
 
 	// Create vision message
-	visionMessage, err := sdk.NewVisionMessage(sdk.User, contentParts)
+	visionMessage, err := sdk.NewImageMessage(sdk.User, contentParts)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func main() {
 	}
 	contentParts = append(contentParts, imagePart)
 
-	visionMessage, err = sdk.NewVisionMessage(sdk.User, contentParts)
+	visionMessage, err = sdk.NewImageMessage(sdk.User, contentParts)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func main() {
 	}
 	contentParts = append(contentParts, image2)
 
-	visionMessage, err = sdk.NewVisionMessage(sdk.User, contentParts)
+	visionMessage, err = sdk.NewImageMessage(sdk.User, contentParts)
 	if err != nil {
 		log.Fatal(err)
 	}

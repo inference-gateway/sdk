@@ -17,14 +17,14 @@ func main() {
 
 	ctx := context.Background()
 
-	// Example 1: Regular request with MCP and A2A enabled (default)
+	// Example 1: Regular request with MCP enabled (default)
 	fmt.Println("=== Regular Request (with middleware) ===")
 	response1, err := client.GenerateContent(
 		ctx,
 		sdk.Openai,
 		"gpt-4o",
 		[]sdk.Message{
-			{Role: sdk.User, Content: "What tools are available?"},
+			{Role: sdk.User, Content: sdk.NewMessageContent("What tools are available?")},
 		},
 	)
 	if err != nil {
@@ -45,7 +45,7 @@ func main() {
 			sdk.Openai,
 			"gpt-4o",
 			[]sdk.Message{
-				{Role: sdk.User, Content: "What tools are available?"},
+				{Role: sdk.User, Content: sdk.NewMessageContent("What tools are available?")},
 			},
 		)
 	if err != nil {
@@ -54,11 +54,10 @@ func main() {
 		fmt.Printf("Response: %s\n", response2.Choices[0].Message.Content)
 	}
 
-	// Example 3: Bypass both MCP and A2A middleware
-	fmt.Println("\n=== Bypass Both MCP and A2A Middleware ===")
+	// Example 3: Bypass both MCP middleware
+	fmt.Println("\n=== Bypass Both MCP Middleware ===")
 	middlewareOpts = &sdk.MiddlewareOptions{
 		SkipMCP: true,
-		SkipA2A: true,
 	}
 	response3, err := client.
 		WithMiddlewareOptions(middlewareOpts).
@@ -67,7 +66,7 @@ func main() {
 			sdk.Openai,
 			"gpt-4o",
 			[]sdk.Message{
-				{Role: sdk.User, Content: "Hello, how are you?"},
+				{Role: sdk.User, Content: sdk.NewMessageContent("Hello, how are you?")},
 			},
 		)
 	if err != nil {
@@ -88,7 +87,7 @@ func main() {
 			sdk.Openai,
 			"gpt-4o",
 			[]sdk.Message{
-				{Role: sdk.User, Content: "Simple question without middleware"},
+				{Role: sdk.User, Content: sdk.NewMessageContent("Simple question without middleware")},
 			},
 		)
 	if err != nil {
@@ -101,13 +100,12 @@ func main() {
 	fmt.Println("\n=== Custom Headers Approach ===")
 	response5, err := client.
 		WithHeader("X-MCP-Bypass", "true").
-		WithHeader("X-A2A-Bypass", "true").
 		GenerateContent(
 			ctx,
 			sdk.Openai,
 			"gpt-4o",
 			[]sdk.Message{
-				{Role: sdk.User, Content: "Using custom headers"},
+				{Role: sdk.User, Content: sdk.NewMessageContent("Using custom headers")},
 			},
 		)
 	if err != nil {
