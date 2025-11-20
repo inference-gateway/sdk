@@ -22,13 +22,11 @@ func main() {
 		BaseURL: apiURL,
 	})
 
-	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	// List all models from all providers
 	fmt.Println("Listing all available models...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	allModels, err := client.ListModels(ctx)
+	cancel() // Clean up resources
 	if err != nil {
 		log.Fatalf("Error listing models: %v", err)
 	}
@@ -38,50 +36,31 @@ func main() {
 		fmt.Printf("%d. %s (owned by %s)\n", i+1, model.Id, model.OwnedBy)
 	}
 
-	// List models for a specific provider
-	fmt.Println("\nListing models from Groq Cloud...")
-	groqModels, err := client.ListProviderModels(ctx, sdk.Groq)
-	if err != nil {
-		log.Printf("Error listing Groq Cloud models: %v", err)
-	} else {
-		fmt.Printf("Provider: %s\n", *groqModels.Provider)
-		for i, model := range groqModels.Data {
-			fmt.Printf("%d. %s\n", i+1, model.Id)
-		}
+	// List models for specific providers
+	providers := []struct {
+		name     string
+		provider sdk.Provider
+	}{
+		{"Groq", sdk.Groq},
+		{"DeepSeek", sdk.Deepseek},
+		{"Google", sdk.Google},
+		{"Ollama", sdk.Ollama},
+		{"Ollama Cloud", sdk.OllamaCloud},
 	}
 
-	// List models for a specific provider
-	fmt.Println("\nListing models from DeepSeek...")
-	deepseekModels, err := client.ListProviderModels(ctx, sdk.Deepseek)
-	if err != nil {
-		log.Printf("Error listing DeepSeek models: %v", err)
-	} else {
-		fmt.Printf("Provider: %s\n", *deepseekModels.Provider)
-		for i, model := range deepseekModels.Data {
-			fmt.Printf("%d. %s\n", i+1, model.Id)
-		}
-	}
+	for _, p := range providers {
+		fmt.Printf("\nListing models from %s...\n", p.name)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		models, err := client.ListProviderModels(ctx, p.provider)
+		cancel()
 
-	// List models for another provider
-	fmt.Println("\nListing models from Google...")
-	googleModels, err := client.ListProviderModels(ctx, sdk.Google)
-	if err != nil {
-		log.Printf("Error listing Google models: %v", err)
-	} else {
-		fmt.Printf("Provider: %s\n", *googleModels.Provider)
-		for i, model := range googleModels.Data {
-			fmt.Printf("%d. %s\n", i+1, model.Id)
+		if err != nil {
+			log.Printf("Error listing %s models: %v", p.name, err)
+			continue
 		}
-	}
 
-	// List models for another provider
-	fmt.Println("\nListing models from Ollama...")
-	ollamaModels, err := client.ListProviderModels(ctx, sdk.Ollama)
-	if err != nil {
-		log.Printf("Error listing Ollama models: %v", err)
-	} else {
-		fmt.Printf("Provider: %s\n", *ollamaModels.Provider)
-		for i, model := range ollamaModels.Data {
+		fmt.Printf("Provider: %s\n", *models.Provider)
+		for i, model := range models.Data {
 			fmt.Printf("%d. %s\n", i+1, model.Id)
 		}
 	}
