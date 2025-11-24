@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.14.1](https://github.com/inference-gateway/sdk/compare/v1.14.0...v1.14.1) (2025-11-24)
+
+### ♻️ Improvements
+
+* **types:** Rename Message_Content to MessageContent ([#33](https://github.com/inference-gateway/sdk/issues/33)) ([5962d4c](https://github.com/inference-gateway/sdk/commit/5962d4cbb36b449d5f2cb92e143943323792e7a0)), closes [#32](https://github.com/inference-gateway/sdk/issues/32)
+
 ## [1.14.0](https://github.com/inference-gateway/sdk/compare/v1.13.0...v1.14.0) (2025-11-20)
 
 ### ⚠ BREAKING CHANGES
