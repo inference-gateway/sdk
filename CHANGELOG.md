@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.15.0](https://github.com/inference-gateway/sdk/compare/v1.14.1...v1.15.0) (2026-01-24)
+
+### ✨ Features
+
+* Add Moonshot AI provider and sync OpenAPI schema ([#34](https://github.com/inference-gateway/sdk/issues/34)) ([91b1dd4](https://github.com/inference-gateway/sdk/commit/91b1dd4727fc27ab56f9582e1dc44859c1a40e43))
+
 ## [1.14.1](https://github.com/inference-gateway/sdk/compare/v1.14.0...v1.14.1) (2025-11-24)
 
 ### ♻️ Improvements
