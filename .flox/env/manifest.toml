@@ -2,10 +2,8 @@ version = 1
 
 [install]
 go.pkg-path = "go"
-go.version = "^1.25.2"
-
+go.version = "^1.25.5"
 golangci-lint.pkg-path = "golangci-lint"
 golangci-lint.version = "^2.6.0"
-
 claude-code.pkg-path = "claude-code"
-claude-code.version = "2.0.30"
+claude-code.version = "2.1.14"

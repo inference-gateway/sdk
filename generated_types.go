@@ -13,18 +13,18 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
-// Defines values for ChatCompletionChoiceFinishReason.
-const (
-	ContentFilter ChatCompletionChoiceFinishReason = "content_filter"
-	FunctionCall  ChatCompletionChoiceFinishReason = "function_call"
-	Length        ChatCompletionChoiceFinishReason = "length"
-	Stop          ChatCompletionChoiceFinishReason = "stop"
-	ToolCalls     ChatCompletionChoiceFinishReason = "tool_calls"
-)
-
 // Defines values for ChatCompletionToolType.
 const (
 	Function ChatCompletionToolType = "function"
+)
+
+// Defines values for FinishReason.
+const (
+	ContentFilter FinishReason = "content_filter"
+	FunctionCall  FinishReason = "function_call"
+	Length        FinishReason = "length"
+	Stop          FinishReason = "stop"
+	ToolCalls     FinishReason = "tool_calls"
 )
 
 // Defines values for ImageContentPartType.
@@ -56,6 +56,7 @@ const (
 	Google      Provider = "google"
 	Groq        Provider = "groq"
 	Mistral     Provider = "mistral"
+	Moonshot    Provider = "moonshot"
 	Ollama      Provider = "ollama"
 	OllamaCloud Provider = "ollama_cloud"
 	Openai      Provider = "openai"
@@ -83,7 +84,7 @@ type ChatCompletionChoice struct {
 	// `length` if the maximum number of tokens specified in the request was reached,
 	// `content_filter` if content was omitted due to a flag from our content filters,
 	// `tool_calls` if the model called a tool.
-	FinishReason ChatCompletionChoiceFinishReason `json:"finish_reason"`
+	FinishReason FinishReason `json:"finish_reason"`
 
 	// Index The index of the choice in the list of choices.
 	Index int `json:"index"`
@@ -91,12 +92,6 @@ type ChatCompletionChoice struct {
 	// Message Message structure for provider requests
 	Message Message `json:"message"`
 }
-
-// ChatCompletionChoiceFinishReason The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
-// `length` if the maximum number of tokens specified in the request was reached,
-// `content_filter` if content was omitted due to a flag from our content filters,
-// `tool_calls` if the model called a tool.
-type ChatCompletionChoiceFinishReason string
 
 // ChatCompletionMessageToolCall defines model for ChatCompletionMessageToolCall.
 type ChatCompletionMessageToolCall struct {
@@ -204,6 +199,12 @@ type Error struct {
 	Error *string `json:"error,omitempty"`
 }
 
+// FinishReason The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
+// `length` if the maximum number of tokens specified in the request was reached,
+// `content_filter` if content was omitted due to a flag from our content filters,
+// `tool_calls` if the model called a tool.
+type FinishReason string
+
 // FunctionObject defines model for FunctionObject.
 type FunctionObject struct {
 	// Description A description of what the function does, used by the model to choose when and how to call the function.
@@ -281,6 +282,7 @@ type MCPTool struct {
 
 // Message Message structure for provider requests
 type Message struct {
+	// Content Message content - either text or multimodal content parts
 	Content MessageContent `json:"content"`
 
 	// Reasoning The reasoning of the chunk message. Same as reasoning_content.
@@ -295,16 +297,16 @@ type Message struct {
 	ToolCalls  *[]ChatCompletionMessageToolCall `json:"tool_calls,omitempty"`
 }
 
+// MessageContent Message content - either text or multimodal content parts
+type MessageContent struct {
+	union json.RawMessage
+}
+
 // MessageContent0 Text content (backward compatibility)
 type MessageContent0 = string
 
 // MessageContent1 Array of content parts for multimodal messages
 type MessageContent1 = []ContentPart
-
-// MessageContent defines model for Message.Content.
-type MessageContent struct {
-	union json.RawMessage
-}
 
 // MessageRole Role of the message sender
 type MessageRole string
