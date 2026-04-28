@@ -24,6 +24,7 @@ type ChatCompletionMessageToolCallChunk struct {
 		Name      string `json:"name,omitempty"`
 		Arguments string `json:"arguments,omitempty"`
 	} `json:"function,omitempty"`
+	ExtraContent *ToolCallExtraContent `json:"extra_content,omitempty"`
 }
 
 // ChatCompletionTokenLogprob represents token log probability information.
