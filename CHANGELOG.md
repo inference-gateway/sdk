@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.0](https://github.com/inference-gateway/sdk/compare/v1.15.0...v1.16.0) (2026-04-28)
+
+### ✨ Features
+
+* Add google's thought_signature ([#35](https://github.com/inference-gateway/sdk/issues/35)) ([f123e7b](https://github.com/inference-gateway/sdk/commit/f123e7bcb63f4f73a7b5b01343a7a50b3268e2de))
+
 ## [1.15.0](https://github.com/inference-gateway/sdk/compare/v1.14.1...v1.15.0) (2026-01-24)
 
 ### ✨ Features
