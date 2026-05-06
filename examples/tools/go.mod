@@ -1,6 +1,6 @@
 module github.com/inference-gateway/examples/tools
 
-go 1.25.2
+go 1.26.2
 
 require github.com/inference-gateway/sdk v0.1.0
 
