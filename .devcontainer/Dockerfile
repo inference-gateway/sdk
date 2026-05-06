@@ -1,8 +1,8 @@
-FROM mcr.microsoft.com/devcontainers/go:1-1.24-bookworm
+FROM mcr.microsoft.com/devcontainers/go:1-1.26-bookworm
 
 ENV ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom \
-    GOLANG_CI_LINT_VERSION=v2.6.0 \
-    TASK_VERSION=v3.45.4
+    GOLANG_CI_LINT_VERSION=v2.12.2 \
+    TASK_VERSION=v3.48.0
 
 # Install common tools
 RUN apt-get update && \
@@ -23,7 +23,7 @@ RUN apt-get update && \
 # Install go tools
 RUN apt-get update && \
     # Install golangci-lint
-    curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin ${GOLANG_CI_LINT_VERSION} && \
+    curl -sSfL https://golangci-lint.run/install.sh | sh -s ${GOLANG_CI_LINT_VERSION} && \
     # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
