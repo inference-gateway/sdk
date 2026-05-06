@@ -212,6 +212,7 @@ func main() {
 
 			// Process stream
 			assistantMessage := sdk.Message{Role: sdk.Assistant}
+			var assistantContent strings.Builder
 			var isThinking bool
 			toolCallBuffer := make(map[string]*sdk.ChatCompletionMessageToolCall)
 			toolCallsExecuted := false
@@ -251,7 +252,7 @@ func main() {
 								fmt.Printf("\n\n")
 							}
 							fmt.Print(choice.Delta.Content)
-							assistantMessage.Content += choice.Delta.Content
+							assistantContent.WriteString(choice.Delta.Content)
 						} // Handle tool calls - accumulate and execute when complete
 						for _, toolCallChunk := range choice.Delta.ToolCalls {
 							// Use index for consistent tracking across chunks
@@ -302,16 +303,17 @@ func main() {
 
 									conversationHistory = append(conversationHistory, sdk.Message{
 										Role:      sdk.Assistant,
-										Content:   assistantMessage.Content,
+										Content:   sdk.NewMessageContent(assistantContent.String()),
 										ToolCalls: assistantMessage.ToolCalls,
 									})
 									conversationHistory = append(conversationHistory, sdk.Message{
 										Role:       sdk.Tool,
-										Content:    result,
+										Content:    sdk.NewMessageContent(result),
 										ToolCallId: &toolCall.Id,
 									})
 
 									assistantMessage = sdk.Message{Role: sdk.Assistant}
+									assistantContent.Reset()
 									toolCallsExecuted = true
 
 									// Remove this tool call from buffer to avoid re-execution
@@ -345,12 +347,12 @@ func main() {
 
 						conversationHistory = append(conversationHistory, sdk.Message{
 							Role:      sdk.Assistant,
-							Content:   assistantMessage.Content,
+							Content:   sdk.NewMessageContent(assistantContent.String()),
 							ToolCalls: assistantMessage.ToolCalls,
 						})
 						conversationHistory = append(conversationHistory, sdk.Message{
 							Role:       sdk.Tool,
-							Content:    result,
+							Content:    sdk.NewMessageContent(result),
 							ToolCallId: &toolCall.Id,
 						})
 
@@ -362,7 +364,8 @@ func main() {
 
 			// If no tool calls were executed, add final message and break
 			if !toolCallsExecuted {
-				if assistantMessage.Content != "" {
+				if assistantContent.Len() > 0 {
+					assistantMessage.Content = sdk.NewMessageContent(assistantContent.String())
 					conversationHistory = append(conversationHistory, assistantMessage)
 				}
 				break

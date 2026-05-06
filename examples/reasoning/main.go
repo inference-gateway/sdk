@@ -62,8 +62,8 @@ func main() {
 	conversationHistory := []sdk.Message{
 		{
 			Role: sdk.System,
-			Content: `You are a helpful assistant. When answering questions, think through your response step by step. 
-Consider multiple approaches and explain your reasoning process clearly.`,
+			Content: sdk.NewMessageContent(`You are a helpful assistant. When answering questions, think through your response step by step.
+Consider multiple approaches and explain your reasoning process clearly.`),
 		},
 	}
 
@@ -86,7 +86,7 @@ Consider multiple approaches and explain your reasoning process clearly.`,
 		// Add user message to conversation
 		conversationHistory = append(conversationHistory, sdk.Message{
 			Role:    sdk.User,
-			Content: question,
+			Content: sdk.NewMessageContent(question),
 		})
 
 		// Generate response with streaming
@@ -97,6 +97,7 @@ Consider multiple approaches and explain your reasoning process clearly.`,
 
 		// Process stream with enhanced reasoning display
 		assistantMessage := sdk.Message{Role: sdk.Assistant}
+		var assistantContent strings.Builder
 		var isThinking bool
 		var reasoningBuffer strings.Builder
 
@@ -144,13 +145,14 @@ Consider multiple approaches and explain your reasoning process clearly.`,
 							fmt.Printf("\n\n📝 Response: ")
 						}
 						fmt.Print(choice.Delta.Content)
-						assistantMessage.Content += choice.Delta.Content
+						assistantContent.WriteString(choice.Delta.Content)
 					}
 				}
 			}
 		}
 
 		// Add assistant response to conversation history
+		assistantMessage.Content = sdk.NewMessageContent(assistantContent.String())
 		conversationHistory = append(conversationHistory, assistantMessage)
 
 		fmt.Print("\n" + strings.Repeat("═", 79) + "\n")
