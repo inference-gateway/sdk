@@ -117,7 +117,7 @@ func main() {
 
 	modelName := os.Getenv("LLM_MODEL")
 	if modelName == "" {
-		modelName = "deepseek-chat"
+		modelName = "deepseek-v4-flash"
 	}
 
 	provider := sdk.Provider(providerName)

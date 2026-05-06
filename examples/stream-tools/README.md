@@ -7,7 +7,7 @@ Real-time agent that executes tools during streaming responses. Demonstrates bui
 ```bash
 # Set environment (optional)
 export LLM_PROVIDER="deepseek"
-export LLM_MODEL="deepseek-chat"
+export LLM_MODEL="deepseek-v4-flash"
 
 # Run the agent
 go run agent.go

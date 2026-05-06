@@ -71,7 +71,7 @@ Found 50 models
 46. distil-whisper-large-v3-en (owned by Hugging Face)
 47. whisper-large-v3 (owned by OpenAI)
 48. qwen-2.5-coder-32b (owned by Alibaba Cloud)
-49. deepseek-chat (owned by deepseek)
+49. deepseek-v4-flash (owned by deepseek)
 50. deepseek-reasoner (owned by deepseek)
 
 Listing models from Groq Cloud...
@@ -100,7 +100,7 @@ Provider: groq
 
 Listing models from DeepSeek...
 Provider: deepseek
-1. deepseek-chat
+1. deepseek-v4-flash
 2. deepseek-reasoner
 
 Listing models from Ollama...

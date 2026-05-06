@@ -72,7 +72,7 @@ hasReasoning := (choice.Delta.Reasoning != nil && *choice.Delta.Reasoning != "")
 
 If you don't see reasoning content:
 
-1. **Check Model**: Ensure you're using `deepseek-reasoner`, not `deepseek-chat`
+1. **Check Model**: Ensure you're using `deepseek-reasoner`, not `deepseek-v4-flash`
 2. **Verify Backend**: Confirm your inference gateway supports reasoning fields
 3. **Check Prompts**: Use questions that encourage step-by-step thinking
 4. **Debug Fields**: Add logging to see which fields contain reasoning data
