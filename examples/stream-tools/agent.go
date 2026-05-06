@@ -212,6 +212,7 @@ func main() {
 
 			// Process stream
 			assistantMessage := sdk.Message{Role: sdk.Assistant}
+			var assistantContent string
 			var isThinking bool
 			toolCallBuffer := make(map[string]*sdk.ChatCompletionMessageToolCall)
 			toolCallsExecuted := false
@@ -251,71 +252,86 @@ func main() {
 								fmt.Printf("\n\n")
 							}
 							fmt.Print(choice.Delta.Content)
-							assistantMessage.Content += choice.Delta.Content
-						} // Handle tool calls - accumulate and execute when complete
-						for _, toolCallChunk := range choice.Delta.ToolCalls {
-							// Use index for consistent tracking across chunks
-							id := fmt.Sprintf("tool_call_%d", toolCallChunk.Index)
+							assistantContent += choice.Delta.Content
+						}
 
-							if toolCallBuffer[id] == nil {
-								toolCallBuffer[id] = &sdk.ChatCompletionMessageToolCall{
-									Id:   toolCallChunk.ID, // Keep original ID if available
-									Type: sdk.ChatCompletionToolType(toolCallChunk.Type),
-									Function: sdk.ChatCompletionMessageToolCallFunction{
-										Name:      "",
-										Arguments: "",
-									},
-								}
-							}
+						// Handle tool calls - accumulate and execute when complete
+						if choice.Delta.ToolCalls != nil {
+							for _, toolCallChunk := range *choice.Delta.ToolCalls {
+								// Use index for consistent tracking across chunks
+								id := fmt.Sprintf("tool_call_%d", toolCallChunk.Index)
 
-							// Update ID if we get a new one
-							if toolCallChunk.ID != "" {
-								toolCallBuffer[id].Id = toolCallChunk.ID
-							}
-
-							// Accumulate function name and arguments
-							if toolCallChunk.Function.Name != "" {
-								toolCallBuffer[id].Function.Name += toolCallChunk.Function.Name
-							}
-							if toolCallChunk.Function.Arguments != "" {
-								toolCallBuffer[id].Function.Arguments += toolCallChunk.Function.Arguments
-							}
-
-							// Check if JSON is complete and execute
-							args := strings.TrimSpace(toolCallBuffer[id].Function.Arguments)
-							funcName := strings.TrimSpace(toolCallBuffer[id].Function.Name)
-							if args != "" && funcName != "" && strings.HasSuffix(args, "}") {
-								var temp interface{}
-								if json.Unmarshal([]byte(args), &temp) == nil {
-									// Execute tool call immediately
-									toolCall := toolCallBuffer[id]
-									fmt.Printf("\n🔧 Executing: %s(%s)\n", toolCall.Function.Name, toolCall.Function.Arguments)
-
-									result := executeToolCall(toolCall.Function.Name, toolCall.Function.Arguments)
-									fmt.Printf("📋 Result: %s\n", result)
-
-									// Add to conversation
-									if assistantMessage.ToolCalls == nil {
-										assistantMessage.ToolCalls = &[]sdk.ChatCompletionMessageToolCall{}
+								if toolCallBuffer[id] == nil {
+									tcID := ""
+									if toolCallChunk.Id != nil {
+										tcID = *toolCallChunk.Id
 									}
-									*assistantMessage.ToolCalls = append(*assistantMessage.ToolCalls, *toolCall)
+									tcType := ""
+									if toolCallChunk.Type != nil {
+										tcType = *toolCallChunk.Type
+									}
+									toolCallBuffer[id] = &sdk.ChatCompletionMessageToolCall{
+										Id:   tcID,
+										Type: sdk.ChatCompletionToolType(tcType),
+										Function: sdk.ChatCompletionMessageToolCallFunction{
+											Name:      "",
+											Arguments: "",
+										},
+									}
+								}
 
-									conversationHistory = append(conversationHistory, sdk.Message{
-										Role:      sdk.Assistant,
-										Content:   assistantMessage.Content,
-										ToolCalls: assistantMessage.ToolCalls,
-									})
-									conversationHistory = append(conversationHistory, sdk.Message{
-										Role:       sdk.Tool,
-										Content:    result,
-										ToolCallId: &toolCall.Id,
-									})
+								// Update ID if we get a new one
+								if toolCallChunk.Id != nil && *toolCallChunk.Id != "" {
+									toolCallBuffer[id].Id = *toolCallChunk.Id
+								}
 
-									assistantMessage = sdk.Message{Role: sdk.Assistant}
-									toolCallsExecuted = true
+								// Accumulate function name and arguments
+								if toolCallChunk.Function != nil {
+									if toolCallChunk.Function.Name != "" {
+										toolCallBuffer[id].Function.Name += toolCallChunk.Function.Name
+									}
+									if toolCallChunk.Function.Arguments != "" {
+										toolCallBuffer[id].Function.Arguments += toolCallChunk.Function.Arguments
+									}
+								}
 
-									// Remove this tool call from buffer to avoid re-execution
-									delete(toolCallBuffer, id)
+								// Check if JSON is complete and execute
+								args := strings.TrimSpace(toolCallBuffer[id].Function.Arguments)
+								funcName := strings.TrimSpace(toolCallBuffer[id].Function.Name)
+								if args != "" && funcName != "" && strings.HasSuffix(args, "}") {
+									var temp interface{}
+									if json.Unmarshal([]byte(args), &temp) == nil {
+										// Execute tool call immediately
+										toolCall := toolCallBuffer[id]
+										fmt.Printf("\n🔧 Executing: %s(%s)\n", toolCall.Function.Name, toolCall.Function.Arguments)
+
+										result := executeToolCall(toolCall.Function.Name, toolCall.Function.Arguments)
+										fmt.Printf("📋 Result: %s\n", result)
+
+										// Add to conversation
+										if assistantMessage.ToolCalls == nil {
+											assistantMessage.ToolCalls = &[]sdk.ChatCompletionMessageToolCall{}
+										}
+										*assistantMessage.ToolCalls = append(*assistantMessage.ToolCalls, *toolCall)
+
+										conversationHistory = append(conversationHistory, sdk.Message{
+											Role:      sdk.Assistant,
+											Content:   sdk.NewMessageContent(assistantContent),
+											ToolCalls: assistantMessage.ToolCalls,
+										})
+										conversationHistory = append(conversationHistory, sdk.Message{
+											Role:       sdk.Tool,
+											Content:    sdk.NewMessageContent(result),
+											ToolCallId: &toolCall.Id,
+										})
+
+										assistantMessage = sdk.Message{Role: sdk.Assistant}
+										assistantContent = ""
+										toolCallsExecuted = true
+
+										// Remove this tool call from buffer to avoid re-execution
+										delete(toolCallBuffer, id)
+									}
 								}
 							}
 						}
@@ -345,12 +361,12 @@ func main() {
 
 						conversationHistory = append(conversationHistory, sdk.Message{
 							Role:      sdk.Assistant,
-							Content:   assistantMessage.Content,
+							Content:   sdk.NewMessageContent(assistantContent),
 							ToolCalls: assistantMessage.ToolCalls,
 						})
 						conversationHistory = append(conversationHistory, sdk.Message{
 							Role:       sdk.Tool,
-							Content:    result,
+							Content:    sdk.NewMessageContent(result),
 							ToolCallId: &toolCall.Id,
 						})
 
@@ -362,7 +378,8 @@ func main() {
 
 			// If no tool calls were executed, add final message and break
 			if !toolCallsExecuted {
-				if assistantMessage.Content != "" {
+				if assistantContent != "" {
+					assistantMessage.Content = sdk.NewMessageContent(assistantContent)
 					conversationHistory = append(conversationHistory, assistantMessage)
 				}
 				break
