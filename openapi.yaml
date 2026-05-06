@@ -1072,11 +1072,28 @@ components:
           description: The index of the choice in the list of choices.
         message:
           $ref: '#/components/schemas/Message'
+        logprobs:
+          description: Log probability information for the choice.
+          type: object
+          nullable: true
+          properties:
+            content:
+              description: A list of message content tokens with log probability information.
+              type: array
+              items:
+                $ref: '#/components/schemas/ChatCompletionTokenLogprob'
+            refusal:
+              description: A list of message refusal tokens with log probability information.
+              type: array
+              items:
+                $ref: '#/components/schemas/ChatCompletionTokenLogprob'
+          required:
+            - content
+            - refusal
       required:
         - finish_reason
         - index
         - message
-        - logprobs
     ChatCompletionStreamChoice:
       type: object
       required:
