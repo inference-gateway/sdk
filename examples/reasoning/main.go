@@ -15,7 +15,7 @@ import (
 // isReasoningModel checks if the given model supports reasoning capabilities
 func isReasoningModel(provider sdk.Provider, model string) bool {
 	reasoningModels := map[sdk.Provider][]string{
-		sdk.Deepseek: {"deepseek-reasoner"},
+		sdk.Deepseek: {"deepseek-v4-pro"},
 		// Add more providers and their reasoning models here as they become available
 		// Example: sdk.Openai: {"o1", "o1-preview", "o1-mini"},
 	}
@@ -45,7 +45,7 @@ func main() {
 
 	modelName := os.Getenv("LLM_MODEL")
 	if modelName == "" {
-		modelName = "deepseek-reasoner"
+		modelName = "deepseek-v4-pro"
 	}
 
 	provider := sdk.Provider(providerName)
@@ -55,7 +55,7 @@ func main() {
 
 	// Validate that the selected model supports reasoning
 	if !isReasoningModel(provider, modelName) {
-		log.Fatalf("Error: Model '%s' from provider '%s' does not support reasoning capabilities. Please use a reasoning model like 'deepseek-reasoner'.", modelName, provider)
+		log.Fatalf("Error: Model '%s' from provider '%s' does not support reasoning capabilities. Please use a reasoning model like 'deepseek-v4-pro'.", modelName, provider)
 	}
 
 	// Conversation setup with prompts that encourage step-by-step reasoning

@@ -72,7 +72,7 @@ Found 50 models
 47. whisper-large-v3 (owned by OpenAI)
 48. qwen-2.5-coder-32b (owned by Alibaba Cloud)
 49. deepseek-v4-flash (owned by deepseek)
-50. deepseek-reasoner (owned by deepseek)
+50. deepseek-v4-pro (owned by deepseek)
 
 Listing models from Groq Cloud...
 Provider: groq
@@ -101,7 +101,7 @@ Provider: groq
 Listing models from DeepSeek...
 Provider: deepseek
 1. deepseek-v4-flash
-2. deepseek-reasoner
+2. deepseek-v4-pro
 
 Listing models from Ollama...
 Provider: ollama

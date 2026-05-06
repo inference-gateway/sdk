@@ -24,7 +24,7 @@ Unlike basic chat examples, this demonstrates:
 # Set up environment variables
 export INFERENCE_GATEWAY_URL="http://localhost:8080/v1"
 export LLM_PROVIDER="deepseek"
-export LLM_MODEL="deepseek-reasoner"
+export LLM_MODEL="deepseek-v4-pro"
 
 # Run the example
 go run main.go
@@ -34,7 +34,7 @@ go run main.go
 
 ```
 >DeepSeek Reasoner - Reasoning Display Example
-Provider: deepseek, Model: deepseek-reasoner
+Provider: deepseek, Model: deepseek-v4-pro
 
 S Question 1: What's the best way to learn a new programming language?
 
@@ -72,7 +72,7 @@ hasReasoning := (choice.Delta.Reasoning != nil && *choice.Delta.Reasoning != "")
 
 If you don't see reasoning content:
 
-1. **Check Model**: Ensure you're using `deepseek-reasoner`, not `deepseek-v4-flash`
+1. **Check Model**: Ensure you're using `deepseek-v4-pro`, not `deepseek-v4-flash`
 2. **Verify Backend**: Confirm your inference gateway supports reasoning fields
 3. **Check Prompts**: Use questions that encourage step-by-step thinking
 4. **Debug Fields**: Add logging to see which fields contain reasoning data
