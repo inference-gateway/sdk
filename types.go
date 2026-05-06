@@ -27,13 +27,6 @@ type ChatCompletionMessageToolCallChunk struct {
 	ExtraContent *ToolCallExtraContent `json:"extra_content,omitempty"`
 }
 
-// ChatCompletionTokenLogprob represents token log probability information.
-type ChatCompletionTokenLogprob struct {
-	Token   string  `json:"token"`
-	Logprob float64 `json:"logprob"`
-	Bytes   []int   `json:"bytes"`
-}
-
 // ChatCompletionStreamChoice represents a choice in a streaming chat completion response.
 type ChatCompletionStreamChoice struct {
 	Delta        ChatCompletionStreamResponseDelta `json:"delta"`
