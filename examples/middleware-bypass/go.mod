@@ -1,8 +1,10 @@
 module github.com/inference-gateway/examples/middleware-bypass
 
-go 1.25.2
+go 1.26.2
 
-require github.com/inference-gateway/sdk v0.1.0
+replace github.com/inference-gateway/sdk => ../..
+
+require github.com/inference-gateway/sdk v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
@@ -15,5 +17,3 @@ require (
 	golang.org/x/net v0.41.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/inference-gateway/sdk => ../..

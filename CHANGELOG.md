@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.1](https://github.com/inference-gateway/sdk/compare/v1.16.0...v1.16.1) (2026-05-06)
+
+### ♻️ Improvements
+
+* Rename all instances of deepseek-chat to deepseek-v4-flash ([8036b02](https://github.com/inference-gateway/sdk/commit/8036b0235c903d3cc61fa1b9119f3e67e86ceca8))
+* Rename all instances of deepseek-reasoner to deepseek-v4-pro ([4cb6b12](https://github.com/inference-gateway/sdk/commit/4cb6b12063a4123664860693cd3e44559b79d5e8))
+
+### 🐛 Bug Fixes
+
+* **ci:** Update golangci-lint installation command to specify binary output directory ([542c3e3](https://github.com/inference-gateway/sdk/commit/542c3e3f84d862014e1b7def25a70576902f8300))
+
+### 🔧 Miscellaneous
+
+* **deps:** Update GitHub Actions to use latest versions of checkout, setup-go, golangci-lint, and taskfile ([8c55ab7](https://github.com/inference-gateway/sdk/commit/8c55ab77c87d1f87a961080d36c0b6e68b7fcea0))
+* **deps:** Update go.mod files to replace sdk version and ensure compatibility ([6c6e184](https://github.com/inference-gateway/sdk/commit/6c6e184705a3fcece67343873ada71612f7ef247))
+* **deps:** Update golangci-lint installation script and version to v2.12.2 in Dockerfile and CI workflows ([dc56be3](https://github.com/inference-gateway/sdk/commit/dc56be373261e09a08c521b80853bca2af95e7a3))
+* **deps:** Upgrade go to the latest version ([8f4ba65](https://github.com/inference-gateway/sdk/commit/8f4ba651dcb907e554fc8367628748cb85b09ac8))
+* **openapi:** Sync vendored openapi.yaml with canonical schemas ([#43](https://github.com/inference-gateway/sdk/issues/43)) ([74402d0](https://github.com/inference-gateway/sdk/commit/74402d0b9531ccd6b9d9011edefa7ed4202c4ef6)), closes [#42](https://github.com/inference-gateway/sdk/issues/42)
+
 ## [1.16.0](https://github.com/inference-gateway/sdk/compare/v1.15.0...v1.16.0) (2026-04-28)
 
 ### ✨ Features

@@ -212,7 +212,7 @@ func main() {
 
 			// Process stream
 			assistantMessage := sdk.Message{Role: sdk.Assistant}
-			var assistantContent string
+			var assistantContent strings.Builder
 			var isThinking bool
 			toolCallBuffer := make(map[string]*sdk.ChatCompletionMessageToolCall)
 			toolCallsExecuted := false
@@ -252,32 +252,20 @@ func main() {
 								fmt.Printf("\n\n")
 							}
 							fmt.Print(choice.Delta.Content)
-							assistantContent += choice.Delta.Content
-						}
+							assistantContent.WriteString(choice.Delta.Content)
+						} // Handle tool calls - accumulate and execute when complete
+						for _, toolCallChunk := range choice.Delta.ToolCalls {
+							// Use index for consistent tracking across chunks
+							id := fmt.Sprintf("tool_call_%d", toolCallChunk.Index)
 
-						// Handle tool calls - accumulate and execute when complete
-						if choice.Delta.ToolCalls != nil {
-							for _, toolCallChunk := range *choice.Delta.ToolCalls {
-								// Use index for consistent tracking across chunks
-								id := fmt.Sprintf("tool_call_%d", toolCallChunk.Index)
-
-								if toolCallBuffer[id] == nil {
-									tcID := ""
-									if toolCallChunk.Id != nil {
-										tcID = *toolCallChunk.Id
-									}
-									tcType := ""
-									if toolCallChunk.Type != nil {
-										tcType = *toolCallChunk.Type
-									}
-									toolCallBuffer[id] = &sdk.ChatCompletionMessageToolCall{
-										Id:   tcID,
-										Type: sdk.ChatCompletionToolType(tcType),
-										Function: sdk.ChatCompletionMessageToolCallFunction{
-											Name:      "",
-											Arguments: "",
-										},
-									}
+							if toolCallBuffer[id] == nil {
+								toolCallBuffer[id] = &sdk.ChatCompletionMessageToolCall{
+									Id:   toolCallChunk.ID, // Keep original ID if available
+									Type: sdk.ChatCompletionToolType(toolCallChunk.Type),
+									Function: sdk.ChatCompletionMessageToolCallFunction{
+										Name:      "",
+										Arguments: "",
+									},
 								}
 
 								// Update ID if we get a new one
@@ -332,6 +320,25 @@ func main() {
 										// Remove this tool call from buffer to avoid re-execution
 										delete(toolCallBuffer, id)
 									}
+									*assistantMessage.ToolCalls = append(*assistantMessage.ToolCalls, *toolCall)
+
+									conversationHistory = append(conversationHistory, sdk.Message{
+										Role:      sdk.Assistant,
+										Content:   sdk.NewMessageContent(assistantContent.String()),
+										ToolCalls: assistantMessage.ToolCalls,
+									})
+									conversationHistory = append(conversationHistory, sdk.Message{
+										Role:       sdk.Tool,
+										Content:    sdk.NewMessageContent(result),
+										ToolCallId: &toolCall.Id,
+									})
+
+									assistantMessage = sdk.Message{Role: sdk.Assistant}
+									assistantContent.Reset()
+									toolCallsExecuted = true
+
+									// Remove this tool call from buffer to avoid re-execution
+									delete(toolCallBuffer, id)
 								}
 							}
 						}
@@ -361,7 +368,7 @@ func main() {
 
 						conversationHistory = append(conversationHistory, sdk.Message{
 							Role:      sdk.Assistant,
-							Content:   sdk.NewMessageContent(assistantContent),
+							Content:   sdk.NewMessageContent(assistantContent.String()),
 							ToolCalls: assistantMessage.ToolCalls,
 						})
 						conversationHistory = append(conversationHistory, sdk.Message{
@@ -378,8 +385,8 @@ func main() {
 
 			// If no tool calls were executed, add final message and break
 			if !toolCallsExecuted {
-				if assistantContent != "" {
-					assistantMessage.Content = sdk.NewMessageContent(assistantContent)
+				if assistantContent.Len() > 0 {
+					assistantMessage.Content = sdk.NewMessageContent(assistantContent.String())
 					conversationHistory = append(conversationHistory, assistantMessage)
 				}
 				break
