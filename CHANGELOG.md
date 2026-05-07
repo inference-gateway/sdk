@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.2](https://github.com/inference-gateway/sdk/compare/v1.16.1...v1.16.2) (2026-05-07)
+
+### ♻️ Improvements
+
+* **codegen:** Add missing schemas and reconcile hand-rolled streaming types ([#44](https://github.com/inference-gateway/sdk/issues/44)) ([dfa6c08](https://github.com/inference-gateway/sdk/commit/dfa6c084073a16153e11139be1b29b2b17c8e1db)), closes [#41](https://github.com/inference-gateway/sdk/issues/41)
+
 ## [1.16.1](https://github.com/inference-gateway/sdk/compare/v1.16.0...v1.16.1) (2026-05-06)
 
 ### ♻️ Improvements
