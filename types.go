@@ -70,7 +70,6 @@ func NewMessageContent[T string | []ContentPart](value T) MessageContent {
 	}
 
 	if err != nil {
-		// This should rarely happen for valid inputs
 		panic(fmt.Sprintf("failed to create message content: %v", err))
 	}
 	return content
@@ -106,9 +105,9 @@ func NewTextContentPart(text string) (ContentPart, error) {
 func NewImageContentPart(imageURL string, detail *ImageURLDetail) (ContentPart, error) {
 	var part ContentPart
 	err := part.FromImageContentPart(ImageContentPart{
-		Type: ImageUrl,
-		ImageUrl: ImageURL{
-			Url:    imageURL,
+		Type: ImageContentPartTypeImageURL,
+		ImageURL: ImageURL{
+			URL:    imageURL,
 			Detail: detail,
 		},
 	})

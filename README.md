@@ -621,16 +621,16 @@ tools := []sdk.ChatCompletionTool{
         Type:     sdk.Function,
         Function: sdk.FunctionObject{
             Name:        "get_current_weather",
-            Description: stringPtr("Get the current weather in a given location"),
+            Description: new("Get the current weather in a given location"),
             Parameters: &sdk.FunctionParameters{
                 "type": "object",
-                "properties": map[string]interface{}{
-                    "location": map[string]interface{}{
+                "properties": map[string]any{
+                    "location": map[string]any{
                         "type":        "string",
                         "enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
                         "description": "The city and state, e.g. San Francisco, CA",
                     },
-                    "unit": map[string]interface{}{
+                    "unit": map[string]any{
                         "type":        "string",
                         "enum":        []string{"celsius", "fahrenheit"},
                         "description": "The temperature unit to use",
@@ -644,11 +644,11 @@ tools := []sdk.ChatCompletionTool{
         Type:     sdk.Function,
         Function: sdk.FunctionObject{
             Name:        "get_current_time",
-            Description: stringPtr("Get the current time in a given location"),
+            Description: new("Get the current time in a given location"),
             Parameters: &sdk.FunctionParameters{
                 "type": "object",
-                "properties": map[string]interface{}{
-                    "location": map[string]interface{}{
+                "properties": map[string]any{
+                    "location": map[string]any{
                         "type":        "string",
                         "enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
                         "description": "The city and state, e.g. San Francisco, CA",

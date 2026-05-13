@@ -128,16 +128,16 @@ func main() {
 	// Define tools
 	weatherFunction := sdk.FunctionObject{
 		Name:        "get_current_weather",
-		Description: stringPtr("Get the current weather in a given location"),
+		Description: new("Get the current weather in a given location"),
 		Parameters: &sdk.FunctionParameters{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"location": map[string]interface{}{
+			"properties": map[string]any{
+				"location": map[string]any{
 					"type":        "string",
 					"enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
 					"description": "The city and state, e.g. San Francisco, CA",
 				},
-				"unit": map[string]interface{}{
+				"unit": map[string]any{
 					"type":        "string",
 					"enum":        []string{"celsius", "fahrenheit"},
 					"description": "The temperature unit to use",
@@ -149,19 +149,19 @@ func main() {
 
 	calculatorFunction := sdk.FunctionObject{
 		Name:        "calculate",
-		Description: stringPtr("Perform basic arithmetic operations"),
+		Description: new("Perform basic arithmetic operations"),
 		Parameters: &sdk.FunctionParameters{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"a": map[string]interface{}{
+			"properties": map[string]any{
+				"a": map[string]any{
 					"type":        "number",
 					"description": "First number",
 				},
-				"b": map[string]interface{}{
+				"b": map[string]any{
 					"type":        "number",
 					"description": "Second number",
 				},
-				"operation": map[string]interface{}{
+				"operation": map[string]any{
 					"type":        "string",
 					"enum":        []string{"add", "subtract", "multiply", "divide"},
 					"description": "The arithmetic operation to perform",
@@ -253,93 +253,64 @@ func main() {
 							}
 							fmt.Print(choice.Delta.Content)
 							assistantContent.WriteString(choice.Delta.Content)
-						} // Handle tool calls - accumulate and execute when complete
-						for _, toolCallChunk := range choice.Delta.ToolCalls {
-							// Use index for consistent tracking across chunks
-							id := fmt.Sprintf("tool_call_%d", toolCallChunk.Index)
+						}
 
-							if toolCallBuffer[id] == nil {
-								toolCallBuffer[id] = &sdk.ChatCompletionMessageToolCall{
-									Id:   toolCallChunk.ID, // Keep original ID if available
-									Type: sdk.ChatCompletionToolType(toolCallChunk.Type),
-									Function: sdk.ChatCompletionMessageToolCallFunction{
-										Name:      "",
-										Arguments: "",
-									},
+						// Handle tool calls - accumulate across chunks, execute once the JSON args close.
+						if choice.Delta.ToolCalls != nil {
+							for _, toolCallChunk := range *choice.Delta.ToolCalls {
+								id := fmt.Sprintf("tool_call_%d", toolCallChunk.Index)
+
+								if toolCallBuffer[id] == nil {
+									toolCallBuffer[id] = &sdk.ChatCompletionMessageToolCall{
+										Type: sdk.Function,
+									}
 								}
 
-								// Update ID if we get a new one
-								if toolCallChunk.Id != nil && *toolCallChunk.Id != "" {
-									toolCallBuffer[id].Id = *toolCallChunk.Id
+								if toolCallChunk.ID != nil && *toolCallChunk.ID != "" {
+									toolCallBuffer[id].ID = *toolCallChunk.ID
 								}
-
-								// Accumulate function name and arguments
 								if toolCallChunk.Function != nil {
-									if toolCallChunk.Function.Name != "" {
-										toolCallBuffer[id].Function.Name += toolCallChunk.Function.Name
-									}
-									if toolCallChunk.Function.Arguments != "" {
-										toolCallBuffer[id].Function.Arguments += toolCallChunk.Function.Arguments
-									}
+									toolCallBuffer[id].Function.Name += toolCallChunk.Function.Name
+									toolCallBuffer[id].Function.Arguments += toolCallChunk.Function.Arguments
 								}
 
-								// Check if JSON is complete and execute
 								args := strings.TrimSpace(toolCallBuffer[id].Function.Arguments)
 								funcName := strings.TrimSpace(toolCallBuffer[id].Function.Name)
-								if args != "" && funcName != "" && strings.HasSuffix(args, "}") {
-									var temp interface{}
-									if json.Unmarshal([]byte(args), &temp) == nil {
-										// Execute tool call immediately
-										toolCall := toolCallBuffer[id]
-										fmt.Printf("\n🔧 Executing: %s(%s)\n", toolCall.Function.Name, toolCall.Function.Arguments)
+								if args == "" || funcName == "" || !strings.HasSuffix(args, "}") {
+									continue
+								}
+								var temp any
+								if json.Unmarshal([]byte(args), &temp) != nil {
+									continue
+								}
 
-										result := executeToolCall(toolCall.Function.Name, toolCall.Function.Arguments)
-										fmt.Printf("📋 Result: %s\n", result)
+								toolCall := toolCallBuffer[id]
+								fmt.Printf("\n🔧 Executing: %s(%s)\n", toolCall.Function.Name, toolCall.Function.Arguments)
+								result := executeToolCall(toolCall.Function.Name, toolCall.Function.Arguments)
+								fmt.Printf("📋 Result: %s\n", result)
 
-										// Add to conversation
-										if assistantMessage.ToolCalls == nil {
-											assistantMessage.ToolCalls = &[]sdk.ChatCompletionMessageToolCall{}
-										}
-										*assistantMessage.ToolCalls = append(*assistantMessage.ToolCalls, *toolCall)
+								if assistantMessage.ToolCalls == nil {
+									assistantMessage.ToolCalls = &[]sdk.ChatCompletionMessageToolCall{}
+								}
+								*assistantMessage.ToolCalls = append(*assistantMessage.ToolCalls, *toolCall)
 
-										conversationHistory = append(conversationHistory, sdk.Message{
-											Role:      sdk.Assistant,
-											Content:   sdk.NewMessageContent(assistantContent),
-											ToolCalls: assistantMessage.ToolCalls,
-										})
-										conversationHistory = append(conversationHistory, sdk.Message{
-											Role:       sdk.Tool,
-											Content:    sdk.NewMessageContent(result),
-											ToolCallId: &toolCall.Id,
-										})
-
-										assistantMessage = sdk.Message{Role: sdk.Assistant}
-										assistantContent = ""
-										toolCallsExecuted = true
-
-										// Remove this tool call from buffer to avoid re-execution
-										delete(toolCallBuffer, id)
-									}
-									*assistantMessage.ToolCalls = append(*assistantMessage.ToolCalls, *toolCall)
-
-									conversationHistory = append(conversationHistory, sdk.Message{
+								conversationHistory = append(conversationHistory,
+									sdk.Message{
 										Role:      sdk.Assistant,
 										Content:   sdk.NewMessageContent(assistantContent.String()),
 										ToolCalls: assistantMessage.ToolCalls,
-									})
-									conversationHistory = append(conversationHistory, sdk.Message{
+									},
+									sdk.Message{
 										Role:       sdk.Tool,
 										Content:    sdk.NewMessageContent(result),
-										ToolCallId: &toolCall.Id,
-									})
+										ToolCallID: &toolCall.ID,
+									},
+								)
 
-									assistantMessage = sdk.Message{Role: sdk.Assistant}
-									assistantContent.Reset()
-									toolCallsExecuted = true
-
-									// Remove this tool call from buffer to avoid re-execution
-									delete(toolCallBuffer, id)
-								}
+								assistantMessage = sdk.Message{Role: sdk.Assistant}
+								assistantContent.Reset()
+								toolCallsExecuted = true
+								delete(toolCallBuffer, id)
 							}
 						}
 					}
@@ -353,7 +324,7 @@ func main() {
 				args := strings.TrimSpace(toolCall.Function.Arguments)
 				funcName := strings.TrimSpace(toolCall.Function.Name)
 				if args != "" && funcName != "" && strings.HasSuffix(args, "}") {
-					var temp interface{}
+					var temp any
 					if json.Unmarshal([]byte(args), &temp) == nil {
 						fmt.Printf("\n🔧 Executing: %s(%s)\n", toolCall.Function.Name, toolCall.Function.Arguments)
 
@@ -374,7 +345,7 @@ func main() {
 						conversationHistory = append(conversationHistory, sdk.Message{
 							Role:       sdk.Tool,
 							Content:    sdk.NewMessageContent(result),
-							ToolCallId: &toolCall.Id,
+							ToolCallID: &toolCall.ID,
 						})
 
 						toolCallsExecuted = true
@@ -397,8 +368,4 @@ func main() {
 	}
 
 	fmt.Printf("✅ Agent conversation complete!\n")
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

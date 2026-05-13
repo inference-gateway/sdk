@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	assert "github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
 )
 
 // Test helper functions - using the public NewMessageContent helper
@@ -31,14 +31,14 @@ func TestListModels(t *testing.T) {
 			Object: "list",
 			Data: []Model{
 				{
-					Id:       "openai/gpt-4o",
+					ID:       "openai/gpt-4o",
 					Object:   "model",
 					Created:  1686935002,
 					OwnedBy:  "openai",
 					ServedBy: Openai,
 				},
 				{
-					Id:       "groq/llama-3.3-70b-versatile",
+					ID:       "groq/llama-3.3-70b-versatile",
 					Object:   "model",
 					Created:  1723651281,
 					OwnedBy:  "groq",
@@ -66,8 +66,8 @@ func TestListModels(t *testing.T) {
 	assert.NotNil(t, models)
 	assert.Equal(t, "list", models.Object)
 	assert.Len(t, models.Data, 2)
-	assert.Equal(t, "openai/gpt-4o", models.Data[0].Id)
-	assert.Equal(t, "groq/llama-3.3-70b-versatile", models.Data[1].Id)
+	assert.Equal(t, "openai/gpt-4o", models.Data[0].ID)
+	assert.Equal(t, "groq/llama-3.3-70b-versatile", models.Data[1].ID)
 }
 
 func TestListProviderModels(t *testing.T) {
@@ -81,14 +81,14 @@ func TestListProviderModels(t *testing.T) {
 			Object:   "list",
 			Data: []Model{
 				{
-					Id:       "openai/gpt-4o",
+					ID:       "openai/gpt-4o",
 					Object:   "model",
 					Created:  1686935002,
 					OwnedBy:  "openai",
 					ServedBy: Openai,
 				},
 				{
-					Id:       "openai/gpt-4-turbo",
+					ID:       "openai/gpt-4-turbo",
 					Object:   "model",
 					Created:  1687882410,
 					OwnedBy:  "openai",
@@ -116,15 +116,15 @@ func TestListProviderModels(t *testing.T) {
 	assert.Equal(t, Openai, *models.Provider)
 	assert.Equal(t, "list", models.Object)
 	assert.Len(t, models.Data, 2)
-	assert.Equal(t, "openai/gpt-4o", models.Data[0].Id)
-	assert.Equal(t, "openai/gpt-4-turbo", models.Data[1].Id)
+	assert.Equal(t, "openai/gpt-4o", models.Data[0].ID)
+	assert.Equal(t, "openai/gpt-4-turbo", models.Data[1].ID)
 }
 
 func TestListProviderModels_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		err := json.NewEncoder(w).Encode(Error{
-			Error: stringPtr("Invalid API key"),
+			Error: new("Invalid API key"),
 		})
 		assert.NoError(t, err)
 	}))
@@ -155,10 +155,10 @@ func TestListTools(t *testing.T) {
 					Name:        "read_file",
 					Description: "Read content from a file",
 					Server:      "http://mcp-filesystem-server:8083/mcp",
-					InputSchema: &map[string]interface{}{
+					InputSchema: &map[string]any{
 						"type": "object",
-						"properties": map[string]interface{}{
-							"file_path": map[string]interface{}{
+						"properties": map[string]any{
+							"file_path": map[string]any{
 								"type":        "string",
 								"description": "Path to the file to read",
 							},
@@ -170,14 +170,14 @@ func TestListTools(t *testing.T) {
 					Name:        "write_file",
 					Description: "Write content to a file",
 					Server:      "http://mcp-filesystem-server:8083/mcp",
-					InputSchema: &map[string]interface{}{
+					InputSchema: &map[string]any{
 						"type": "object",
-						"properties": map[string]interface{}{
-							"file_path": map[string]interface{}{
+						"properties": map[string]any{
+							"file_path": map[string]any{
 								"type":        "string",
 								"description": "Path to the file to write",
 							},
-							"content": map[string]interface{}{
+							"content": map[string]any{
 								"type":        "string",
 								"description": "Content to write to the file",
 							},
@@ -216,7 +216,7 @@ func TestListTools(t *testing.T) {
 func TestListTools_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
-		response := map[string]interface{}{
+		response := map[string]any{
 			"error": "MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable.",
 		}
 		err := json.NewEncoder(w).Encode(response)
@@ -252,7 +252,7 @@ func TestGenerateContent(t *testing.T) {
 		assert.Equal(t, User, requestBody.Messages[1].Role, "Second message should have user role")
 
 		response := CreateChatCompletionResponse{
-			Id:      "chat-12345",
+			ID:      "chat-12345",
 			Object:  "chat.completion",
 			Created: 1693672537,
 			Model:   "gpt-4o",
@@ -303,7 +303,7 @@ func TestGenerateContent(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
-	assert.Equal(t, "chat-12345", response.Id)
+	assert.Equal(t, "chat-12345", response.ID)
 	assert.Equal(t, "gpt-4o", response.Model)
 	assert.Len(t, response.Choices, 1)
 	assert.Equal(t, Assistant, response.Choices[0].Message.Role)
@@ -322,7 +322,7 @@ func TestGenerateContent_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		err := json.NewEncoder(w).Encode(Error{
-			Error: stringPtr("Invalid model specified"),
+			Error: new("Invalid model specified"),
 		})
 		assert.NoError(t, err)
 	}))
@@ -455,7 +455,7 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		err := json.NewEncoder(w).Encode(Error{
-			Error: stringPtr("Invalid model for streaming"),
+			Error: new("Invalid model for streaming"),
 		})
 		assert.NoError(t, err)
 	}))
@@ -536,7 +536,7 @@ func TestWithOptions(t *testing.T) {
 		options         *CreateChatCompletionRequest
 		isStreaming     bool
 		expectedOptions func(t *testing.T, req CreateChatCompletionRequest)
-		mockResponse    func(t *testing.T) interface{}
+		mockResponse    func(t *testing.T) any
 	}{
 		{
 			name:     "Basic content with no options",
@@ -553,9 +553,9 @@ func TestWithOptions(t *testing.T) {
 				assert.NotNil(t, req.Stream)
 				assert.False(t, *req.Stream)
 			},
-			mockResponse: func(t *testing.T) interface{} {
+			mockResponse: func(t *testing.T) any {
 				return CreateChatCompletionResponse{
-					Id:      "test-1",
+					ID:      "test-1",
 					Object:  "chat.completion",
 					Created: 1693672537,
 					Model:   "openai/gpt-4o",
@@ -580,7 +580,7 @@ func TestWithOptions(t *testing.T) {
 				{Role: User, Content: NewMessageContent("What is the square root of 144?")},
 			},
 			options: &CreateChatCompletionRequest{
-				ReasoningFormat: stringPtr("parsed"),
+				ReasoningFormat: new("parsed"),
 			},
 			isStreaming: false,
 			expectedOptions: func(t *testing.T, req CreateChatCompletionRequest) {
@@ -590,10 +590,10 @@ func TestWithOptions(t *testing.T) {
 				assert.NotNil(t, req.Stream)
 				assert.False(t, *req.Stream)
 			},
-			mockResponse: func(t *testing.T) interface{} {
+			mockResponse: func(t *testing.T) any {
 				reasoningContent := "I need to calculate the square root of 144. The square root of a number is a value that, when multiplied by itself, gives the original number. For 144, the square root is 12 because 12 × 12 = 144."
 				return CreateChatCompletionResponse{
-					Id:      "test-2",
+					ID:      "test-2",
 					Object:  "chat.completion",
 					Created: 1693672537,
 					Model:   "anthropic/claude-3-opus-20240229",
@@ -620,7 +620,7 @@ func TestWithOptions(t *testing.T) {
 				{Role: User, Content: NewMessageContent("What is the square root of 144?")},
 			},
 			options: &CreateChatCompletionRequest{
-				ReasoningFormat: stringPtr("raw"),
+				ReasoningFormat: new("raw"),
 			},
 			isStreaming: false,
 			expectedOptions: func(t *testing.T, req CreateChatCompletionRequest) {
@@ -630,9 +630,9 @@ func TestWithOptions(t *testing.T) {
 				assert.NotNil(t, req.Stream)
 				assert.False(t, *req.Stream)
 			},
-			mockResponse: func(t *testing.T) interface{} {
+			mockResponse: func(t *testing.T) any {
 				return CreateChatCompletionResponse{
-					Id:      "test-3",
+					ID:      "test-3",
 					Object:  "chat.completion",
 					Created: 1693672537,
 					Model:   "anthropic/claude-3-opus-20240229",
@@ -665,7 +665,7 @@ func TestWithOptions(t *testing.T) {
 				assert.NotNil(t, req.Stream)
 				assert.True(t, *req.Stream)
 			},
-			mockResponse: func(t *testing.T) interface{} {
+			mockResponse: func(t *testing.T) any {
 				return nil
 			},
 		},
@@ -948,7 +948,7 @@ func TestHeadersInAllRequests(t *testing.T) {
 					w.WriteHeader(http.StatusOK)
 				case "/v1/chat/completions":
 					response := CreateChatCompletionResponse{
-						Id:      "test",
+						ID:      "test",
 						Object:  "chat.completion",
 						Created: 123456789,
 						Model:   "gpt-4o",
@@ -1147,7 +1147,7 @@ func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 					assert.NoError(t, err)
 				case "/v1/chat/completions":
 					response := CreateChatCompletionResponse{
-						Id:      "test-id",
+						ID:      "test-id",
 						Object:  "chat.completion",
 						Created: 1234567890,
 						Model:   "gpt-4o",
@@ -1216,10 +1216,6 @@ func TestMiddlewareOptionsChaining(t *testing.T) {
 	ctx := context.Background()
 	_, err := client.ListModels(ctx)
 	assert.NoError(t, err)
-}
-
-func stringPtr(s string) *string {
-	return &s
 }
 
 func providerPtr(p Provider) *Provider {
@@ -1342,7 +1338,7 @@ func TestRetryLogic(t *testing.T) {
 						err := json.NewEncoder(w).Encode(response)
 						assert.NoError(t, err)
 					} else {
-						err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+						err := json.NewEncoder(w).Encode(Error{Error: new("Server error")})
 						assert.NoError(t, err)
 					}
 				}
@@ -1537,7 +1533,7 @@ func TestRetryWithContext(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
 		w.WriteHeader(http.StatusInternalServerError)
-		err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+		err := json.NewEncoder(w).Encode(Error{Error: new("Server error")})
 		assert.NoError(t, err)
 	}))
 	defer server.Close()
@@ -1646,7 +1642,7 @@ func TestRetryCallback(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if callCount < 2 {
 			w.WriteHeader(http.StatusInternalServerError)
-			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+			err := json.NewEncoder(w).Encode(Error{Error: new("Server error")})
 			assert.NoError(t, err)
 		} else {
 			w.WriteHeader(http.StatusOK)
@@ -1753,7 +1749,7 @@ func TestRetryWithCustomStatusCodesAndCallback(t *testing.T) {
 						err := json.NewEncoder(w).Encode(response)
 						assert.NoError(t, err)
 					} else {
-						err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+						err := json.NewEncoder(w).Encode(Error{Error: new("Server error")})
 						assert.NoError(t, err)
 					}
 				}
@@ -1826,7 +1822,7 @@ func TestRetryAfterHeader(t *testing.T) {
 						w.Header().Set("Retry-After", tt.retryAfterValues[callCount])
 					}
 					w.WriteHeader(http.StatusTooManyRequests)
-					err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Rate limited")})
+					err := json.NewEncoder(w).Encode(Error{Error: new("Rate limited")})
 					assert.NoError(t, err)
 				} else {
 					w.WriteHeader(http.StatusOK)
@@ -1880,7 +1876,7 @@ func TestRetryAfterHeaderWithHTTPDate(t *testing.T) {
 			futureTime := time.Now().Add(3 * time.Second)
 			w.Header().Set("Retry-After", futureTime.UTC().Format(http.TimeFormat))
 			w.WriteHeader(http.StatusTooManyRequests)
-			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Rate limited")})
+			err := json.NewEncoder(w).Encode(Error{Error: new("Rate limited")})
 			assert.NoError(t, err)
 		} else {
 			w.WriteHeader(http.StatusOK)
@@ -1927,7 +1923,7 @@ func TestRetryConfigWithNilCallback(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if callCount == 0 {
 			w.WriteHeader(http.StatusInternalServerError)
-			err := json.NewEncoder(w).Encode(Error{Error: stringPtr("Server error")})
+			err := json.NewEncoder(w).Encode(Error{Error: new("Server error")})
 			assert.NoError(t, err)
 		} else {
 			w.WriteHeader(http.StatusOK)
@@ -1964,14 +1960,14 @@ func TestOllamaCloudProvider(t *testing.T) {
 				Object:   "list",
 				Data: []Model{
 					{
-						Id:       "ollama_cloud/gpt-oss:20b",
+						ID:       "ollama_cloud/gpt-oss:20b",
 						Object:   "model",
 						Created:  1730419200,
 						OwnedBy:  "ollama_cloud",
 						ServedBy: OllamaCloud,
 					},
 					{
-						Id:       "ollama_cloud/llama3.3:70b",
+						ID:       "ollama_cloud/llama3.3:70b",
 						Object:   "model",
 						Created:  1730419200,
 						OwnedBy:  "ollama_cloud",
@@ -1998,8 +1994,8 @@ func TestOllamaCloudProvider(t *testing.T) {
 		assert.NotNil(t, models)
 		assert.Equal(t, OllamaCloud, *models.Provider)
 		assert.Len(t, models.Data, 2)
-		assert.Equal(t, "ollama_cloud/gpt-oss:20b", models.Data[0].Id)
-		assert.Equal(t, "ollama_cloud/llama3.3:70b", models.Data[1].Id)
+		assert.Equal(t, "ollama_cloud/gpt-oss:20b", models.Data[0].ID)
+		assert.Equal(t, "ollama_cloud/llama3.3:70b", models.Data[1].ID)
 	})
 
 	t.Run("GenerateContent with Ollama Cloud", func(t *testing.T) {
@@ -2014,7 +2010,7 @@ func TestOllamaCloudProvider(t *testing.T) {
 			assert.Equal(t, "ollama_cloud/gpt-oss:20b", req.Model)
 
 			response := CreateChatCompletionResponse{
-				Id:      "chatcmpl-test-ollama-cloud",
+				ID:      "chatcmpl-test-ollama-cloud",
 				Object:  "chat.completion",
 				Created: 1730419200,
 				Model:   "ollama_cloud/gpt-oss:20b",
@@ -2055,7 +2051,7 @@ func TestOllamaCloudProvider(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, response)
-		assert.Equal(t, "chatcmpl-test-ollama-cloud", response.Id)
+		assert.Equal(t, "chatcmpl-test-ollama-cloud", response.ID)
 		assert.Equal(t, "ollama_cloud/gpt-oss:20b", response.Model)
 		assert.Len(t, response.Choices, 1)
 

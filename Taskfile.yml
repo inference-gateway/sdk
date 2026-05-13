@@ -10,7 +10,8 @@ tasks:
   generate:
     desc: Generate Go types from OpenAPI specification
     cmds:
-      - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest --package=sdk --generate types -o generated_types.go openapi.yaml
+      - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest --config oapi-codegen.yaml openapi.yaml
+      - gofmt -r 'interface{} -> any' -w generated_types.go
 
   lint:
     desc: Runs golangci-lint

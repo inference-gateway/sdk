@@ -157,7 +157,16 @@ paths:
                 $ref: '#/components/schemas/CreateChatCompletionResponse'
             text/event-stream:
               schema:
-                $ref: '#/components/schemas/SSEvent'
+                description: |
+                  Server-Sent Events stream. Each frame is an `SSEvent` whose
+                  `data` field contains the JSON-serialized payload for that
+                  event. For content/message chunk events the payload is a
+                  `CreateChatCompletionStreamResponse`. The `oneOf` here makes
+                  the streaming payload schemas reachable from this operation
+                  so that code generators emit types for them.
+                oneOf:
+                  - $ref: '#/components/schemas/SSEvent'
+                  - $ref: '#/components/schemas/CreateChatCompletionStreamResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
