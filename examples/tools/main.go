@@ -73,16 +73,16 @@ func main() {
 	// Define the function we want the model to potentially call
 	weatherFunction := sdk.FunctionObject{
 		Name:        "get_current_weather",
-		Description: stringPtr("Get the current weather in a given location"),
+		Description: new("Get the current weather in a given location"),
 		Parameters: &sdk.FunctionParameters{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"location": map[string]interface{}{
+			"properties": map[string]any{
+				"location": map[string]any{
 					"type":        "string",
 					"enum":        []string{"san francisco", "new york", "london", "tokyo", "sydney"},
 					"description": "The city and state, e.g. San Francisco, CA",
 				},
-				"unit": map[string]interface{}{
+				"unit": map[string]any{
 					"type":        "string",
 					"enum":        []string{"celsius", "fahrenheit"},
 					"description": "The temperature unit to use",
@@ -152,7 +152,7 @@ func main() {
 		updatedMessages = append(updatedMessages, sdk.Message{
 			Role:       sdk.Tool,
 			Content:    sdk.NewMessageContent(string(weatherJSON)),
-			ToolCallId: &toolCall.Id,
+			ToolCallID: &toolCall.ID,
 		})
 
 		// Make another request to get the final response
@@ -168,8 +168,4 @@ func main() {
 		// Model responded directly without calling function
 		fmt.Printf("Model response: %s\n", response.Choices[0].Message.Content)
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

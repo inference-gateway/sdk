@@ -33,7 +33,7 @@ func main() {
 
 	fmt.Printf("Found %d models\n", len(allModels.Data))
 	for i, model := range allModels.Data {
-		fmt.Printf("%d. %s (owned by %s)\n", i+1, model.Id, model.OwnedBy)
+		fmt.Printf("%d. %s (owned by %s)\n", i+1, model.ID, model.OwnedBy)
 	}
 
 	// List models for specific providers
@@ -61,7 +61,7 @@ func main() {
 
 		fmt.Printf("Provider: %s\n", *models.Provider)
 		for i, model := range models.Data {
-			fmt.Printf("%d. %s\n", i+1, model.Id)
+			fmt.Printf("%d. %s\n", i+1, model.ID)
 		}
 	}
 }

@@ -279,15 +279,15 @@ func (c *clientImpl) WithAuthToken(token string) *clientImpl {
 //			Functions: []sdk.FunctionObject{
 //				{
 //					Name: "get_current_weather",
-//					Description: stringPtr("Get the current weather in a given location"),
+//					Description: new("Get the current weather in a given location"),
 //					Parameters: &sdk.FunctionParameters{
-//						Type: stringPtr("object"),
-//						Properties: &map[string]interface{}{
-//							"location": map[string]interface{}{
+//						Type: new("object"),
+//						Properties: &map[string]any{
+//							"location": map[string]any{
 //								"type":        "string",
 //								"description": "The city and state, e.g. San Francisco, CA",
 //							},
-//							"unit": map[string]interface{}{
+//							"unit": map[string]any{
 //								"type":        "string",
 //								"enum":        []string{"celsius", "fahrenheit"},
 //								"description": "The temperature unit to use",

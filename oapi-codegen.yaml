@@ -1,0 +1,6 @@
+package: sdk
+output: generated_types.go
+generate:
+  models: true
+output-options:
+  name-normalizer: ToCamelCaseWithInitialisms
