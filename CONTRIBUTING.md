@@ -14,18 +14,47 @@ Thank you for your interest in contributing to the [Inference Gateway Go SDK](sd
 
 ## Development Setup
 
-1. Prerequisites:
+The project ships a [Flox](https://flox.dev) environment that pins Go and `golangci-lint` to the versions used in CI. Using Flox is the recommended path; a manual setup is also documented below.
 
--   docker
+### Option A — Flox (recommended)
 
-2. Clone and setup:
+1. Install [Flox](https://flox.dev/docs/install-flox/) and [Task](https://taskfile.dev).
+2. Clone and activate the environment:
 
 ```sh
 git clone https://github.com/inference-gateway/sdk
-code sdk
+cd sdk
+flox activate
+go mod download
 ```
 
-3. Click on the `Reopen in Container` button in the bottom right corner of the window.
+`flox activate` provides the pinned Go toolchain and `golangci-lint` for the current shell. Re-run it whenever you enter the project in a new shell.
+
+### Option B — Manual setup
+
+1. Install:
+
+-   [Go](https://go.dev/dl/) 1.26 or newer
+-   [Task](https://taskfile.dev)
+-   [golangci-lint](https://golangci-lint.run)
+-   Git
+
+2. Clone the repository and download dependencies:
+
+```sh
+git clone https://github.com/inference-gateway/sdk
+cd sdk
+go mod download
+```
+
+### Regenerating types (optional)
+
+If the upstream OpenAPI spec has changed:
+
+```sh
+task oas-download
+task generate
+```
 
 ## Development Process
 
@@ -35,15 +64,21 @@ code sdk
 git checkout -b my-feature
 ```
 
-2. Make changes and test:
+2. Make changes and run the tests:
 
 ```sh
-go test ./...
+task test
 ```
 
 3. Add tests for new features or fix tests for refactoring and bug fixes.
 
-4. Run linter:
+4. Run the linter:
+
+```sh
+task lint
+```
+
+5. Format your code before committing:
 
 ```sh
 go fmt ./...
