@@ -51,13 +51,13 @@ jobs:
           curl -s https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin v3.48.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 'lts/*'
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@v1.0.114
+        uses: anthropics/claude-code-action@v1.0.121
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           display_report: true
