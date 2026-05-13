@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.3](https://github.com/inference-gateway/sdk/compare/v1.16.2...v1.16.3) (2026-05-13)
+
+### ♻️ Improvements
+
+* Align generated code with Go naming conventions ([#52](https://github.com/inference-gateway/sdk/issues/52)) ([c491916](https://github.com/inference-gateway/sdk/commit/c491916ef835d7d848a979ff19d984083527b9e8))
+* Remove unneeded copilot-instructions.md ([59b59cb](https://github.com/inference-gateway/sdk/commit/59b59cb71dc57fd46dbccf4f44a496f7cdf954e3))
+
+### 👷 CI
+
+* Enable display report for Claude Code action ([fa596cd](https://github.com/inference-gateway/sdk/commit/fa596cd203ad69bdc0634f96a68e1cc148eef92e))
+
+### 📚 Documentation
+
+* Update CLAUDE.md ([80fb78e](https://github.com/inference-gateway/sdk/commit/80fb78ed5a2e68840676588d960d2a066321ce29))
+
+### 🔧 Miscellaneous
+
+* Add codeowners ([db9b691](https://github.com/inference-gateway/sdk/commit/db9b6919e394c1baa8ae15585ca2a5496cefd20e))
+* Add dependabot ([b9ac9ae](https://github.com/inference-gateway/sdk/commit/b9ac9ae089c01520ffa33c0f9daf44b8b9ec98e1))
+* Remove devcontainers ([74ab9f6](https://github.com/inference-gateway/sdk/commit/74ab9f68e9c51e465b86e04f3497ab1ebe8ea10c))
+* Remove outdated issue templates for bug reports, feature requests, and refactor requests ([e6c7ae4](https://github.com/inference-gateway/sdk/commit/e6c7ae42bbb80f6953449e04e464a4917241d42b))
+
+### 📦 Miscellaneous
+
+* **deps:** Bump actions/checkout from 4.2.2 to 6.0.2 ([#46](https://github.com/inference-gateway/sdk/issues/46)) ([8c9b678](https://github.com/inference-gateway/sdk/commit/8c9b67871264b08d0a8ecf746c775d7c45fba239))
+* **deps:** Bump actions/setup-node from 4 to 6 ([#47](https://github.com/inference-gateway/sdk/issues/47)) ([68a3228](https://github.com/inference-gateway/sdk/commit/68a3228234c54a98b0ceb33f5e592e373c753937))
+* **deps:** Bump anthropics/claude-code-action from 1.0.114 to 1.0.121 ([#48](https://github.com/inference-gateway/sdk/issues/48)) ([14e8d3d](https://github.com/inference-gateway/sdk/commit/14e8d3d39998936b59bd8b4a5c8ab47e333391b2))
+* **deps:** Bump github.com/go-resty/resty/v2 from 2.16.3 to 2.17.2 ([#49](https://github.com/inference-gateway/sdk/issues/49)) ([4367734](https://github.com/inference-gateway/sdk/commit/4367734beec69a74b9fc395996ac41188f9e15d2))
+* **deps:** Bump github.com/oapi-codegen/runtime from 1.1.2 to 1.4.0 ([#51](https://github.com/inference-gateway/sdk/issues/51)) ([3b9cc6c](https://github.com/inference-gateway/sdk/commit/3b9cc6cf2d2fb279d88ba8a163ae99ec1a642dfc))
+* **deps:** Bump github.com/stretchr/testify from 1.10.0 to 1.11.1 ([#50](https://github.com/inference-gateway/sdk/issues/50)) ([d0211eb](https://github.com/inference-gateway/sdk/commit/d0211eb189722356fa44883acc2980d2b0c9a547))
+
 ## [1.16.2](https://github.com/inference-gateway/sdk/compare/v1.16.1...v1.16.2) (2026-05-07)
 
 ### ♻️ Improvements
