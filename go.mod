@@ -5,7 +5,7 @@ go 1.26.2
 require (
 	github.com/go-resty/resty/v2 v2.16.3
 	github.com/oapi-codegen/runtime v1.1.2
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
