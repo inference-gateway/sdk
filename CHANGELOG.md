@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.16.4](https://github.com/inference-gateway/sdk/compare/v1.16.3...v1.16.4) (2026-05-19)
+
+### 👷 CI
+
+* **dependabot:** Add dependabot to help with dependecies upgrades ([36e91b9](https://github.com/inference-gateway/sdk/commit/36e91b9db70b720ac30f527b380d080bed4a9aa9))
+* **deps:** Bump anthropics/claude-code-action ([#53](https://github.com/inference-gateway/sdk/issues/53)) ([919e4f4](https://github.com/inference-gateway/sdk/commit/919e4f448209f1e164541a38c9aa7f07668b4454))
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump claude-code to latest and add infer CLI to flox environment ([1c2c149](https://github.com/inference-gateway/sdk/commit/1c2c1492b0f0048a6866dc37abab2d33e7781ad8))
+* **deps:** Bump dev and ci dependecies to latest ([cdd9c73](https://github.com/inference-gateway/sdk/commit/cdd9c7356dc8cddfe1667364251adad57cdf31b8))
+
 ## [1.16.3](https://github.com/inference-gateway/sdk/compare/v1.16.2...v1.16.3) (2026-05-13)
 
 ### ♻️ Improvements
