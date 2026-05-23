@@ -6,7 +6,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/inference-gateway/sdk.svg)](https://pkg.go.dev/github.com/inference-gateway/sdk)
 [![Go Report Card](https://goreportcard.com/badge/github.com/inference-gateway/sdk)](https://goreportcard.com/report/github.com/inference-gateway/sdk)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Release](https://img.shields.io/github/release/inference-gateway/sdk.svg)](https://github.com/inference-gateway/sdk/releases)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/inference-gateway/sdk)](https://golang.org/)
 
@@ -720,4 +720,4 @@ Please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file for information abou
 
 ## License
 
-This SDK is distributed under the MIT License, see [LICENSE](LICENSE) for more information.
+This SDK is distributed under the Apache 2.0 License, see [LICENSE](LICENSE) for more information.
