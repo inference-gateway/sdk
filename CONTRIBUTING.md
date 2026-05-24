@@ -16,7 +16,7 @@ Thank you for your interest in contributing to the [Inference Gateway Go SDK](sd
 
 The project ships a [Flox](https://flox.dev) environment that pins Go and `golangci-lint` to the versions used in CI. Using Flox is the recommended path; a manual setup is also documented below.
 
-### Option A — Flox (recommended)
+### Option A - Flox (recommended)
 
 1. Install [Flox](https://flox.dev/docs/install-flox/) and [Task](https://taskfile.dev).
 2. Clone and activate the environment:
@@ -30,7 +30,7 @@ go mod download
 
 `flox activate` provides the pinned Go toolchain and `golangci-lint` for the current shell. Re-run it whenever you enter the project in a new shell.
 
-### Option B — Manual setup
+### Option B - Manual setup
 
 1. Install:
 
