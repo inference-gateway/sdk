@@ -2,6 +2,59 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.17.0](https://github.com/inference-gateway/sdk/compare/v1.16.4...v1.17.0) (2026-06-11)
+
+### ✨ Features
+
+* add minimax to provider enum ([#78](https://github.com/inference-gateway/sdk/issues/78)) ([3f5bd68](https://github.com/inference-gateway/sdk/commit/3f5bd68fab5cd76e41b1c4dde829abb176aa82c8))
+
+### 👷 CI
+
+* centralize claude.yml via reusable workflow ([#57](https://github.com/inference-gateway/sdk/issues/57)) ([75a92af](https://github.com/inference-gateway/sdk/commit/75a92af9252344d64d0b80791fb7867d080dce20))
+* centralize claude.yml via reusable workflow ([#58](https://github.com/inference-gateway/sdk/issues/58)) ([ba399f0](https://github.com/inference-gateway/sdk/commit/ba399f0a3f594515019cb14c90cb11b4a97cb17f))
+* centralize claude.yml via reusable workflow ([#59](https://github.com/inference-gateway/sdk/issues/59)) ([da8d999](https://github.com/inference-gateway/sdk/commit/da8d9993f1081e22c572076870c866bb488d2930))
+* centralize claude.yml via reusable workflow ([#75](https://github.com/inference-gateway/sdk/issues/75)) ([c7af56c](https://github.com/inference-gateway/sdk/commit/c7af56c604928c7c657dc7a7f5bb4589cce01a1b))
+* centralize infer.yml + bump infer CLI and sync .infer config ([#62](https://github.com/inference-gateway/sdk/issues/62)) ([12de81b](https://github.com/inference-gateway/sdk/commit/12de81bc2b532f5d79d1091adc0f1b83e5ce7b3c))
+* centralize infer.yml + sync .infer config ([#61](https://github.com/inference-gateway/sdk/issues/61)) ([9252034](https://github.com/inference-gateway/sdk/commit/92520349d521e8c975cdc58dbe04faba6fa2104f))
+* centralize infer.yml via reusable workflow ([#60](https://github.com/inference-gateway/sdk/issues/60)) ([fd172d7](https://github.com/inference-gateway/sdk/commit/fd172d780f8a5f25779e3aaf5b0364f5ea1a4025))
+* **claude:** Add maintainer skill ([6daeb97](https://github.com/inference-gateway/sdk/commit/6daeb975f560a8dece5f3cbadc6622cdf441b4f5))
+* **claude:** change effort to max ([4b68110](https://github.com/inference-gateway/sdk/commit/4b6811028f41ecb88c77bbcfe16f391abe08e6f5))
+* **claude:** download all maintainer skill assets ([48e51b4](https://github.com/inference-gateway/sdk/commit/48e51b4d4ba911e14000df4a246dfdbe15d1d290))
+* **claude:** remove system prompt - use default community maintained prompt ([1fa7439](https://github.com/inference-gateway/sdk/commit/1fa743928dd8a4efd4b5ef1bf31b702a738a77a1))
+* **claude:** standardize workflow + task-based branch prefix ([6f1616f](https://github.com/inference-gateway/sdk/commit/6f1616f9821b4e7185d68a13c8421c7af7a2c848))
+* **deps:** Bump anthropics/claude-code-action  v1.0.131 -> v1.0.133 ([a4f1945](https://github.com/inference-gateway/sdk/commit/a4f19459fc8a99168edf2e3a647952e6c9ec9b35))
+* **deps:** Bump anthropics/claude-code-action in the github-actions group ([#55](https://github.com/inference-gateway/sdk/issues/55)) ([d9ff0fc](https://github.com/inference-gateway/sdk/commit/d9ff0fc6ee792bac460e3bbd9ceac832904a6ce0))
+* **deps:** Bump github.com/oapi-codegen/runtime in the gomod group ([#54](https://github.com/inference-gateway/sdk/issues/54)) ([26a830c](https://github.com/inference-gateway/sdk/commit/26a830c976288b7f6acd4613c9ceffd1165e5164))
+* **deps:** bump golangci/golangci-lint-action in the github-actions group ([#56](https://github.com/inference-gateway/sdk/issues/56)) ([b51eaac](https://github.com/inference-gateway/sdk/commit/b51eaac60308988c50483fa3e050929e70a1cb7e))
+* **deps:** bump the github-actions group with 2 updates ([#67](https://github.com/inference-gateway/sdk/issues/67)) ([23566a6](https://github.com/inference-gateway/sdk/commit/23566a6241ff1ea2d1dcf8a66e7770013a688c41))
+* **deps:** Update Claude Code Action to version 1.0.131 ([df3e6b0](https://github.com/inference-gateway/sdk/commit/df3e6b02ce0e109b0e80cccaa4e5414a1d7a69ab))
+* **deps:** Update claude-code-action to version 1.0.130 ([9b1dd9a](https://github.com/inference-gateway/sdk/commit/9b1dd9ae9a02816e455bc084decd120092d544cd))
+* **deps:** Update golangci-lint installation to use action and add task setup ([2a9862b](https://github.com/inference-gateway/sdk/commit/2a9862b75ff53c972deb43902bd8915595c73f6d))
+* **infer:** centralize infer.yml + bump infer CLI and sync .infer config ([#63](https://github.com/inference-gateway/sdk/issues/63)) ([8106a91](https://github.com/inference-gateway/sdk/commit/8106a91a41cc02ea0e4ccc614206072abe2c16f6))
+* modify release workflow to use GitHub app token ([d21a8ae](https://github.com/inference-gateway/sdk/commit/d21a8aec459e29c371b0f56a6db13507a2e83ccc))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.148 -> 2.1.158 ([#65](https://github.com/inference-gateway/sdk/issues/65)) ([71de38e](https://github.com/inference-gateway/sdk/commit/71de38e50382afb9cbb447a229428e809e21f960))
+* **deps:** bump claude-code 2.1.158 -> 2.1.161, claude-code-action v1.0.133 -> v1.0.135 ([#73](https://github.com/inference-gateway/sdk/issues/73)) ([bd7c623](https://github.com/inference-gateway/sdk/commit/bd7c6235ddaaa191555811586ab81bbab74df401))
+* **deps:** bump codex 0.133.0 -> 0.135.0 ([#69](https://github.com/inference-gateway/sdk/issues/69)) ([921d2d2](https://github.com/inference-gateway/sdk/commit/921d2d27c0ab3b445f8fa8758d6cd56e48e46936))
+* **deps:** Bump dev dependencies ([8bef526](https://github.com/inference-gateway/sdk/commit/8bef5261c42925cfa6d7eb50866317c50cb37c98))
+* **deps:** bump infer CLI v0.117.0 -> v0.117.1, infer-action v0.9.1 -> v0.11.1 ([#64](https://github.com/inference-gateway/sdk/issues/64)) ([6be8292](https://github.com/inference-gateway/sdk/commit/6be8292a028deabf3284cbb993ebc2ec5780002e))
+* **deps:** bump infer CLI v0.117.1 -> v0.119.0, infer-action v0.11.2 -> v0.11.4 ([#70](https://github.com/inference-gateway/sdk/issues/70)) ([f7223c3](https://github.com/inference-gateway/sdk/commit/f7223c35705d58e90f95be966f231771a15dcd19))
+* **deps:** bump infer CLI v0.119.0 -> v0.120.0, infer-action v0.11.4 -> v0.11.6 ([#71](https://github.com/inference-gateway/sdk/issues/71)) ([e1bfba9](https://github.com/inference-gateway/sdk/commit/e1bfba91930cff5299ba20ded51691e90ab2aea2))
+* **deps:** bump infer CLI v0.120.0 -> v0.120.1, infer-action v0.11.6 -> v0.11.7 ([#72](https://github.com/inference-gateway/sdk/issues/72)) ([de1ff89](https://github.com/inference-gateway/sdk/commit/de1ff89f81f134f5f929719a3e1dafdf1341decc))
+* **deps:** bump infer CLI v0.120.1 -> v0.121.0 ([#74](https://github.com/inference-gateway/sdk/issues/74)) ([032bd0d](https://github.com/inference-gateway/sdk/commit/032bd0d4a00ab26f0d3a2323e9ce799caa31ed40))
+* **deps:** bump infer-action v0.11.1 -> v0.11.2 ([#68](https://github.com/inference-gateway/sdk/issues/68)) ([3a9c6a6](https://github.com/inference-gateway/sdk/commit/3a9c6a6880e055196ec6823ba0be4a00f15f4b15))
+* **deps:** bump infer-action v0.11.7 -> v0.12.1 ([#76](https://github.com/inference-gateway/sdk/issues/76)) ([65e438d](https://github.com/inference-gateway/sdk/commit/65e438d57a038c22e36b9c28aeef14301ee9b237))
+* **deps:** Update claude-code version to 2.1.141 and infer.flake to v0.109.11 ([aa5019d](https://github.com/inference-gateway/sdk/commit/aa5019dc213d7e97ef95d47b192d489389ba0402))
+* **docs:** Generate AGENTS.md file ([073632b](https://github.com/inference-gateway/sdk/commit/073632bfa2fe54490c8cedf5452337dcc4bb47f3))
+* **docs:** Generate CLAUDE.md file ([3fdc2e7](https://github.com/inference-gateway/sdk/commit/3fdc2e7984cd1c7426ae5d2d13b19afaddfb065a))
+* **docs:** Remove CLAUDE.md ([6364962](https://github.com/inference-gateway/sdk/commit/63649620b5ce1055411b3f972f50b004747be312))
+* **flox:** add missing manifest.lock file ([c92705b](https://github.com/inference-gateway/sdk/commit/c92705b82b35e0117f9a6c517e04f8270dde088c))
+* **flox:** Bump schema version ([afde3f3](https://github.com/inference-gateway/sdk/commit/afde3f3bddee655bf3365c2dd7288aff0c8972a3))
+* **license:** Update license to Apache 2.0 ([033317a](https://github.com/inference-gateway/sdk/commit/033317af2034163cf183c9488f0d269f85e1a86b))
+* Replace em dashes with normal dashes ([899fac7](https://github.com/inference-gateway/sdk/commit/899fac7b60fa83a3901e0357b9a812e8f5c50a3a))
+
 ## [1.16.4](https://github.com/inference-gateway/sdk/compare/v1.16.3...v1.16.4) (2026-05-19)
 
 ### 👷 CI
