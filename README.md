@@ -708,6 +708,8 @@ The SDK supports the following LLM providers:
 -   Anthropic (sdk.Anthropic)
 -   Google (sdk.Google)
 -   Mistral AI (sdk.Mistral)
+-   MiniMax (sdk.Minimax)
+-   Moonshot (sdk.Moonshot)
 
 ## Documentation
 
