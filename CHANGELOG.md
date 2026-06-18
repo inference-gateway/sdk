@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.18.1](https://github.com/inference-gateway/sdk/compare/v1.18.0...v1.18.1) (2026-06-18)
+
+### 👷 CI
+
+* **deps:** upgrade actions/checkout from v6.0.3 to v7.0.0 across workflows ([bea800e](https://github.com/inference-gateway/sdk/commit/bea800eb148b6340117ed9166dfed6be07fcc228))
+
+### 🔧 Miscellaneous
+
+* **deps:** update schema version and codex version to 0.139.0 in manifest files ([80aa77e](https://github.com/inference-gateway/sdk/commit/80aa77e25e384df24020ae6223b8fe190c09b813))
+* update CI workflow to include permissions ([ff64b16](https://github.com/inference-gateway/sdk/commit/ff64b16410ba0a520135fb374d12816fb74cc958))
+
 ## [1.18.0](https://github.com/inference-gateway/sdk/compare/v1.17.0...v1.18.0) (2026-06-18)
 
 ### ✨ Features
