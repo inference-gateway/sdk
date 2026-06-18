@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.18.0](https://github.com/inference-gateway/sdk/compare/v1.17.0...v1.18.0) (2026-06-18)
+
+### ✨ Features
+
+* regenerate SDK types from updated openapi.yaml ([#85](https://github.com/inference-gateway/sdk/issues/85)) ([a030c19](https://github.com/inference-gateway/sdk/commit/a030c191fbfeabfbc4046b4187eea026a68dccbf)), closes [schemas#71](https://github.com/inference-gateway/schemas/issues/71)
+
+### 👷 CI
+
+* **deps:** bump the github-actions group with 2 updates ([#81](https://github.com/inference-gateway/sdk/issues/81)) ([d66cdeb](https://github.com/inference-gateway/sdk/commit/d66cdeb58222623cc412249563c7721be8012b5d))
+* **infer:** centralize infer.yml + sync .infer config ([#83](https://github.com/inference-gateway/sdk/issues/83)) ([8fff409](https://github.com/inference-gateway/sdk/commit/8fff409eb525c084737351df403522aef0ddfef6))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.161 -> 2.1.170, claude-code-action v1.0.135 -> v1.0.142 ([#79](https://github.com/inference-gateway/sdk/issues/79)) ([889e3d9](https://github.com/inference-gateway/sdk/commit/889e3d9cb70011aab89f4abe88661059ba2774ab))
+* **deps:** bump claude-code 2.1.170 -> 2.1.177, claude-code-action v1.0.142 -> v1.0.150 ([#82](https://github.com/inference-gateway/sdk/issues/82)) ([9a026c7](https://github.com/inference-gateway/sdk/commit/9a026c749c27df585da96bc27724018605eef4b8))
+* **deps:** bump infer CLI v0.121.0 -> v0.121.1, infer-action v0.12.1 -> v0.13.1 ([#80](https://github.com/inference-gateway/sdk/issues/80)) ([9a1fc16](https://github.com/inference-gateway/sdk/commit/9a1fc163b8a1a90fa922a75165956b0ae1e84f45))
+
 ## [1.17.0](https://github.com/inference-gateway/sdk/compare/v1.16.4...v1.17.0) (2026-06-11)
 
 ### ✨ Features
