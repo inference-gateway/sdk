@@ -24,8 +24,8 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: |
             ${{ github.event.repository.name }}
-    
-      - uses: actions/checkout@v6.0.3
+
+      - uses: actions/checkout@v7.0.0
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
