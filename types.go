@@ -95,7 +95,7 @@ func NewImageMessage(role MessageRole, parts []ContentPart) (Message, error) {
 func NewTextContentPart(text string) (ContentPart, error) {
 	var part ContentPart
 	err := part.FromTextContentPart(TextContentPart{
-		Type: Text,
+		Type: TextContentPartTypeText,
 		Text: text,
 	})
 	return part, err

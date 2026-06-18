@@ -98,7 +98,7 @@ func main() {
 	contentParts = append(contentParts, textPart)
 
 	// Use high detail level for better analysis
-	highDetail := sdk.High
+	highDetail := sdk.ImageURLDetailHigh
 	imagePart, err = sdk.NewImageContentPart(
 		"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...", // truncated for example
 		&highDetail,
