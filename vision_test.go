@@ -33,7 +33,7 @@ func TestVisionMessage_ImageURLContent(t *testing.T) {
 
 	var textPart ContentPart
 	err := textPart.FromTextContentPart(TextContentPart{
-		Type: Text,
+		Type: TextContentPartTypeText,
 		Text: "What is in this image?",
 	})
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestVisionMessage_ImageURLContent(t *testing.T) {
 		Type: ImageContentPartTypeImageURL,
 		ImageURL: ImageURL{
 			URL:    "https://example.com/image.jpg",
-			Detail: new(Auto),
+			Detail: new(ImageURLDetailAuto),
 		},
 	})
 	require.NoError(t, err)
@@ -59,7 +59,7 @@ func TestVisionMessage_ImageURLContent(t *testing.T) {
 
 	textPartRetrieved, err := parts[0].AsTextContentPart()
 	require.NoError(t, err)
-	assert.Equal(t, Text, textPartRetrieved.Type)
+	assert.Equal(t, TextContentPartTypeText, textPartRetrieved.Type)
 	assert.Equal(t, "What is in this image?", textPartRetrieved.Text)
 
 	imagePartRetrieved, err := parts[1].AsImageContentPart()
@@ -67,7 +67,7 @@ func TestVisionMessage_ImageURLContent(t *testing.T) {
 	assert.Equal(t, ImageContentPartTypeImageURL, imagePartRetrieved.Type)
 	assert.Equal(t, "https://example.com/image.jpg", imagePartRetrieved.ImageURL.URL)
 	assert.NotNil(t, imagePartRetrieved.ImageURL.Detail)
-	assert.Equal(t, Auto, *imagePartRetrieved.ImageURL.Detail)
+	assert.Equal(t, ImageURLDetailAuto, *imagePartRetrieved.ImageURL.Detail)
 }
 
 func TestVisionMessage_DataURLImage(t *testing.T) {
@@ -84,7 +84,7 @@ func TestVisionMessage_DataURLImage(t *testing.T) {
 		Type: ImageContentPartTypeImageURL,
 		ImageURL: ImageURL{
 			URL:    dataURL,
-			Detail: new(High),
+			Detail: new(ImageURLDetailHigh),
 		},
 	})
 	require.NoError(t, err)
@@ -100,7 +100,7 @@ func TestVisionMessage_DataURLImage(t *testing.T) {
 	imagePartRetrieved, err := parts[0].AsImageContentPart()
 	require.NoError(t, err)
 	assert.Equal(t, dataURL, imagePartRetrieved.ImageURL.URL)
-	assert.Equal(t, High, *imagePartRetrieved.ImageURL.Detail)
+	assert.Equal(t, ImageURLDetailHigh, *imagePartRetrieved.ImageURL.Detail)
 }
 
 func TestGenerateContent_WithVision(t *testing.T) {
@@ -164,7 +164,7 @@ func TestGenerateContent_WithVision(t *testing.T) {
 
 	var textPart ContentPart
 	err := textPart.FromTextContentPart(TextContentPart{
-		Type: Text,
+		Type: TextContentPartTypeText,
 		Text: "What is in this image?",
 	})
 	require.NoError(t, err)
