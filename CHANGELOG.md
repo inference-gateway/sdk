@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.20.0](https://github.com/inference-gateway/sdk/compare/v1.19.0...v1.20.0) (2026-07-08)
+
+### ✨ Features
+
+* add Responses API support with zai provider ([#107](https://github.com/inference-gateway/sdk/issues/107)) ([71128ab](https://github.com/inference-gateway/sdk/commit/71128ab3f953e7a872c1c1e15abb1a7369fa518b))
+
+### 👷 CI
+
+* **deps:** bump golang.org/x/net in /examples/middleware-bypass ([#104](https://github.com/inference-gateway/sdk/issues/104)) ([9fae726](https://github.com/inference-gateway/sdk/commit/9fae726650a5bb3e748619cb0e4c5cb4604c9ff4))
+* **deps:** bump inference-gateway/.github/.github/workflows/claude.yml ([#106](https://github.com/inference-gateway/sdk/issues/106)) ([c3b667b](https://github.com/inference-gateway/sdk/commit/c3b667b3479deb09f5bab050f6284e035f96f1d3))
+* **release:** update semantic release and plugins to latest versions with local installation ([2b64b79](https://github.com/inference-gateway/sdk/commit/2b64b79b8ca7a842de66959b484567ea85006827))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.177 -> 2.1.197, claude-code-action v1.0.161 -> v1.0.165 ([#100](https://github.com/inference-gateway/sdk/issues/100)) ([dc226c9](https://github.com/inference-gateway/sdk/commit/dc226c9d56c4f356dcf088002a6de010a72bf515))
+* **deps:** bump claude-code 2.1.197 -> 2.1.201 ([#101](https://github.com/inference-gateway/sdk/issues/101)) ([a6960b6](https://github.com/inference-gateway/sdk/commit/a6960b667b10beb8060615c67922702a15ce31a3))
+* **deps:** bump infer CLI v0.130.1 -> v0.133.0, infer-action v0.24.0 -> v0.26.0 ([#102](https://github.com/inference-gateway/sdk/issues/102)) ([74b8fc9](https://github.com/inference-gateway/sdk/commit/74b8fc9d3ae4fff16e61409cdecd25b819489b1e))
+* **deps:** bump infer CLI v0.133.0 -> v0.133.1, infer-action v0.26.0 -> v0.27.1 ([#103](https://github.com/inference-gateway/sdk/issues/103)) ([9ea8113](https://github.com/inference-gateway/sdk/commit/9ea8113a541db78a09007c767341b944cde717a7))
+* **deps:** bump infer CLI v0.133.1 -> v0.137.0, infer-action v0.27.1 -> v0.29.0 ([#105](https://github.com/inference-gateway/sdk/issues/105)) ([83b35c5](https://github.com/inference-gateway/sdk/commit/83b35c57d71628567efc12e03d230322c85ab237))
+* **deps:** update dependencies and add go-task ([098f686](https://github.com/inference-gateway/sdk/commit/098f6862128f9570bafb99616afe9490cc303202))
+* remove deprecated configuration and shortcut files ([238997b](https://github.com/inference-gateway/sdk/commit/238997b18809e18d0f58791f1553feae81cf6dd6))
+
 ## [1.19.0](https://github.com/inference-gateway/sdk/compare/v1.18.1...v1.19.0) (2026-07-05)
 
 ## [1.18.1](https://github.com/inference-gateway/sdk/compare/v1.18.0...v1.18.1) (2026-06-18)
