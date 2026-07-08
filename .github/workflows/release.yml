@@ -4,6 +4,9 @@ name: Release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   github_release:
     name: GitHub Release
