@@ -2,13 +2,16 @@ schema-version = "1.13.0"
 
 [install]
 go.pkg-path = "go"
-go.version = "^1.26.2"
+go.version = "^1.26.4"
 golangci-lint.pkg-path = "golangci-lint"
 golangci-lint.version = "^2.12.2"
+go-task.pkg-path = "go-task"
+go-task.version = "3.48.0"
 infer.flake = "github:inference-gateway/cli/v0.137.0"
 claude-code.pkg-path = "claude-code"
 claude-code.version = "^2.1.201"
 claude-code.pkg-group = "claude-code"
 codex.pkg-path = "codex"
-codex.version = "^0.139.0"
+codex.version = "^0.142.3"
 codex.pkg-group = "codex"
+

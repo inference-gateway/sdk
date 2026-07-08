@@ -8,7 +8,7 @@ The Inference Gateway Go SDK — a thin Go client (`github.com/inference-gateway
 
 ## Commands
 
-The project uses [Task](https://taskfile.dev) (see `Taskfile.yml`). Toolchain is pinned via Flox in `.flox/env/manifest.toml` (Go ^1.26.2, golangci-lint ^2.12.2) — `flox activate` from the repo root puts the right versions on `PATH`. CI runs `golangci-lint run --timeout 5m`, `go build -v ./...`, and `go test -v ./...`.
+The project uses [Task](https://taskfile.dev) (see `Taskfile.yml`). Toolchain is pinned via Flox in `.flox/env/manifest.toml` (Go ^1.26.4, golangci-lint ^2.12.2) — `flox activate` from the repo root puts the right versions on `PATH`. CI runs `golangci-lint run --timeout 5m`, `go build -v ./...`, and `go test -v ./...`.
 
 - `task test` — run the full Go test suite (`go test -v ./...`).
 - Run a single test: `go test -v -run TestListModels ./...` (or `TestStream`, `TestVision`, etc.).

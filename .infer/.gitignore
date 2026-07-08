@@ -1,0 +1,11 @@
+# inference-gateway CLI runtime artifacts - do not commit
+logs/*.log
+history
+chat_export_*
+conversations.db*
+conversations
+session_groups.json
+bin/
+backups/
+tmp/
+plans/
