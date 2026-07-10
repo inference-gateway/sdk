@@ -760,9 +760,6 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 		defer close(eventChan)
 
 		defer func() {
-			// Best-effort close of the streamed response body. Any error here
-			// (e.g. a connection torn down mid-stream) is intentionally ignored
-			// so that a failed close can never take down the caller's process.
 			_ = rawBody.Close()
 		}()
 
