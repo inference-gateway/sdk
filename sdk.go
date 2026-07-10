@@ -763,6 +763,15 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 			_ = rawBody.Close()
 		}()
 
+		send := func(ev SSEvent) bool {
+			select {
+			case eventChan <- ev:
+				return true
+			case <-ctx.Done():
+				return false
+			}
+		}
+
 		reader := bufio.NewReader(rawBody)
 
 		for {
@@ -770,10 +779,10 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 			if err != nil {
 				if err != io.EOF {
 					errorData := []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
-					eventChan <- SSEvent{
+					send(SSEvent{
 						Event: nil,
 						Data:  &errorData,
-					}
+					})
 				}
 				return
 			}
@@ -791,17 +800,19 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 
 			if data == "[DONE]" {
 				streamEnd := StreamEnd
-				eventChan <- SSEvent{
+				send(SSEvent{
 					Event: &streamEnd,
-				}
+				})
 				return
 			}
 
 			contentDelta := ContentDelta
 			dataBytes := []byte(data)
-			eventChan <- SSEvent{
+			if !send(SSEvent{
 				Event: &contentDelta,
 				Data:  &dataBytes,
+			}) {
+				return
 			}
 		}
 	}()

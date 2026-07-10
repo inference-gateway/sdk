@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -573,6 +574,65 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 
 	_, open := <-eventCh
 	assert.False(t, open, "Channel should be closed on error")
+}
+
+func TestGenerateContentStream_ContextCancelTerminatesReader(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			t.Errorf("Streaming not supported")
+			return
+		}
+
+		for i := 0; i < 500; i++ {
+			if _, err := fmt.Fprint(w, "data: 1\n\n"); err != nil {
+				return
+			}
+			flusher.Flush()
+		}
+
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{
+		BaseURL: server.URL + "/v1",
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	runtime.GC()
+	time.Sleep(50 * time.Millisecond)
+	baseline := runtime.NumGoroutine()
+
+	eventCh, err := client.GenerateContentStream(
+		ctx,
+		Ollama,
+		"llama2",
+		[]Message{
+			{Role: User, Content: NewMessageContent("What is Go?")},
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, eventCh)
+
+	select {
+	case <-eventCh:
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected at least one stream event")
+	}
+	time.Sleep(200 * time.Millisecond)
+
+	cancel()
+
+	deadline := time.Now().Add(3 * time.Second)
+	for runtime.NumGoroutine() > baseline {
+		if time.Now().After(deadline) {
+			t.Fatalf("reader goroutine did not terminate after context cancel (goroutines: %d, baseline: %d)", runtime.NumGoroutine(), baseline)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
 }
 
 func TestHealthCheck(t *testing.T) {
