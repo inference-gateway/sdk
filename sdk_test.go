@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 	"time"
 
@@ -484,6 +485,79 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 
 	_, open := <-eventCh
 	assert.False(t, open, "Channel should be closed on error")
+}
+
+func TestGenerateContentStream_ContextCancelTerminatesReader(t *testing.T) {
+	// Regression test for issue #117: the reader goroutine must not block
+	// forever when the consumer abandons the channel. The server streams far
+	// more frames than the 100-slot channel buffer can hold, so the reader
+	// blocks on a send; cancelling the context must terminate the goroutine
+	// even though nothing drains the channel anymore.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			t.Errorf("Streaming not supported")
+			return
+		}
+
+		for i := 0; i < 500; i++ {
+			if _, err := fmt.Fprint(w, "data: 1\n\n"); err != nil {
+				return
+			}
+			flusher.Flush()
+		}
+
+		// Hold the body open until the request is cancelled so the reader
+		// never reaches EOF on its own.
+		<-r.Context().Done()
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{
+		BaseURL: server.URL + "/v1",
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	runtime.GC()
+	time.Sleep(50 * time.Millisecond)
+	baseline := runtime.NumGoroutine()
+
+	eventCh, err := client.GenerateContentStream(
+		ctx,
+		Ollama,
+		"llama2",
+		[]Message{
+			{Role: User, Content: NewMessageContent("What is Go?")},
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, eventCh)
+
+	// Confirm the stream is live, then abandon the channel so the reader
+	// fills the buffer and blocks on the next send.
+	select {
+	case <-eventCh:
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected at least one stream event")
+	}
+	time.Sleep(200 * time.Millisecond)
+
+	// Cancelling the context must unblock the pending send and let the reader
+	// goroutine return, even though the consumer stopped reading.
+	cancel()
+
+	deadline := time.Now().Add(3 * time.Second)
+	for {
+		if runtime.NumGoroutine() <= baseline {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("reader goroutine did not terminate after context cancel (goroutines: %d, baseline: %d)", runtime.NumGoroutine(), baseline)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
 }
 
 func TestHealthCheck(t *testing.T) {
