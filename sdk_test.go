@@ -488,11 +488,6 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 }
 
 func TestGenerateContentStream_ContextCancelTerminatesReader(t *testing.T) {
-	// Regression test for issue #117: the reader goroutine must not block
-	// forever when the consumer abandons the channel. The server streams far
-	// more frames than the 100-slot channel buffer can hold, so the reader
-	// blocks on a send; cancelling the context must terminate the goroutine
-	// even though nothing drains the channel anymore.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		flusher, ok := w.(http.Flusher)
@@ -508,8 +503,6 @@ func TestGenerateContentStream_ContextCancelTerminatesReader(t *testing.T) {
 			flusher.Flush()
 		}
 
-		// Hold the body open until the request is cancelled so the reader
-		// never reaches EOF on its own.
 		<-r.Context().Done()
 	}))
 	defer server.Close()
@@ -535,8 +528,6 @@ func TestGenerateContentStream_ContextCancelTerminatesReader(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, eventCh)
 
-	// Confirm the stream is live, then abandon the channel so the reader
-	// fills the buffer and blocks on the next send.
 	select {
 	case <-eventCh:
 	case <-time.After(2 * time.Second):
@@ -544,8 +535,6 @@ func TestGenerateContentStream_ContextCancelTerminatesReader(t *testing.T) {
 	}
 	time.Sleep(200 * time.Millisecond)
 
-	// Cancelling the context must unblock the pending send and let the reader
-	// goroutine return, even though the consumer stopped reading.
 	cancel()
 
 	deadline := time.Now().Add(3 * time.Second)
