@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.20.1](https://github.com/inference-gateway/sdk/compare/v1.20.0...v1.20.1) (2026-07-10)
+
+### 🐛 Bug Fixes
+
+* preserve HTTP error when context cancelled during backoff ([#119](https://github.com/inference-gateway/sdk/issues/119)) ([6998109](https://github.com/inference-gateway/sdk/commit/699810956c0d841bfb99d6ce75d70137899fe6ff))
+* prevent stream reader goroutine leak on ctx cancel ([#121](https://github.com/inference-gateway/sdk/issues/121)) ([8c8ff2d](https://github.com/inference-gateway/sdk/commit/8c8ff2def8ae67c65749e0250b0f03ad683bc402))
+* prevent stream reader panic on body close error ([#120](https://github.com/inference-gateway/sdk/issues/120)) ([f107881](https://github.com/inference-gateway/sdk/commit/f107881515b988437418a86341f61474a0b571ad)), closes [#116](https://github.com/inference-gateway/sdk/issues/116)
+
+### 👷 CI
+
+* **claude:** centralize claude.yml via reusable workflow ([#114](https://github.com/inference-gateway/sdk/issues/114)) ([3ce2ac8](https://github.com/inference-gateway/sdk/commit/3ce2ac80bf1c74c7c1fdd3df7faf0897a2bd68a3))
+* **infer:** centralize infer.yml via reusable workflow ([#111](https://github.com/inference-gateway/sdk/issues/111)) ([61a6a2c](https://github.com/inference-gateway/sdk/commit/61a6a2c3d36d93bd266c1e2467b78cb641bb69fa))
+* **infer:** centralize infer.yml via reusable workflow ([#112](https://github.com/inference-gateway/sdk/issues/112)) ([e3d3acc](https://github.com/inference-gateway/sdk/commit/e3d3acc2dc36f7d1ef919358c63886e9f4be2816))
+* restrict default workflow token permissions to contents: read ([#110](https://github.com/inference-gateway/sdk/issues/110)) ([e67a0f2](https://github.com/inference-gateway/sdk/commit/e67a0f2d7b4afd5305fea482cac13818e410ca5b))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code-action v1.0.165 -> v1.0.169 ([#113](https://github.com/inference-gateway/sdk/issues/113)) ([b49dec6](https://github.com/inference-gateway/sdk/commit/b49dec676744c24de1f1375550111d038007dfce))
+* **deps:** bump infer CLI v0.137.0 -> v0.138.0, infer-action v0.29.0 -> v0.30.1 ([#109](https://github.com/inference-gateway/sdk/issues/109)) ([4acac0a](https://github.com/inference-gateway/sdk/commit/4acac0adc15b3eec275d01e9a59b20ad9c2c14bb))
+* **deps:** bump infer CLI v0.138.0 -> v0.141.0 ([#115](https://github.com/inference-gateway/sdk/issues/115)) ([fea1e80](https://github.com/inference-gateway/sdk/commit/fea1e808cec2887c42119296066777b4516616c3))
+
 ## [1.20.0](https://github.com/inference-gateway/sdk/compare/v1.19.0...v1.20.0) (2026-07-08)
 
 ### ✨ Features
