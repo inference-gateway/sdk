@@ -538,10 +538,7 @@ func TestGenerateContentStream_ContextCancelTerminatesReader(t *testing.T) {
 	cancel()
 
 	deadline := time.Now().Add(3 * time.Second)
-	for {
-		if runtime.NumGoroutine() <= baseline {
-			break
-		}
+	for runtime.NumGoroutine() > baseline {
 		if time.Now().After(deadline) {
 			t.Fatalf("reader goroutine did not terminate after context cancel (goroutines: %d, baseline: %d)", runtime.NumGoroutine(), baseline)
 		}
