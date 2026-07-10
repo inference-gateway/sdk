@@ -1586,17 +1586,13 @@ func TestRetryContextCancelledPreservesError(t *testing.T) {
 		},
 	})
 
-	// The first request returns quickly (HTTP 500), then the client sleeps for
-	// the 1s backoff. The context is cancelled mid-backoff.
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
 	_, err := client.ListModels(ctx)
 
 	require.Error(t, err)
-	// The cancellation cause is still discoverable via errors.Is.
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
-	// The underlying HTTP failure that caused the retry is not dropped.
 	assert.Contains(t, err.Error(), "HTTP 500")
 	assert.GreaterOrEqual(t, callCount, 1)
 }
