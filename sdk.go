@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/require"
 )
 
 // Client represents the SDK client interface
@@ -758,8 +757,10 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 		defer close(eventChan)
 
 		defer func() {
-			err := rawBody.Close()
-			require.NoError(nil, err, "failed to close response body")
+			// Best-effort close of the streamed response body. Any error here
+			// (e.g. a connection torn down mid-stream) is intentionally ignored
+			// so that a failed close can never take down the caller's process.
+			_ = rawBody.Close()
 		}()
 
 		reader := bufio.NewReader(rawBody)
