@@ -225,7 +225,10 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*rest
 
 			select {
 			case <-ctx.Done():
-				return nil, ctx.Err()
+				if lastErr != nil {
+					return resp, fmt.Errorf("%w (cancelled while retrying: %w)", lastErr, ctx.Err())
+				}
+				return resp, ctx.Err()
 			case <-time.After(delay):
 			}
 		}

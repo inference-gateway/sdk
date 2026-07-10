@@ -1560,6 +1560,47 @@ func TestRetryWithContext(t *testing.T) {
 	assert.LessOrEqual(t, callCount, 5)
 }
 
+// TestRetryContextCancelledPreservesError verifies that when the context is
+// cancelled while executeWithRetry is sleeping between attempts, the returned
+// error preserves both the cancellation cause and the underlying HTTP failure
+// that triggered the retry (regression test for issue #118).
+func TestRetryContextCancelledPreservesError(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.WriteHeader(http.StatusInternalServerError)
+		err := json.NewEncoder(w).Encode(Error{Error: new("Server error")})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+		RetryConfig: &RetryConfig{
+			Enabled:           true,
+			MaxAttempts:       5,
+			InitialBackoffSec: 1,
+			MaxBackoffSec:     10,
+			BackoffMultiplier: 2,
+		},
+	})
+
+	// The first request returns quickly (HTTP 500), then the client sleeps for
+	// the 1s backoff. The context is cancelled mid-backoff.
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+
+	_, err := client.ListModels(ctx)
+
+	require.Error(t, err)
+	// The cancellation cause is still discoverable via errors.Is.
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	// The underlying HTTP failure that caused the retry is not dropped.
+	assert.Contains(t, err.Error(), "HTTP 500")
+	assert.GreaterOrEqual(t, callCount, 1)
+}
+
 func TestCustomRetryableStatusCodes(t *testing.T) {
 	tests := []struct {
 		name              string
