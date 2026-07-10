@@ -762,12 +762,6 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 			require.NoError(nil, err, "failed to close response body")
 		}()
 
-		// send delivers an event on eventChan but always yields to a cancelled
-		// context. Without this guard the goroutine can block forever on a send
-		// when the consumer abandons the channel: bufio.Reader keeps serving
-		// lines from its internal buffer after the socket is dead, so once the
-		// 100-slot buffer is full the send would never complete. It returns
-		// false when ctx is done so the caller can stop reading.
 		send := func(ev SSEvent) bool {
 			select {
 			case eventChan <- ev:
