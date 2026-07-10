@@ -3,10 +3,13 @@ package sdk
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -449,6 +452,92 @@ func TestGenerateContentStream(t *testing.T) {
 
 	assert.Equal(t, "Go is amazing", content)
 	assert.Equal(t, 4, eventCount)
+	assert.True(t, streamEndReceived)
+}
+
+// errClosingBody is a response body whose Close always fails, used to simulate
+// a connection torn down mid-stream where rawBody.Close() returns an error.
+type errClosingBody struct {
+	io.Reader
+}
+
+func (errClosingBody) Close() error {
+	return errors.New("simulated body close failure")
+}
+
+// closeErrRoundTripper serves a fixed SSE payload from a body that errors on Close.
+type closeErrRoundTripper struct {
+	payload string
+}
+
+func (rt closeErrRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	header := make(http.Header)
+	header.Set("Content-Type", "text/event-stream")
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Status:     "200 OK",
+		Proto:      "HTTP/1.1",
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Header:     header,
+		Body:       errClosingBody{Reader: strings.NewReader(rt.payload)},
+		Request:    req,
+	}, nil
+}
+
+// TestGenerateContentStreamBodyCloseError is a regression test for issue #116:
+// a failing rawBody.Close() must be handled gracefully and must never panic the
+// host process. Before the fix this path called require.NoError(nil, err, ...),
+// which panicked on a nil TestingT inside an unrecoverable goroutine and crashed
+// the whole process. Reaching the assertions at all proves no panic occurred.
+func TestGenerateContentStreamBodyCloseError(t *testing.T) {
+	payload := `data: {"id":"chatcmpl-1","object":"chat.completion.chunk","created":1698819810,"model":"llama2","choices":[{"delta":{"content":"hi"},"index":0,"finish_reason":"stop"}]}` + "\n\n" +
+		"data: [DONE]\n\n"
+
+	client := NewClient(&ClientOptions{BaseURL: "http://stream.invalid/v1"})
+	impl, ok := client.(*clientImpl)
+	require.True(t, ok)
+	impl.http.SetTransport(closeErrRoundTripper{payload: payload})
+
+	ctx := context.Background()
+	eventCh, err := client.GenerateContentStream(
+		ctx,
+		Ollama,
+		"llama2",
+		[]Message{
+			{
+				Role:    User,
+				Content: NewMessageContent("hello"),
+			},
+		},
+	)
+	require.NoError(t, err)
+	require.NotNil(t, eventCh)
+
+	var content string
+	var streamEndReceived bool
+	for event := range eventCh {
+		if event.Event == nil {
+			continue
+		}
+		switch *event.Event {
+		case ContentDelta:
+			if event.Data == nil {
+				continue
+			}
+			var streamResponse CreateChatCompletionStreamResponse
+			if err := json.Unmarshal(*event.Data, &streamResponse); err != nil {
+				continue
+			}
+			for _, choice := range streamResponse.Choices {
+				content += choice.Delta.Content
+			}
+		case StreamEnd:
+			streamEndReceived = true
+		}
+	}
+
+	assert.Equal(t, "hi", content)
 	assert.True(t, streamEndReceived)
 }
 
@@ -1618,6 +1707,43 @@ func TestRetryWithContext(t *testing.T) {
 	assert.Error(t, err)
 	assert.GreaterOrEqual(t, callCount, 1)
 	assert.LessOrEqual(t, callCount, 5)
+}
+
+// TestRetryContextCancelledPreservesError verifies that when the context is
+// cancelled while executeWithRetry is sleeping between attempts, the returned
+// error preserves both the cancellation cause and the underlying HTTP failure
+// that triggered the retry (regression test for issue #118).
+func TestRetryContextCancelledPreservesError(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.WriteHeader(http.StatusInternalServerError)
+		err := json.NewEncoder(w).Encode(Error{Error: new("Server error")})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	baseURL := server.URL + "/v1"
+	client := NewClient(&ClientOptions{
+		BaseURL: baseURL,
+		RetryConfig: &RetryConfig{
+			Enabled:           true,
+			MaxAttempts:       5,
+			InitialBackoffSec: 1,
+			MaxBackoffSec:     10,
+			BackoffMultiplier: 2,
+		},
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+
+	_, err := client.ListModels(ctx)
+
+	require.Error(t, err)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+	assert.Contains(t, err.Error(), "HTTP 500")
+	assert.GreaterOrEqual(t, callCount, 1)
 }
 
 func TestCustomRetryableStatusCodes(t *testing.T) {
