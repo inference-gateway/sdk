@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.21.0](https://github.com/inference-gateway/sdk/compare/v1.20.1...v1.21.0) (2026-07-11)
+
+### ✨ Features
+
+* return Client from With* builder methods ([#122](https://github.com/inference-gateway/sdk/issues/122)) ([ad48b9b](https://github.com/inference-gateway/sdk/commit/ad48b9b6e37fc4c49d7c7fe5fa1aa51eda66bd0f))
+
 ## [1.20.1](https://github.com/inference-gateway/sdk/compare/v1.20.0...v1.20.1) (2026-07-10)
 
 ### 🐛 Bug Fixes
