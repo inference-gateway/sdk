@@ -18,12 +18,12 @@ import (
 
 // Client represents the SDK client interface
 type Client interface {
-	WithAuthToken(token string) *clientImpl
-	WithTools(tools *[]ChatCompletionTool) *clientImpl
-	WithOptions(options *CreateChatCompletionRequest) *clientImpl
-	WithHeaders(headers map[string]string) *clientImpl
-	WithHeader(name, value string) *clientImpl
-	WithMiddlewareOptions(options *MiddlewareOptions) *clientImpl
+	WithAuthToken(token string) Client
+	WithTools(tools *[]ChatCompletionTool) Client
+	WithOptions(options *CreateChatCompletionRequest) Client
+	WithHeaders(headers map[string]string) Client
+	WithHeader(name, value string) Client
+	WithMiddlewareOptions(options *MiddlewareOptions) Client
 	ListModels(ctx context.Context) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
 	ListTools(ctx context.Context) (*ListToolsResponse, error)
@@ -262,7 +262,7 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*rest
 //	})
 //	client = client.WithAuthToken("your-auth-token")
 //	resp, err := client.ListModels(ctx)
-func (c *clientImpl) WithAuthToken(token string) *clientImpl {
+func (c *clientImpl) WithAuthToken(token string) Client {
 	c.token = token
 	c.http.SetAuthToken(token)
 	return c
@@ -302,7 +302,7 @@ func (c *clientImpl) WithAuthToken(token string) *clientImpl {
 //		},
 //	}
 //	resp, err = client.WithTools(tools).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
-func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) *clientImpl {
+func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) Client {
 	c.tools = tools
 	return c
 }
@@ -334,7 +334,7 @@ func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) *clientImpl {
 //   - For GenerateContentStream calls, Stream will always be set to true regardless of options
 //   - Model and Messages provided in the actual method calls will override options
 //   - Options will persist for all future calls until cleared with WithOptions(nil)
-func (c *clientImpl) WithOptions(options *CreateChatCompletionRequest) *clientImpl {
+func (c *clientImpl) WithOptions(options *CreateChatCompletionRequest) Client {
 	c.options = options
 	return c
 }
@@ -351,7 +351,7 @@ func (c *clientImpl) WithOptions(options *CreateChatCompletionRequest) *clientIm
 //	}
 //	client = client.WithHeaders(headers)
 //	resp, err := client.ListModels(ctx)
-func (c *clientImpl) WithHeaders(headers map[string]string) *clientImpl {
+func (c *clientImpl) WithHeaders(headers map[string]string) Client {
 	for name, value := range headers {
 		c.http.Header.Set(name, value)
 	}
@@ -367,7 +367,7 @@ func (c *clientImpl) WithHeaders(headers map[string]string) *clientImpl {
 //	})
 //	client = client.WithHeader("X-Custom-Header", "value")
 //	resp, err := client.ListModels(ctx)
-func (c *clientImpl) WithHeader(name, value string) *clientImpl {
+func (c *clientImpl) WithHeader(name, value string) Client {
 	c.http.Header.Set(name, value)
 	return c
 }
@@ -387,7 +387,7 @@ func (c *clientImpl) WithHeader(name, value string) *clientImpl {
 // Note: This functionality requires the Inference Gateway to support the corresponding headers:
 //   - X-MCP-Bypass: Skip MCP middleware processing
 //   - X-Direct-Provider: Route directly to provider
-func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) *clientImpl {
+func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) Client {
 	if options == nil {
 		return c
 	}

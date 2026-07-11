@@ -33,7 +33,7 @@ Two test files: `sdk_test.go` (~33 tests, covers client/list/generate/stream/ret
 
 ### Builder pattern — `WithX` methods MUTATE
 
-`WithAuthToken`, `WithTools`, `WithOptions`, `WithHeaders`, `WithHeader`, `WithMiddlewareOptions` all return `*clientImpl` for chaining but modify the receiver. They do not clone. `client.WithAuthToken("x")` changes every subsequent call on `client` (and on anything aliasing it). When a user wants per-call config, they generally chain inline: `client.WithTools(t).GenerateContent(...)`. `WithMiddlewareOptions` is special — it both sets headers (when the flag is true) and *deletes* them (when false), so it can be used to clear prior middleware state.
+`WithAuthToken`, `WithTools`, `WithOptions`, `WithHeaders`, `WithHeader`, `WithMiddlewareOptions` all return `Client` for chaining but modify the receiver. They do not clone. `client.WithAuthToken("x")` changes every subsequent call on `client` (and on anything aliasing it). When a user wants per-call config, they generally chain inline: `client.WithTools(t).GenerateContent(...)`. `WithMiddlewareOptions` is special — it both sets headers (when the flag is true) and *deletes* them (when false), so it can be used to clear prior middleware state.
 
 ### Retry layer
 
