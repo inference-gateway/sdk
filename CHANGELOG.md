@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.21.1](https://github.com/inference-gateway/sdk/compare/v1.21.0...v1.21.1) (2026-07-16)
+
+### 👷 CI
+
+* **deps:** bump actions/setup-node in the github-actions group ([#124](https://github.com/inference-gateway/sdk/issues/124)) ([31f4dd0](https://github.com/inference-gateway/sdk/commit/31f4dd0ce5909157d1a11fa4ac838ed51b836ac7))
+* **deps:** bump github.com/oapi-codegen/runtime in the gomod group ([#123](https://github.com/inference-gateway/sdk/issues/123)) ([dc90f19](https://github.com/inference-gateway/sdk/commit/dc90f1951fb7e7b5b62481d86fefd8e28c4ec2a5))
+
+### 🔧 Miscellaneous
+
+* **release:** update GitHub App credentials to use RELEASER_APP_ID and RELEASER_APP_PRIVATE_KEY ([6ebaebe](https://github.com/inference-gateway/sdk/commit/6ebaebe2a9738b3df5908166491319d203b53cda))
+
 ## [1.21.0](https://github.com/inference-gateway/sdk/compare/v1.20.1...v1.21.0) (2026-07-11)
 
 ### ✨ Features
