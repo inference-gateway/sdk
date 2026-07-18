@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.22.0](https://github.com/inference-gateway/sdk/compare/v1.21.1...v1.22.0) (2026-07-18)
+
+### ✨ Features
+
+* add llamacpp provider support ([#127](https://github.com/inference-gateway/sdk/issues/127)) ([35bda81](https://github.com/inference-gateway/sdk/commit/35bda81b1bbc7cb0183f7e7b727cb0e0739ecb6f)), closes [#126](https://github.com/inference-gateway/sdk/issues/126)
+
+### 🔧 Miscellaneous
+
+* **deps:** bump infer CLI v0.141.0 -> v0.147.1 ([#125](https://github.com/inference-gateway/sdk/issues/125)) ([2b3da64](https://github.com/inference-gateway/sdk/commit/2b3da64582cddd4f3636e47d872a446534ac78ce))
+
 ## [1.21.1](https://github.com/inference-gateway/sdk/compare/v1.21.0...v1.21.1) (2026-07-16)
 
 ### 👷 CI
