@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.25.0](https://github.com/inference-gateway/sdk/compare/v1.24.0...v1.25.0) (2026-07-20)
+
+### ✨ Features
+
+* expose include param in ListModels and ListProviderModels ([#133](https://github.com/inference-gateway/sdk/issues/133)) ([4e394cb](https://github.com/inference-gateway/sdk/commit/4e394cb0d8efb4e7ee6ad4c0129805335d1a9aca))
+
+### ♻️ Improvements
+
+* sync schema and regenerate types with structured ContextWindow and Pricing ([#134](https://github.com/inference-gateway/sdk/issues/134)) ([8cfa9ec](https://github.com/inference-gateway/sdk/commit/8cfa9ecd529cd55770f5ef7acb5b05fe2990767a))
+
 ## [1.24.0](https://github.com/inference-gateway/sdk/compare/v1.23.0...v1.24.0) (2026-07-20)
 
 ### ✨ Features
