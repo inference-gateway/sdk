@@ -2246,3 +2246,34 @@ func TestOllamaCloudProvider(t *testing.T) {
 		assert.Equal(t, "Hello! I'm an AI assistant powered by Ollama Cloud. How can I help you today?", responseText)
 	})
 }
+
+func TestCompletionUsageUnmarshalsTokenDetails(t *testing.T) {
+	chunk := []byte(`{
+		"id": "chatcmpl-1",
+		"object": "chat.completion.chunk",
+		"created": 1,
+		"model": "deepseek/deepseek-chat",
+		"choices": [],
+		"usage": {
+			"prompt_tokens": 2006,
+			"completion_tokens": 300,
+			"total_tokens": 2306,
+			"prompt_tokens_details": {"cached_tokens": 1920, "audio_tokens": 0},
+			"completion_tokens_details": {"reasoning_tokens": 42}
+		}
+	}`)
+
+	var streamResponse CreateChatCompletionStreamResponse
+	require.NoError(t, json.Unmarshal(chunk, &streamResponse))
+	require.NotNil(t, streamResponse.Usage)
+	require.NotNil(t, streamResponse.Usage.PromptTokensDetails)
+	require.NotNil(t, streamResponse.Usage.PromptTokensDetails.CachedTokens)
+	assert.Equal(t, int64(1920), *streamResponse.Usage.PromptTokensDetails.CachedTokens)
+	require.NotNil(t, streamResponse.Usage.CompletionTokensDetails)
+	require.NotNil(t, streamResponse.Usage.CompletionTokensDetails.ReasoningTokens)
+	assert.Equal(t, int64(42), *streamResponse.Usage.CompletionTokensDetails.ReasoningTokens)
+
+	var legacy CompletionUsage
+	require.NoError(t, json.Unmarshal([]byte(`{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3}`), &legacy))
+	assert.Nil(t, legacy.PromptTokensDetails, "payloads without details must stay valid")
+}
