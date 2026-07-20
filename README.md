@@ -304,6 +304,17 @@ if err != nil {
 }
 fmt.Printf("Provider: %s\n", *groqResp.Provider)
 fmt.Printf("Available Groq models: %+v\n", groqResp.Data)
+
+// Request additional per-model metadata (?include=context_window)
+withCtx, err := client.ListModels(ctx, sdk.ContextWindow)
+if err != nil {
+    log.Fatalf("Error listing models: %v", err)
+}
+for _, model := range withCtx.Data {
+    if model.ContextWindow != nil {
+        fmt.Printf("%s context window: %d tokens\n", model.ID, *model.ContextWindow)
+    }
+}
 ```
 
 ### Listing MCP Tools
