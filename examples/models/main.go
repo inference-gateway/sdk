@@ -20,6 +20,8 @@ func main() {
 	// Create a new client
 	client := sdk.NewClient(&sdk.ClientOptions{
 		BaseURL: apiURL,
+		// ponytail: retries off — a listing demo shouldn't stall 6s per dead provider
+		RetryConfig: &sdk.RetryConfig{Enabled: false},
 	})
 
 	// List all models from all providers
