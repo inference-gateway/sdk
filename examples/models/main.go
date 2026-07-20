@@ -64,4 +64,25 @@ func main() {
 			fmt.Printf("%d. %s\n", i+1, model.ID)
 		}
 	}
+
+	// List models with context window and pricing metadata
+	fmt.Println("\nListing models with context window and pricing metadata...")
+	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	detailedModels, err := client.ListModels(ctx, sdk.ListModelsParamsIncludeContextWindow, sdk.ListModelsParamsIncludePricing)
+	cancel()
+	if err != nil {
+		log.Printf("Error listing models with include params: %v", err)
+	} else {
+		for i, model := range detailedModels.Data {
+			fmt.Printf("%d. %s (owned by %s)\n", i+1, model.ID, model.OwnedBy)
+			if model.ContextWindow != nil {
+					fmt.Printf("   Context window: %d tokens (source: %s)\n", model.ContextWindow.Tokens, model.ContextWindow.Source)
+			}
+			if model.Pricing != nil {
+					fmt.Printf("   Pricing: %s input, %s output (%s, source: %s)\n",
+						model.Pricing.InputPerToken, model.Pricing.OutputPerToken,
+						model.Pricing.Currency, model.Pricing.Source)
+			}
+		}
+	}
 }
