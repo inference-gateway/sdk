@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.23.0](https://github.com/inference-gateway/sdk/compare/v1.22.0...v1.23.0) (2026-07-20)
+
+### ✨ Features
+
+* add prompt_tokens_details and completion_tokens_details to CompletionUsage ([#128](https://github.com/inference-gateway/sdk/issues/128)) ([74dcc13](https://github.com/inference-gateway/sdk/commit/74dcc131eedfdefc669e6c24aec5ba33063814ef))
+
 ## [1.22.0](https://github.com/inference-gateway/sdk/compare/v1.21.1...v1.22.0) (2026-07-18)
 
 ### ✨ Features
