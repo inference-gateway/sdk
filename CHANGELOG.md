@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.24.0](https://github.com/inference-gateway/sdk/compare/v1.23.0...v1.24.0) (2026-07-20)
+
+### ✨ Features
+
+* sync Model types with /v1/models include parameter ([#131](https://github.com/inference-gateway/sdk/issues/131)) ([4549939](https://github.com/inference-gateway/sdk/commit/45499397d0e57ced724745e397c875399b3ec17a))
+
 ## [1.23.0](https://github.com/inference-gateway/sdk/compare/v1.22.0...v1.23.0) (2026-07-20)
 
 ### ✨ Features
