@@ -125,7 +125,7 @@ func TestListProviderModels(t *testing.T) {
 }
 
 func TestListModelsWithInclude(t *testing.T) {
-	contextWindow := int64(128000)
+	contextWindow := ContextWindow{Tokens: 128000, Source: ContextWindowSourceProvider}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v1/models", r.URL.Path, "Path should be /v1/models")
@@ -155,17 +155,17 @@ func TestListModelsWithInclude(t *testing.T) {
 		BaseURL: server.URL + "/v1",
 	})
 
-	models, err := client.ListModels(context.Background(), ContextWindow)
+	models, err := client.ListModels(context.Background(), ListModelsParamsIncludeContextWindow)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, models)
 	assert.Len(t, models.Data, 1)
 	require.NotNil(t, models.Data[0].ContextWindow)
-	assert.Equal(t, contextWindow, *models.Data[0].ContextWindow)
+	assert.Equal(t, contextWindow.Tokens, models.Data[0].ContextWindow.Tokens)
 }
 
 func TestListProviderModelsWithInclude(t *testing.T) {
-	contextWindow := int64(200000)
+	contextWindow := ContextWindow{Tokens: 200000, Source: ContextWindowSourceProvider}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v1/models", r.URL.Path, "Path should be /v1/models")
@@ -197,13 +197,13 @@ func TestListProviderModelsWithInclude(t *testing.T) {
 		BaseURL: server.URL + "/v1",
 	})
 
-	models, err := client.ListProviderModels(context.Background(), Openai, ContextWindow, Pricing)
+	models, err := client.ListProviderModels(context.Background(), Openai, ListModelsParamsIncludeContextWindow, ListModelsParamsIncludePricing)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, models)
 	assert.Len(t, models.Data, 1)
 	require.NotNil(t, models.Data[0].ContextWindow)
-	assert.Equal(t, contextWindow, *models.Data[0].ContextWindow)
+	assert.Equal(t, contextWindow.Tokens, models.Data[0].ContextWindow.Tokens)
 }
 
 func TestListModelsWithoutIncludeOmitsParam(t *testing.T) {

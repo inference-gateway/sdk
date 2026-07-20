@@ -424,7 +424,7 @@ func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) Client {
 // Optional include parameters request additional per-model metadata, e.g.
 // models with context window sizes:
 //
-//	models, err := client.ListModels(ctx, sdk.ContextWindow)
+//	models, err := client.ListModels(ctx, sdk.ListModelsParamsIncludeContextWindow)
 func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParamsInclude) (*ListModelsResponse, error) {
 	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
 		req := c.http.R().
@@ -470,7 +470,7 @@ func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParams
 // Optional include parameters request additional per-model metadata, e.g.
 // models with context window sizes:
 //
-//	resp, err := client.ListProviderModels(ctx, sdk.Ollama, sdk.ContextWindow)
+//	resp, err := client.ListProviderModels(ctx, sdk.Ollama, sdk.ListModelsParamsIncludeContextWindow)
 func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider, include ...ListModelsParamsInclude) (*ListModelsResponse, error) {
 	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
 		req := c.http.R().

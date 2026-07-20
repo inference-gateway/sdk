@@ -6,6 +6,7 @@ package sdk
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -40,6 +41,27 @@ const (
 func (e ChatCompletionToolType) Valid() bool {
 	switch e {
 	case Function:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContextWindowSource.
+const (
+	ContextWindowSourceCommunity ContextWindowSource = "community"
+	ContextWindowSourceProvider  ContextWindowSource = "provider"
+	ContextWindowSourceRuntime   ContextWindowSource = "runtime"
+)
+
+// Valid indicates whether the value is a known member of the ContextWindowSource enum.
+func (e ContextWindowSource) Valid() bool {
+	switch e {
+	case ContextWindowSourceCommunity:
+		return true
+	case ContextWindowSourceProvider:
+		return true
+	case ContextWindowSourceRuntime:
 		return true
 	default:
 		return false
@@ -151,6 +173,24 @@ func (e MessageRole) Valid() bool {
 	case Tool:
 		return true
 	case User:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for PricingSource.
+const (
+	PricingSourceCommunity PricingSource = "community"
+	PricingSourceProvider  PricingSource = "provider"
+)
+
+// Valid indicates whether the value is a known member of the PricingSource enum.
+func (e PricingSource) Valid() bool {
+	switch e {
+	case PricingSourceCommunity:
+		return true
+	case PricingSourceProvider:
 		return true
 	default:
 		return false
@@ -699,16 +739,16 @@ func (e TextContentPartType) Valid() bool {
 
 // Defines values for ListModelsParamsInclude.
 const (
-	ContextWindow ListModelsParamsInclude = "context_window"
-	Pricing       ListModelsParamsInclude = "pricing"
+	ListModelsParamsIncludeContextWindow ListModelsParamsInclude = "context_window"
+	ListModelsParamsIncludePricing       ListModelsParamsInclude = "pricing"
 )
 
 // Valid indicates whether the value is a known member of the ListModelsParamsInclude enum.
 func (e ListModelsParamsInclude) Valid() bool {
 	switch e {
-	case ContextWindow:
+	case ListModelsParamsIncludeContextWindow:
 		return true
-	case Pricing:
+	case ListModelsParamsIncludePricing:
 		return true
 	default:
 		return false
@@ -931,6 +971,18 @@ type CompletionUsage struct {
 type ContentPart struct {
 	union json.RawMessage
 }
+
+// ContextWindow Context window information for a model
+type ContextWindow struct {
+	// Source Source of the context window information
+	Source ContextWindowSource `json:"source"`
+
+	// Tokens Maximum number of tokens the model can process in a single request
+	Tokens int `json:"tokens"`
+}
+
+// ContextWindowSource Source of the context window information
+type ContextWindowSource string
 
 // CreateChatCompletionRequest defines model for CreateChatCompletionRequest.
 type CreateChatCompletionRequest struct {
@@ -1251,17 +1303,44 @@ type MessageRole string
 
 // Model Common model information
 type Model struct {
-	// ContextWindow Maximum context window in tokens. Present only when requested via `include=context_window`; `null` when requested but not yet resolved.
-	ContextWindow *int64 `json:"context_window,omitempty"`
-	Created       int64  `json:"created"`
-	ID            string `json:"id"`
-	Object        string `json:"object"`
-	OwnedBy       string `json:"owned_by"`
+	// ContextWindow Context window information for the model (included when `include=context_window`)
+	ContextWindow *ContextWindow `json:"context_window,omitempty"`
+	Created       int64          `json:"created"`
+	ID            string         `json:"id"`
+	Object        string         `json:"object"`
+	OwnedBy       string         `json:"owned_by"`
 
-	// Pricing Per-model pricing metadata. Present only when requested via `include=pricing`; `null` when requested but not yet resolved. The object shape is defined by a follow-up change.
-	Pricing  *map[string]any `json:"pricing,omitempty"`
-	ServedBy Provider        `json:"served_by"`
+	// Pricing Pricing information for the model (included when `include=pricing`)
+	Pricing  *Pricing `json:"pricing,omitempty"`
+	ServedBy Provider `json:"served_by"`
 }
+
+// Pricing Pricing information for a model
+type Pricing struct {
+	// CacheReadPerToken Price per cached input token read
+	CacheReadPerToken *string `json:"cache_read_per_token,omitempty"`
+
+	// CacheWritePerToken Price per cached input token write
+	CacheWritePerToken *string `json:"cache_write_per_token,omitempty"`
+
+	// Currency Currency code for the pricing (e.g. USD)
+	Currency string `json:"currency"`
+
+	// InputPerToken Price per input token
+	InputPerToken string `json:"input_per_token"`
+
+	// OutputPerToken Price per output token
+	OutputPerToken string `json:"output_per_token"`
+
+	// Source Source of the pricing information
+	Source PricingSource `json:"source"`
+
+	// UpdatedAt Timestamp when the pricing was last updated
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// PricingSource Source of the pricing information
+type PricingSource string
 
 // Provider defines model for Provider.
 type Provider string
@@ -1862,7 +1941,9 @@ type ListModelsParams struct {
 	// Provider Specific provider to query (optional)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 
-	// Include Optional comma-separated list of additional per-model metadata fields to include in the response. Supported keys: `context_window`, `pricing`. Keys are trimmed and de-duplicated; an unknown key returns 400. When omitted, the response contains no metadata fields and stays byte-for-byte OpenAI-compatible. A requested key that cannot be resolved is returned as an explicit `null`, distinguishing "not requested" (key absent) from "requested but unavailable" (key present, value null).
+	// Include Comma-separated list of metadata keys to include in the response.
+	// Supported values: `pricing`, `context_window`.
+	// When omitted, the response remains unchanged (backward compatible).
 	Include *[]ListModelsParamsInclude `form:"include,omitempty" json:"include,omitempty"`
 }
 
