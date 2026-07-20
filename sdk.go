@@ -24,8 +24,8 @@ type Client interface {
 	WithHeaders(headers map[string]string) Client
 	WithHeader(name, value string) Client
 	WithMiddlewareOptions(options *MiddlewareOptions) Client
-	ListModels(ctx context.Context) (*ListModelsResponse, error)
-	ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error)
+	ListModels(ctx context.Context, include ...ListModelsParamsInclude) (*ListModelsResponse, error)
+	ListProviderModels(ctx context.Context, provider Provider, include ...ListModelsParamsInclude) (*ListModelsResponse, error)
 	ListTools(ctx context.Context) (*ListToolsResponse, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
@@ -420,12 +420,20 @@ func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) Client {
 //	    log.Fatalf("Error listing models: %v", err)
 //	}
 //	fmt.Printf("Available models: %+v\n", models)
-func (c *clientImpl) ListModels(ctx context.Context) (*ListModelsResponse, error) {
+//
+// Optional include parameters request additional per-model metadata, e.g.
+// models with context window sizes:
+//
+//	models, err := client.ListModels(ctx, sdk.ContextWindow)
+func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParamsInclude) (*ListModelsResponse, error) {
 	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
+		req := c.http.R().
 			SetContext(ctx).
-			SetResult(&ListModelsResponse{}).
-			Get(fmt.Sprintf("%s/models", c.baseURL))
+			SetResult(&ListModelsResponse{})
+		if query := joinInclude(include); query != "" {
+			req.SetQueryParam("include", query)
+		}
+		return req.Get(fmt.Sprintf("%s/models", c.baseURL))
 	})
 
 	if err != nil {
@@ -458,12 +466,20 @@ func (c *clientImpl) ListModels(ctx context.Context) (*ListModelsResponse, error
 //	}
 //	fmt.Printf("Provider: %s", resp.Provider)
 //	fmt.Printf("Available models: %+v\n", resp.Data)
-func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider) (*ListModelsResponse, error) {
+//
+// Optional include parameters request additional per-model metadata, e.g.
+// models with context window sizes:
+//
+//	resp, err := client.ListProviderModels(ctx, sdk.Ollama, sdk.ContextWindow)
+func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider, include ...ListModelsParamsInclude) (*ListModelsResponse, error) {
 	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
+		req := c.http.R().
 			SetContext(ctx).
-			SetResult(&ListModelsResponse{}).
-			Get(fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider))
+			SetResult(&ListModelsResponse{})
+		if query := joinInclude(include); query != "" {
+			req.SetQueryParam("include", query)
+		}
+		return req.Get(fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider))
 	})
 
 	if err != nil {
@@ -822,6 +838,15 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+// joinInclude renders include values as the comma-separated ?include= query value
+func joinInclude(include []ListModelsParamsInclude) string {
+	parts := make([]string, len(include))
+	for i, inc := range include {
+		parts[i] = string(inc)
+	}
+	return strings.Join(parts, ",")
 }
 
 // HealthCheck performs a health check request to verify API availability.

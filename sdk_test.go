@@ -124,6 +124,107 @@ func TestListProviderModels(t *testing.T) {
 	assert.Equal(t, "openai/gpt-4-turbo", models.Data[1].ID)
 }
 
+func TestListModelsWithInclude(t *testing.T) {
+	contextWindow := int64(128000)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/models", r.URL.Path, "Path should be /v1/models")
+		assert.Equal(t, "context_window", r.URL.Query().Get("include"), "Include should be specified in query")
+
+		response := ListModelsResponse{
+			Object: "list",
+			Data: []Model{
+				{
+					ID:            "openai/gpt-4o",
+					Object:        "model",
+					Created:       1686935002,
+					OwnedBy:       "openai",
+					ServedBy:      Openai,
+					ContextWindow: &contextWindow,
+				},
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{
+		BaseURL: server.URL + "/v1",
+	})
+
+	models, err := client.ListModels(context.Background(), ContextWindow)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, models)
+	assert.Len(t, models.Data, 1)
+	require.NotNil(t, models.Data[0].ContextWindow)
+	assert.Equal(t, contextWindow, *models.Data[0].ContextWindow)
+}
+
+func TestListProviderModelsWithInclude(t *testing.T) {
+	contextWindow := int64(200000)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/models", r.URL.Path, "Path should be /v1/models")
+		assert.Equal(t, "openai", r.URL.Query().Get("provider"), "Provider should be specified in query")
+		assert.Equal(t, "context_window,pricing", r.URL.Query().Get("include"), "Include should be comma-separated in query")
+
+		response := ListModelsResponse{
+			Provider: providerPtr(Openai),
+			Object:   "list",
+			Data: []Model{
+				{
+					ID:            "openai/gpt-4o",
+					Object:        "model",
+					Created:       1686935002,
+					OwnedBy:       "openai",
+					ServedBy:      Openai,
+					ContextWindow: &contextWindow,
+				},
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{
+		BaseURL: server.URL + "/v1",
+	})
+
+	models, err := client.ListProviderModels(context.Background(), Openai, ContextWindow, Pricing)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, models)
+	assert.Len(t, models.Data, 1)
+	require.NotNil(t, models.Data[0].ContextWindow)
+	assert.Equal(t, contextWindow, *models.Data[0].ContextWindow)
+}
+
+func TestListModelsWithoutIncludeOmitsParam(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, present := r.URL.Query()["include"]
+		assert.False(t, present, "include param should be absent when not requested")
+
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(ListModelsResponse{Object: "list", Data: []Model{}})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{
+		BaseURL: server.URL + "/v1",
+	})
+
+	_, err := client.ListModels(context.Background())
+	assert.NoError(t, err)
+}
+
 func TestListProviderModels_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
