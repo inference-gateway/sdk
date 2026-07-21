@@ -241,6 +241,7 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*rest
 				return resp, nil
 			}
 			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode())
+			closeRawBody(resp)
 		}
 
 		if !isRetryableError(lastErr) && (resp == nil || !isRetryableStatusCode(resp.StatusCode(), c.retryConfig)) {
@@ -754,6 +755,7 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 		close(eventChan)
 
 		body, _ := io.ReadAll(resp.RawBody())
+		closeRawBody(resp)
 		var errorResp Error
 		if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error != nil {
 			return eventChan, fmt.Errorf("API stream error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
@@ -921,6 +923,7 @@ func (c *clientImpl) CreateMessageStream(ctx context.Context, provider Provider,
 		close(eventChan)
 
 		body, _ := io.ReadAll(resp.RawBody())
+		closeRawBody(resp)
 		return eventChan, messagesAPIError(resp.StatusCode(), body)
 	}
 
@@ -950,6 +953,18 @@ func messagesAPIError(statusCode int, body []byte) error {
 	}
 
 	return fmt.Errorf("%s", errMsg)
+}
+
+// closeRawBody closes an unparsed (SetDoNotParseResponse) response body so the
+// connection isn't leaked on error/retry paths. Safe on parsed responses,
+// whose body resty has already closed.
+func closeRawBody(resp *resty.Response) {
+	if resp == nil {
+		return
+	}
+	if body := resp.RawBody(); body != nil {
+		_ = body.Close()
+	}
 }
 
 func boolPtr(b bool) *bool {
