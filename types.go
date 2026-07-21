@@ -113,3 +113,17 @@ func NewImageContentPart(imageURL string, detail *ImageURLDetail) (ContentPart, 
 	})
 	return part, err
 }
+
+// Backwards-compatible aliases for enum values renamed by the schemas
+// v0.11.1 generated-code sync.
+const (
+	ContentDelta = SSEventEventContentDelta
+	ContentEnd   = SSEventEventContentEnd
+	ContentStart = SSEventEventContentStart
+	MessageEnd   = SSEventEventMessageEnd
+	MessageStart = SSEventEventMessageStart
+	StreamEnd    = SSEventEventStreamEnd
+	StreamStart  = SSEventEventStreamStart
+
+	Refusal = ResponseOutputRefusalTypeRefusal
+)
