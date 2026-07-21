@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.0](https://github.com/inference-gateway/sdk/compare/v1.25.0...v1.26.0) (2026-07-21)
+
+### ✨ Features
+
+* sync generated types with schemas v0.11.1 ([#137](https://github.com/inference-gateway/sdk/issues/137)) ([06ee74a](https://github.com/inference-gateway/sdk/commit/06ee74af8844043f4128169f21bd53b5cf671131))
+
+### 👷 CI
+
+* add deterministic schemas type sync ([#136](https://github.com/inference-gateway/sdk/issues/136)) ([da49d15](https://github.com/inference-gateway/sdk/commit/da49d151583a02dec85f8d99a4e232e5203af132))
+
+### 🔧 Miscellaneous
+
+* **schema:** sync openapi.yaml from upstream schemas and regenerate types ([#135](https://github.com/inference-gateway/sdk/issues/135)) ([ab86707](https://github.com/inference-gateway/sdk/commit/ab86707c6ab2039c8f9ae0d0f99eee1fedc72bfb))
+
 ## [1.25.0](https://github.com/inference-gateway/sdk/compare/v1.24.0...v1.25.0) (2026-07-20)
 
 ### ✨ Features
