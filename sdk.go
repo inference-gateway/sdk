@@ -29,6 +29,8 @@ type Client interface {
 	ListTools(ctx context.Context) (*ListToolsResponse, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
+	CreateMessage(ctx context.Context, provider Provider, request CreateMessagesRequest) (*MessagesResponse, error)
+	CreateMessageStream(ctx context.Context, provider Provider, request CreateMessagesRequest) (<-chan SSEvent, error)
 	HealthCheck(ctx context.Context) error
 }
 
@@ -772,68 +774,182 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 		return eventChan, fmt.Errorf("empty response body")
 	}
 
-	go func() {
-		defer close(eventChan)
-
-		defer func() {
-			_ = rawBody.Close()
-		}()
-
-		send := func(ev SSEvent) bool {
-			select {
-			case eventChan <- ev:
-				return true
-			case <-ctx.Done():
-				return false
-			}
-		}
-
-		reader := bufio.NewReader(rawBody)
-
-		for {
-			line, err := reader.ReadString('\n')
-			if err != nil {
-				if err != io.EOF {
-					errorData := []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
-					send(SSEvent{
-						Event: nil,
-						Data:  &errorData,
-					})
-				}
-				return
-			}
-
-			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
-			}
-
-			if !strings.HasPrefix(line, "data: ") {
-				continue
-			}
-
-			data := strings.TrimPrefix(line, "data: ")
-
-			if data == "[DONE]" {
-				streamEnd := StreamEnd
-				send(SSEvent{
-					Event: &streamEnd,
-				})
-				return
-			}
-
-			contentDelta := ContentDelta
-			dataBytes := []byte(data)
-			if !send(SSEvent{
-				Event: &contentDelta,
-				Data:  &dataBytes,
-			}) {
-				return
-			}
-		}
-	}()
+	go readSSEStream(ctx, rawBody, eventChan)
 
 	return eventChan, nil
+}
+
+// readSSEStream reads `data: ` lines off an SSE body, emits ContentDelta
+// events, and closes the channel on `[DONE]`, EOF, or read error.
+func readSSEStream(ctx context.Context, rawBody io.ReadCloser, eventChan chan SSEvent) {
+	defer close(eventChan)
+
+	defer func() {
+		_ = rawBody.Close()
+	}()
+
+	send := func(ev SSEvent) bool {
+		select {
+		case eventChan <- ev:
+			return true
+		case <-ctx.Done():
+			return false
+		}
+	}
+
+	reader := bufio.NewReader(rawBody)
+
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			if err != io.EOF {
+				errorData := []byte(fmt.Sprintf(`{"error": "%s"}`, err.Error()))
+				send(SSEvent{
+					Event: nil,
+					Data:  &errorData,
+				})
+			}
+			return
+		}
+
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		if !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+
+		data := strings.TrimPrefix(line, "data: ")
+
+		if data == "[DONE]" {
+			streamEnd := StreamEnd
+			send(SSEvent{
+				Event: &streamEnd,
+			})
+			return
+		}
+
+		contentDelta := ContentDelta
+		dataBytes := []byte(data)
+		if !send(SSEvent{
+			Event: &contentDelta,
+			Data:  &dataBytes,
+		}) {
+			return
+		}
+	}
+}
+
+// CreateMessage creates a message using the Anthropic-compatible Messages API.
+// Not every provider implements it; unsupported providers return an error —
+// use GenerateContent for those.
+//
+// Example:
+//
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
+//	var content sdk.MessagesMessage_Content
+//	_ = content.FromMessagesMessageContent0("What is Go?")
+//	response, err := client.CreateMessage(ctx, sdk.Anthropic, sdk.CreateMessagesRequest{
+//		Model:     "claude-sonnet-5",
+//		MaxTokens: 1024,
+//		Messages:  []sdk.MessagesMessage{{Role: sdk.MessagesMessageRoleUser, Content: content}},
+//	})
+func (c *clientImpl) CreateMessage(ctx context.Context, provider Provider, request CreateMessagesRequest) (*MessagesResponse, error) {
+	request.Stream = boolPtr(false)
+
+	queryParams := make(map[string]string)
+	if provider != "" {
+		queryParams["provider"] = string(provider)
+	}
+
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetQueryParams(queryParams).
+			SetBody(request).
+			SetResult(&MessagesResponse{}).
+			Post(fmt.Sprintf("%s/messages", c.baseURL))
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		return nil, messagesAPIError(resp.StatusCode(), resp.Body())
+	}
+
+	result, ok := resp.Result().(*MessagesResponse)
+	if !ok || result == nil {
+		return nil, fmt.Errorf("failed to parse response")
+	}
+
+	return result, nil
+}
+
+// CreateMessageStream creates a message using the Anthropic-compatible Messages
+// API in streaming mode. Each ContentDelta event's Data is a JSON-serialized
+// MessagesStreamEvent; the channel closes when the stream ends.
+func (c *clientImpl) CreateMessageStream(ctx context.Context, provider Provider, request CreateMessagesRequest) (<-chan SSEvent, error) {
+	eventChan := make(chan SSEvent, 100)
+
+	request.Stream = boolPtr(true)
+
+	queryParams := make(map[string]string)
+	if provider != "" {
+		queryParams["provider"] = string(provider)
+	}
+
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetQueryParams(queryParams).
+			SetBody(request).
+			SetDoNotParseResponse(true).
+			Post(fmt.Sprintf("%s/messages", c.baseURL))
+	})
+	if err != nil {
+		close(eventChan)
+		return eventChan, err
+	}
+
+	if resp.IsError() {
+		close(eventChan)
+
+		body, _ := io.ReadAll(resp.RawBody())
+		return eventChan, messagesAPIError(resp.StatusCode(), body)
+	}
+
+	rawBody := resp.RawBody()
+	if rawBody == nil {
+		close(eventChan)
+		return eventChan, fmt.Errorf("empty response body")
+	}
+
+	go readSSEStream(ctx, rawBody, eventChan)
+
+	return eventChan, nil
+}
+
+// messagesAPIError builds an error from an Anthropic-format error body,
+// falling back to the raw body when it doesn't parse.
+func messagesAPIError(statusCode int, body []byte) error {
+	var errorResp MessagesError
+	if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error.Message != "" {
+		return fmt.Errorf("API error: %s (status code: %d)", errorResp.Error.Message, statusCode)
+	}
+
+	errMsg := fmt.Sprintf("messages request failed with status: %d", statusCode)
+
+	if len(body) > 0 {
+		errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(body))
+	}
+
+	return fmt.Errorf("%s", errMsg)
 }
 
 func boolPtr(b bool) *bool {

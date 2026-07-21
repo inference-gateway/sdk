@@ -2378,3 +2378,137 @@ func TestCompletionUsageUnmarshalsTokenDetails(t *testing.T) {
 	require.NoError(t, json.Unmarshal([]byte(`{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3}`), &legacy))
 	assert.Nil(t, legacy.PromptTokensDetails, "payloads without details must stay valid")
 }
+
+func TestCreateMessage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/messages", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "anthropic", r.URL.Query().Get("provider"))
+
+		var requestBody CreateMessagesRequest
+		err := json.NewDecoder(r.Body).Decode(&requestBody)
+		assert.NoError(t, err)
+		assert.Equal(t, "claude-sonnet-5", requestBody.Model)
+		assert.Equal(t, 1024, requestBody.MaxTokens)
+		assert.False(t, *requestBody.Stream)
+		assert.Len(t, requestBody.Messages, 1)
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = fmt.Fprint(w, `{
+			"id": "msg_123",
+			"type": "message",
+			"role": "assistant",
+			"model": "claude-sonnet-5",
+			"content": [{"type": "text", "text": "Go is a programming language."}],
+			"stop_reason": "end_turn",
+			"usage": {"input_tokens": 10, "output_tokens": 7}
+		}`)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	var content MessagesMessage_Content
+	require.NoError(t, content.FromMessagesMessageContent0("What is Go?"))
+
+	response, err := client.CreateMessage(context.Background(), Anthropic, CreateMessagesRequest{
+		Model:     "claude-sonnet-5",
+		MaxTokens: 1024,
+		Messages:  []MessagesMessage{{Role: MessagesMessageRoleUser, Content: content}},
+	})
+
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Equal(t, "msg_123", response.ID)
+	require.Len(t, response.Content, 1)
+	textBlock, err := response.Content[0].AsMessagesTextBlock()
+	assert.NoError(t, err)
+	assert.Equal(t, "Go is a programming language.", textBlock.Text)
+}
+
+func TestCreateMessage_APIError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, err := fmt.Fprint(w, `{"type": "error", "error": {"type": "not_supported_error", "message": "The Messages API is not supported by this provider yet."}}`)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	var content MessagesMessage_Content
+	require.NoError(t, content.FromMessagesMessageContent0("What is Go?"))
+
+	response, err := client.CreateMessage(context.Background(), Groq, CreateMessagesRequest{
+		Model:     "some-model",
+		MaxTokens: 1024,
+		Messages:  []MessagesMessage{{Role: MessagesMessageRoleUser, Content: content}},
+	})
+
+	assert.Error(t, err)
+	assert.Nil(t, response)
+	assert.Contains(t, err.Error(), "not supported")
+}
+
+func TestCreateMessageStream(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/messages", r.URL.Path)
+
+		var requestBody CreateMessagesRequest
+		err := json.NewDecoder(r.Body).Decode(&requestBody)
+		assert.NoError(t, err)
+		assert.True(t, *requestBody.Stream)
+
+		w.Header().Set("Content-Type", "text/event-stream")
+		flusher, ok := w.(http.Flusher)
+		require.True(t, ok, "Streaming not supported")
+
+		chunks := []string{
+			`{"type": "message_start", "message": {"id": "msg_123", "type": "message", "role": "assistant", "model": "claude-sonnet-5", "content": [], "stop_reason": null, "usage": {"input_tokens": 10, "output_tokens": 0}}}`,
+			`{"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Go is"}}`,
+			`{"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": " amazing"}}`,
+			`{"type": "message_stop"}`,
+		}
+		for _, chunk := range chunks {
+			_, err := fmt.Fprintf(w, "data: %s\n\n", chunk)
+			require.NoError(t, err)
+			flusher.Flush()
+		}
+		_, err = fmt.Fprint(w, "data: [DONE]\n\n")
+		require.NoError(t, err)
+		flusher.Flush()
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	var content MessagesMessage_Content
+	require.NoError(t, content.FromMessagesMessageContent0("What is Go?"))
+
+	events, err := client.CreateMessageStream(context.Background(), Anthropic, CreateMessagesRequest{
+		Model:     "claude-sonnet-5",
+		MaxTokens: 1024,
+		Messages:  []MessagesMessage{{Role: MessagesMessageRoleUser, Content: content}},
+	})
+	require.NoError(t, err)
+
+	var text string
+	var sawStreamEnd bool
+	for event := range events {
+		require.NotNil(t, event.Event)
+		switch *event.Event {
+		case ContentDelta:
+			var streamEvent MessagesStreamEvent
+			require.NoError(t, json.Unmarshal(*event.Data, &streamEvent))
+			if streamEvent.Delta != nil && streamEvent.Delta.Text != nil {
+				text += *streamEvent.Delta.Text
+			}
+		case StreamEnd:
+			sawStreamEnd = true
+		}
+	}
+
+	assert.Equal(t, "Go is amazing", text)
+	assert.True(t, sawStreamEnd)
+}
