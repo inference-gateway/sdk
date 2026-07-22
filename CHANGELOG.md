@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.1](https://github.com/inference-gateway/sdk/compare/v1.26.0...v1.26.1) (2026-07-22)
+
+### 👷 CI
+
+* **deps:** bump github.com/oapi-codegen/runtime in the gomod group ([#139](https://github.com/inference-gateway/sdk/issues/139)) ([24d778c](https://github.com/inference-gateway/sdk/commit/24d778cd60e9aa7cb8820d672db0caccd38354b3))
+* **deps:** bump the github-actions group with 2 updates ([#138](https://github.com/inference-gateway/sdk/issues/138)) ([35d89db](https://github.com/inference-gateway/sdk/commit/35d89dbd4d054a38ffc687c0a9730b8b85574f46))
+
 ## [1.26.0](https://github.com/inference-gateway/sdk/compare/v1.25.0...v1.26.0) (2026-07-21)
 
 ### ✨ Features
