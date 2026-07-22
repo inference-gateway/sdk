@@ -28,7 +28,7 @@ jobs:
           repositories: |
             ${{ github.event.repository.name }}
 
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
