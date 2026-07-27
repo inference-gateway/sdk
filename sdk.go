@@ -159,6 +159,10 @@ func NewClient(options *ClientOptions) Client {
 		client.SetHeaders(options.Headers)
 	}
 
+	if options.Transport != nil {
+		client.SetTransport(options.Transport)
+	}
+
 	retryConfig := options.RetryConfig
 	if retryConfig == nil {
 		retryConfig = getDefaultRetryConfig()
