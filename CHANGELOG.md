@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.27.1](https://github.com/inference-gateway/sdk/compare/v1.27.0...v1.27.1) (2026-07-27)
+
+### 🔧 Miscellaneous
+
+* **deps:** bump infer CLI v0.147.1 -> v0.153.1 ([#143](https://github.com/inference-gateway/sdk/issues/143)) ([0861334](https://github.com/inference-gateway/sdk/commit/08613345661a7d5b3de012ef0999848aa1896a20))
+
 ## [1.27.0](https://github.com/inference-gateway/sdk/compare/v1.26.1...v1.27.0) (2026-07-27)
 
 ### ✨ Features
