@@ -3408,6 +3408,16 @@ components:
                   type: string
                   default: '9464'
                   description: 'Port for telemetry metrics server'
+                - name: telemetry_tracing_enable
+                  env: 'TELEMETRY_TRACING_ENABLE'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLE)'
+                - name: telemetry_tracing_otlp_endpoint
+                  env: 'TELEMETRY_TRACING_OTLP_ENDPOINT'
+                  type: string
+                  default: 'http://localhost:4318'
+                  description: 'OTLP HTTP endpoint for trace export'
           - mcp:
               title: 'Model Context Protocol (MCP)'
               settings:
@@ -3764,3 +3774,16 @@ components:
                   type: string
                   description: 'ZAI API Key'
                   secret: true
+          - routing:
+              title: 'Routing'
+              settings:
+                - name: routing_enabled
+                  env: 'ROUTING_ENABLED'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable gateway-native model routing: logical model aliases backed by a pool of upstream provider deployments, selected round-robin per replica. Opt-in; when disabled, direct provider/model routing is unchanged'
+                - name: routing_config_path
+                  env: 'ROUTING_CONFIG_PATH'
+                  type: string
+                  default: ''
+                  description: 'Path to a YAML file mapping logical model aliases to their upstream deployment pools. Required when ROUTING_ENABLED is true'
