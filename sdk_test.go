@@ -74,6 +74,39 @@ func TestListModels(t *testing.T) {
 	assert.Equal(t, "groq/llama-3.3-70b-versatile", models.Data[1].ID)
 }
 
+type markingTransport struct {
+	base   http.RoundTripper
+	called bool
+}
+
+func (m *markingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	m.called = true
+	req.Header.Set("X-Test-Injected", "1")
+	return m.base.RoundTrip(req)
+}
+
+func TestNewClientTransportOption(t *testing.T) {
+	var seen string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = r.Header.Get("X-Test-Injected")
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(ListModelsResponse{Object: "list"})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	tr := &markingTransport{base: http.DefaultTransport}
+	client := NewClient(&ClientOptions{
+		BaseURL:   server.URL + "/v1",
+		Transport: tr,
+	})
+
+	_, err := client.ListModels(context.Background())
+	require.NoError(t, err)
+	assert.True(t, tr.called, "custom transport should be invoked")
+	assert.Equal(t, "1", seen, "header injected by the transport should reach the server")
+}
+
 func TestListProviderModels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v1/models", r.URL.Path, "Path should be /v1/models")

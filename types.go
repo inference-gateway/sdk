@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -19,6 +20,10 @@ type ClientOptions struct {
 	Headers map[string]string
 	// RetryConfig is the retry configuration for HTTP requests.
 	RetryConfig *RetryConfig
+	// Transport, when set, overrides the client's HTTP transport. Use it to
+	// inject an http.RoundTripper - e.g. one that propagates W3C trace-context
+	// headers so gateway calls join the caller's distributed trace.
+	Transport http.RoundTripper
 }
 
 // RetryConfig represents the retry configuration for HTTP requests
