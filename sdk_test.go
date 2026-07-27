@@ -77,13 +77,11 @@ func TestListModels(t *testing.T) {
 type markingTransport struct {
 	base   http.RoundTripper
 	called bool
-	header string
 }
 
 func (m *markingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	m.called = true
 	req.Header.Set("X-Test-Injected", "1")
-	m.header = req.Header.Get("X-Test-Injected")
 	return m.base.RoundTrip(req)
 }
 
