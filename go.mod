@@ -4,7 +4,7 @@ go 1.26.4
 
 require (
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/oapi-codegen/runtime v1.5.0
+	github.com/oapi-codegen/runtime v1.6.0
 	github.com/stretchr/testify v1.11.1
 )
 

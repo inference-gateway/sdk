@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.26.1](https://github.com/inference-gateway/sdk/compare/v1.26.0...v1.26.1) (2026-07-22)
+
+### 👷 CI
+
+* **deps:** bump github.com/oapi-codegen/runtime in the gomod group ([#139](https://github.com/inference-gateway/sdk/issues/139)) ([24d778c](https://github.com/inference-gateway/sdk/commit/24d778cd60e9aa7cb8820d672db0caccd38354b3))
+* **deps:** bump the github-actions group with 2 updates ([#138](https://github.com/inference-gateway/sdk/issues/138)) ([35d89db](https://github.com/inference-gateway/sdk/commit/35d89dbd4d054a38ffc687c0a9730b8b85574f46))
+
+## [1.26.0](https://github.com/inference-gateway/sdk/compare/v1.25.0...v1.26.0) (2026-07-21)
+
+### ✨ Features
+
+* sync generated types with schemas v0.11.1 ([#137](https://github.com/inference-gateway/sdk/issues/137)) ([06ee74a](https://github.com/inference-gateway/sdk/commit/06ee74af8844043f4128169f21bd53b5cf671131))
+
+### 👷 CI
+
+* add deterministic schemas type sync ([#136](https://github.com/inference-gateway/sdk/issues/136)) ([da49d15](https://github.com/inference-gateway/sdk/commit/da49d151583a02dec85f8d99a4e232e5203af132))
+
+### 🔧 Miscellaneous
+
+* **schema:** sync openapi.yaml from upstream schemas and regenerate types ([#135](https://github.com/inference-gateway/sdk/issues/135)) ([ab86707](https://github.com/inference-gateway/sdk/commit/ab86707c6ab2039c8f9ae0d0f99eee1fedc72bfb))
+
+## [1.25.0](https://github.com/inference-gateway/sdk/compare/v1.24.0...v1.25.0) (2026-07-20)
+
+### ✨ Features
+
+* expose include param in ListModels and ListProviderModels ([#133](https://github.com/inference-gateway/sdk/issues/133)) ([4e394cb](https://github.com/inference-gateway/sdk/commit/4e394cb0d8efb4e7ee6ad4c0129805335d1a9aca))
+
+### ♻️ Improvements
+
+* sync schema and regenerate types with structured ContextWindow and Pricing ([#134](https://github.com/inference-gateway/sdk/issues/134)) ([8cfa9ec](https://github.com/inference-gateway/sdk/commit/8cfa9ecd529cd55770f5ef7acb5b05fe2990767a))
+
 ## [1.24.0](https://github.com/inference-gateway/sdk/compare/v1.23.0...v1.24.0) (2026-07-20)
 
 ### ✨ Features

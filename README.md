@@ -32,6 +32,7 @@ Connect to multiple LLM providers through a unified interface • Stream respons
     - [Vision Support](#vision-support)
     - [Using ReasoningFormat](#using-reasoningformat)
     - [Streaming Content](#streaming-content)
+    - [Messages API (Anthropic-compatible)](#messages-api-anthropic-compatible)
     - [Tool-Use](#tool-use)
     - [Health Check](#health-check)
   - [Examples](#examples)
@@ -617,6 +618,68 @@ for event := range events {
 }
 ```
 
+### Messages API (Anthropic-compatible)
+
+The gateway also exposes an Anthropic-compatible Messages API (`POST /messages`). Not every provider implements it - unsupported providers return an error, so use `GenerateContent` for those.
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1",
+})
+ctx := context.Background()
+
+var content sdk.MessagesMessage_Content
+if err := content.FromMessagesMessageContent0("What is Go?"); err != nil {
+    log.Fatalf("Failed to build content: %v", err)
+}
+
+response, err := client.CreateMessage(ctx, sdk.Anthropic, sdk.CreateMessagesRequest{
+    Model:     "claude-sonnet-5",
+    MaxTokens: 1024,
+    Messages: []sdk.MessagesMessage{
+        {Role: sdk.MessagesMessageRoleUser, Content: content},
+    },
+})
+if err != nil {
+    log.Fatalf("Failed to create message: %v", err)
+}
+
+for _, block := range response.Content {
+    if text, err := block.AsMessagesTextBlock(); err == nil {
+        fmt.Println(text.Text)
+    }
+}
+```
+
+For streaming, use `CreateMessageStream`. Each `ContentDelta` event's `Data` is a JSON-serialized `sdk.MessagesStreamEvent` - switch on its `Type` field (`message_start`, `content_block_delta`, `message_stop`, ...) or just read `Delta.Text`:
+
+```go
+events, err := client.CreateMessageStream(ctx, sdk.Anthropic, request)
+if err != nil {
+    log.Fatalf("Failed to create message stream: %v", err)
+}
+
+for event := range events {
+    if event.Event == nil {
+        continue
+    }
+    switch *event.Event {
+    case sdk.ContentDelta:
+        var streamEvent sdk.MessagesStreamEvent
+        if err := json.Unmarshal(*event.Data, &streamEvent); err != nil {
+            continue
+        }
+        if streamEvent.Delta != nil && streamEvent.Delta.Text != nil {
+            fmt.Print(*streamEvent.Delta.Text)
+        }
+    case sdk.StreamEnd:
+        fmt.Println("\nStream ended")
+    }
+}
+```
+
+For a complete example, see [examples/messages/main.go](examples/messages/main.go).
+
 ### Tool-Use
 
 To use tools with the SDK, you can define a tool and provide it to the client:
@@ -697,6 +760,7 @@ For more detailed examples and use cases, check out the [examples directory](./e
 
 -   **[Generation Example](./examples/generation/)** - Basic content generation examples
 -   **[MCP List Tools Example](./examples/mcp-list-tools/)** - How to list available MCP tools
+-   **[Messages Example](./examples/messages/)** - Anthropic-compatible Messages API (sync + streaming)
 -   **[Middleware Bypass Example](./examples/middleware-bypass/)** - How to bypass middleware layers for direct provider access
 -   **[Models Example](./examples/models/)** - How to list and work with different models
 -   **[Stream Example](./examples/stream/)** - Streaming content generation
