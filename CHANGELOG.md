@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.27.0](https://github.com/inference-gateway/sdk/compare/v1.26.1...v1.27.0) (2026-07-27)
+
+### ✨ Features
+
+* add Transport option to ClientOptions for custom HTTP transport ([#142](https://github.com/inference-gateway/sdk/issues/142)) ([a3dd2e3](https://github.com/inference-gateway/sdk/commit/a3dd2e3034e13279a89d337aef0f351e7de034e8))
+
+### 🐛 Bug Fixes
+
+* **ci:** update maintainer app ID to client ID in workflows and documentation ([1501d61](https://github.com/inference-gateway/sdk/commit/1501d6195c632f55a4dee4eea2f26639095c09ea))
+
+### 👷 CI
+
+* **claude:** centralize claude.yml via reusable workflow ([#140](https://github.com/inference-gateway/sdk/issues/140)) ([ce7045b](https://github.com/inference-gateway/sdk/commit/ce7045ba09deeb67cc7fb1e72e3e3dd71cfc1204))
+* **claude:** centralize claude.yml via reusable workflow ([#141](https://github.com/inference-gateway/sdk/issues/141)) ([4a2b077](https://github.com/inference-gateway/sdk/commit/4a2b0776777721e19400b4ec7d89e165a2b926a5))
+
 ## [1.26.1](https://github.com/inference-gateway/sdk/compare/v1.26.0...v1.26.1) (2026-07-22)
 
 ### 👷 CI
