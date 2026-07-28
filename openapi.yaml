@@ -429,8 +429,8 @@ paths:
         - Metrics
       description: |
         OTLP/HTTP metrics push endpoint. Accepts an OTLP ExportMetricsServiceRequest
-        encoded as protobuf or JSON. Only accessible when TELEMETRY_ENABLE and
-        TELEMETRY_METRICS_PUSH_ENABLE are enabled.
+        encoded as protobuf or JSON. Only accessible when TELEMETRY_ENABLED and
+        TELEMETRY_METRICS_PUSH_ENABLED are enabled.
       summary: Push metrics to the gateway (OTLP/HTTP)
       security:
         - bearerAuth: []
@@ -788,7 +788,7 @@ components:
       bearerFormat: JWT
       description: |
         Authentication is optional by default.
-        To enable authentication, set AUTH_ENABLE to true.
+        To enable authentication, set AUTH_ENABLED to true.
         When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
     Provider:
@@ -3393,13 +3393,13 @@ components:
           - telemetry:
               title: 'Telemetry'
               settings:
-                - name: telemetry_enable
-                  env: 'TELEMETRY_ENABLE'
+                - name: telemetry_enabled
+                  env: 'TELEMETRY_ENABLED'
                   type: bool
                   default: 'false'
                   description: 'Enable telemetry'
-                - name: telemetry_metrics_push_enable
-                  env: 'TELEMETRY_METRICS_PUSH_ENABLE'
+                - name: telemetry_metrics_push_enabled
+                  env: 'TELEMETRY_METRICS_PUSH_ENABLED'
                   type: bool
                   default: 'false'
                   description: 'Enable the OTLP metrics push endpoint (POST /v1/metrics)'
@@ -3408,11 +3408,11 @@ components:
                   type: string
                   default: '9464'
                   description: 'Port for telemetry metrics server'
-                - name: telemetry_tracing_enable
-                  env: 'TELEMETRY_TRACING_ENABLE'
+                - name: telemetry_tracing_enabled
+                  env: 'TELEMETRY_TRACING_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLE)'
+                  description: 'Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLED)'
                 - name: telemetry_tracing_otlp_endpoint
                   env: 'TELEMETRY_TRACING_OTLP_ENDPOINT'
                   type: string
@@ -3421,8 +3421,8 @@ components:
           - mcp:
               title: 'Model Context Protocol (MCP)'
               settings:
-                - name: mcp_enable
-                  env: 'MCP_ENABLE'
+                - name: mcp_enabled
+                  env: 'MCP_ENABLED'
                   type: bool
                   default: 'false'
                   description: 'Enable MCP'
@@ -3498,8 +3498,8 @@ components:
                   type: time.Duration
                   default: '30s'
                   description: 'Interval between reconnection attempts'
-                - name: mcp_polling_enable
-                  env: 'MCP_POLLING_ENABLE'
+                - name: mcp_polling_enabled
+                  env: 'MCP_POLLING_ENABLED'
                   type: bool
                   default: 'true'
                   description: 'Enable health check polling'
@@ -3521,8 +3521,8 @@ components:
           - auth:
               title: 'Authentication'
               settings:
-                - name: auth_enable
-                  env: 'AUTH_ENABLE'
+                - name: auth_enabled
+                  env: 'AUTH_ENABLED'
                   type: bool
                   default: 'false'
                   description: 'Enable authentication'
@@ -3542,6 +3542,32 @@ components:
                   type: string
                   description: 'OIDC client secret'
                   secret: true
+          - guardrails:
+              title: 'Guardrails'
+              settings:
+                - name: guardrails_enabled
+                  env: 'GUARDRAILS_ENABLED'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable gateway guardrails (OPA/Rego policy enforcement)'
+                - name: guardrails_policy_dir
+                  env: 'GUARDRAILS_POLICY_DIR'
+                  type: string
+                  description: 'Directory of .rego files compiled at startup'
+                - name: guardrails_fail_mode
+                  env: 'GUARDRAILS_FAIL_MODE'
+                  type: string
+                  default: 'closed'
+                  description: 'closed or open: behavior on policy/external error or timeout'
+                - name: guardrails_external_url
+                  env: 'GUARDRAILS_EXTERNAL_URL'
+                  type: string
+                  description: 'Optional external HTTP guardrail service'
+                - name: guardrails_external_timeout
+                  env: 'GUARDRAILS_EXTERNAL_TIMEOUT'
+                  type: time.Duration
+                  default: '5s'
+                  description: 'Timeout for the external guardrail service'
           - server:
               title: 'Server settings'
               settings:
