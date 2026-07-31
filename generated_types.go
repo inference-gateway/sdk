@@ -125,6 +125,25 @@ func (e CreateImageRequestResponseFormat) Valid() bool {
 	}
 }
 
+// Defines values for ImageSize.
+const (
+ImageSize256x256    ImageSize = "256x256"
+ImageSize512x512    ImageSize = "512x512"
+ImageSize1024x1024 ImageSize = "1024x1024"
+ImageSize1024x1792 ImageSize = "1024x1792"
+ImageSize1792x1024 ImageSize = "1792x1024"
+)
+
+// Valid indicates whether the value is a known member of the ImageSize enum.
+func (e ImageSize) Valid() bool {
+switch e {
+case ImageSize256x256, ImageSize512x512, ImageSize1024x1024, ImageSize1024x1792, ImageSize1792x1024:
+		return true
+default:
+		return false
+}
+}
+
 // Defines values for CreateMessagesRequestThinkingType.
 const (
 	Enabled CreateMessagesRequestThinkingType = "enabled"
@@ -1538,12 +1557,15 @@ type CreateImageRequest struct {
 
 	// Size The size of the generated images. Must be one of `256x256`,
 	// `512x512`, `1024x1024`, `1024x1792`, or `1792x1024`.
-	Size *string `json:"size,omitempty"`
+	Size *ImageSize `json:"size,omitempty"`
 }
 
 // CreateImageRequestResponseFormat The format in which the generated images are returned. Must be
 // one of `url` or `b64_json`.
 type CreateImageRequestResponseFormat string
+
+// ImageSize The size of the generated images.
+type ImageSize string
 
 // CreateMessagesRequest Request body for creating a message via the Anthropic-compatible
 // Messages API.
