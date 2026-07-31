@@ -2557,10 +2557,6 @@ func TestCreateImage(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "A cute cat", requestBody.Prompt)
 
-		inputTokens := int64(42)
-		outputTokens := int64(25)
-		totalTokens := int64(67)
-
 		response := ImagesResponse{
 			Created: 1730419200,
 			Data: []Image{
@@ -2577,9 +2573,9 @@ func TestCreateImage(t *testing.T) {
 				OutputTokens *int64 `json:"output_tokens,omitempty"`
 				TotalTokens  *int64 `json:"total_tokens,omitempty"`
 			}{
-				InputTokens:  &inputTokens,
-				OutputTokens: &outputTokens,
-				TotalTokens:  &totalTokens,
+				InputTokens:  new(int64(42)),
+				OutputTokens: new(int64(25)),
+				TotalTokens:  new(int64(67)),
 			},
 		}
 
