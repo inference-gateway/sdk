@@ -18,15 +18,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	model := "gpt-image-2"
-	n := 1
-	size := "1024x1024"
-
 	resp, err := client.CreateImage(ctx, sdk.Openai, sdk.CreateImageRequest{
 		Prompt: "A cute cat sitting on a windowsill, digital art style",
-		Model:  &model,
-		N:      &n,
-		Size:   &size,
+		Model:  new("gpt-image-2"),
+		N:      new(1),
+		Size:   new("1024x1024"),
 	})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
