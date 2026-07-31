@@ -159,7 +159,7 @@ func TestCreateChatCompletionRequest_NewFields(t *testing.T) {
 		LogitBias:           &map[string]int{"1234": 10},
 		User:                ptr("end-user-1"),
 		MaxCompletionTokens: ptr(256),
-		ReasoningEffort:     ptr(High),
+		ReasoningEffort:     ptr(CreateChatCompletionRequestReasoningEffortHigh),
 	}
 
 	data, err := json.Marshal(req)
@@ -191,13 +191,18 @@ func TestCreateChatCompletionRequest_NewFields(t *testing.T) {
 	require.NotNil(t, decoded.MaxCompletionTokens)
 	assert.Equal(t, 256, *decoded.MaxCompletionTokens)
 	require.NotNil(t, decoded.ReasoningEffort)
-	assert.Equal(t, High, *decoded.ReasoningEffort)
+	assert.Equal(t, CreateChatCompletionRequestReasoningEffortHigh, *decoded.ReasoningEffort)
 }
 
 // TestReasoningEffort_Valid sanity-checks the generated enum validator for the
 // new reasoning_effort field.
 func TestReasoningEffort_Valid(t *testing.T) {
-	for _, v := range []CreateChatCompletionRequestReasoningEffort{Minimal, Low, Medium, High} {
+	for _, v := range []CreateChatCompletionRequestReasoningEffort{
+		CreateChatCompletionRequestReasoningEffortMinimal,
+		CreateChatCompletionRequestReasoningEffortLow,
+		CreateChatCompletionRequestReasoningEffortMedium,
+		CreateChatCompletionRequestReasoningEffortHigh,
+	} {
 		assert.Truef(t, v.Valid(), "%q should be a valid reasoning_effort", v)
 	}
 	assert.False(t, CreateChatCompletionRequestReasoningEffort("extreme").Valid())
