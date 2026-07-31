@@ -31,6 +31,7 @@ type Client interface {
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
 	CreateMessage(ctx context.Context, provider Provider, request CreateMessagesRequest) (*MessagesResponse, error)
 	CreateMessageStream(ctx context.Context, provider Provider, request CreateMessagesRequest) (<-chan SSEvent, error)
+	CreateImage(ctx context.Context, provider Provider, request CreateImageRequest) (*ImagesResponse, error)
 	HealthCheck(ctx context.Context) error
 }
 
@@ -940,6 +941,60 @@ func (c *clientImpl) CreateMessageStream(ctx context.Context, provider Provider,
 	go readSSEStream(ctx, rawBody, eventChan)
 
 	return eventChan, nil
+}
+
+// CreateImage generates an image using the OpenAI-compatible Images API.
+// Not every provider implements it; unsupported providers return a 400 error.
+//
+// Example:
+//
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//		BaseURL: "http://localhost:8080/v1",
+//	})
+//	ctx := context.Background()
+//	response, err := client.CreateImage(ctx, sdk.Openai, sdk.CreateImageRequest{
+//		Prompt: "A cute cat",
+//	})
+func (c *clientImpl) CreateImage(ctx context.Context, provider Provider, request CreateImageRequest) (*ImagesResponse, error) {
+	queryParams := make(map[string]string)
+	if provider != "" {
+		queryParams["provider"] = string(provider)
+	}
+
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetQueryParams(queryParams).
+			SetBody(request).
+			SetResult(&ImagesResponse{}).
+			Post(fmt.Sprintf("%s/images/generations", c.baseURL))
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		var errorResp Error
+		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
+			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
+		}
+
+		errMsg := fmt.Sprintf("image generation failed with status: %d", resp.StatusCode())
+
+		if len(resp.Body()) > 0 {
+			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
+		}
+
+		return nil, fmt.Errorf("%s", errMsg)
+	}
+
+	result, ok := resp.Result().(*ImagesResponse)
+	if !ok || result == nil {
+		return nil, fmt.Errorf("failed to parse response")
+	}
+
+	return result, nil
 }
 
 // messagesAPIError builds an error from an Anthropic-format error body,

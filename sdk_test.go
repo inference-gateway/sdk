@@ -2545,3 +2545,88 @@ func TestCreateMessageStream(t *testing.T) {
 	assert.Equal(t, "Go is amazing", text)
 	assert.True(t, sawStreamEnd)
 }
+
+func TestCreateImage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/images/generations", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "openai", r.URL.Query().Get("provider"))
+
+		var requestBody CreateImageRequest
+		err := json.NewDecoder(r.Body).Decode(&requestBody)
+		assert.NoError(t, err)
+		assert.Equal(t, "A cute cat", requestBody.Prompt)
+
+		inputTokens := int64(42)
+		outputTokens := int64(25)
+		totalTokens := int64(67)
+
+		response := ImagesResponse{
+			Created: 1730419200,
+			Data: []Image{
+				{
+					URL:           strPtr("https://example.com/image.png"),
+					RevisedPrompt: strPtr("A cute cat in a garden"),
+				},
+			},
+			Usage: &struct {
+				InputTokens        *int64 `json:"input_tokens,omitempty"`
+				InputTokensDetails *struct {
+					CachedTokens *int64 `json:"cached_tokens,omitempty"`
+				} `json:"input_tokens_details,omitempty"`
+				OutputTokens *int64 `json:"output_tokens,omitempty"`
+				TotalTokens  *int64 `json:"total_tokens,omitempty"`
+			}{
+				InputTokens:  &inputTokens,
+				OutputTokens: &outputTokens,
+				TotalTokens:  &totalTokens,
+			},
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(response)
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	response, err := client.CreateImage(context.Background(), Openai, CreateImageRequest{
+		Prompt: "A cute cat",
+	})
+
+	assert.NoError(t, err)
+	assert.NotNil(t, response)
+	assert.Equal(t, int64(1730419200), response.Created)
+	require.Len(t, response.Data, 1)
+	assert.Equal(t, "https://example.com/image.png", *response.Data[0].URL)
+	assert.Equal(t, "A cute cat in a garden", *response.Data[0].RevisedPrompt)
+	require.NotNil(t, response.Usage)
+	assert.Equal(t, int64(42), *response.Usage.InputTokens)
+	assert.Equal(t, int64(25), *response.Usage.OutputTokens)
+	assert.Equal(t, int64(67), *response.Usage.TotalTokens)
+}
+
+func TestCreateImage_APIError(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		err := json.NewEncoder(w).Encode(Error{
+			Error: new("The Images API is not supported by this provider yet."),
+		})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	response, err := client.CreateImage(context.Background(), Groq, CreateImageRequest{
+		Prompt: "A cute cat",
+	})
+
+	assert.Error(t, err)
+	assert.Nil(t, response)
+	assert.Contains(t, err.Error(), "API error")
+	assert.Contains(t, err.Error(), "not supported")
+}
+
+func strPtr(s string) *string { return &s }
