@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.32.0](https://github.com/inference-gateway/sdk/compare/v1.31.0...v1.32.0) (2026-07-31)
+
+### ✨ Features
+
+* sync generated types with schemas v0.18.0 ([#154](https://github.com/inference-gateway/sdk/issues/154)) ([25bdfc0](https://github.com/inference-gateway/sdk/commit/25bdfc0c8a287cb972586d3b7553ef148a552a8c))
+
+### 👷 CI
+
+* **claude:** centralize claude.yml via reusable workflow ([#153](https://github.com/inference-gateway/sdk/issues/153)) ([66c3d91](https://github.com/inference-gateway/sdk/commit/66c3d9128c9360a490c1a24ff41cf37dea7953e0))
+
 ## [1.31.0](https://github.com/inference-gateway/sdk/compare/v1.30.0...v1.31.0) (2026-07-31)
 
 ### ✨ Features
