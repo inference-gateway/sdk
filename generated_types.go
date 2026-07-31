@@ -125,25 +125,6 @@ func (e CreateImageRequestResponseFormat) Valid() bool {
 	}
 }
 
-// Defines values for ImageSize.
-const (
-ImageSize256x256    ImageSize = "256x256"
-ImageSize512x512    ImageSize = "512x512"
-ImageSize1024x1024 ImageSize = "1024x1024"
-ImageSize1024x1792 ImageSize = "1024x1792"
-ImageSize1792x1024 ImageSize = "1792x1024"
-)
-
-// Valid indicates whether the value is a known member of the ImageSize enum.
-func (e ImageSize) Valid() bool {
-switch e {
-case ImageSize256x256, ImageSize512x512, ImageSize1024x1024, ImageSize1024x1792, ImageSize1792x1024:
-		return true
-default:
-		return false
-}
-}
-
 // Defines values for CreateMessagesRequestThinkingType.
 const (
 	Enabled CreateMessagesRequestThinkingType = "enabled"
@@ -195,6 +176,33 @@ const (
 func (e ImageContentPartType) Valid() bool {
 	switch e {
 	case ImageContentPartTypeImageURL:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImageSize.
+const (
+	ImageSize1024X1024 ImageSize = "1024x1024"
+	ImageSize1024X1792 ImageSize = "1024x1792"
+	ImageSize1792X1024 ImageSize = "1792x1024"
+	ImageSize256X256   ImageSize = "256x256"
+	ImageSize512X512   ImageSize = "512x512"
+)
+
+// Valid indicates whether the value is a known member of the ImageSize enum.
+func (e ImageSize) Valid() bool {
+	switch e {
+	case ImageSize1024X1024:
+		return true
+	case ImageSize1024X1792:
+		return true
+	case ImageSize1792X1024:
+		return true
+	case ImageSize256X256:
+		return true
+	case ImageSize512X512:
 		return true
 	default:
 		return false
@@ -1564,9 +1572,6 @@ type CreateImageRequest struct {
 // one of `url` or `b64_json`.
 type CreateImageRequestResponseFormat string
 
-// ImageSize The size of the generated images.
-type ImageSize string
-
 // CreateMessagesRequest Request body for creating a message via the Anthropic-compatible
 // Messages API.
 type CreateMessagesRequest struct {
@@ -1755,6 +1760,9 @@ type ImageContentPart struct {
 
 // ImageContentPartType Content type identifier
 type ImageContentPartType string
+
+// ImageSize The size of the generated images.
+type ImageSize string
 
 // ImageURL Image URL configuration
 type ImageURL struct {

@@ -22,7 +22,7 @@ func main() {
 		Prompt: "A cute cat sitting on a windowsill, digital art style",
 		Model:  new("gpt-image-2"),
 		N:      new(1),
-		Size:   new(sdk.ImageSize1024x1024),
+		Size:   new(sdk.ImageSize1024X1024),
 	})
 	if err != nil {
 		log.Fatalf("Error: %v", err)
