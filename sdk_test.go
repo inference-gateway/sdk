@@ -2561,8 +2561,8 @@ func TestCreateImage(t *testing.T) {
 			Created: 1730419200,
 			Data: []Image{
 				{
-					URL:           strPtr("https://example.com/image.png"),
-					RevisedPrompt: strPtr("A cute cat in a garden"),
+					URL:           new("https://example.com/image.png"),
+					RevisedPrompt: new("A cute cat in a garden"),
 				},
 			},
 			Usage: &struct {
@@ -2625,4 +2625,3 @@ func TestCreateImage_APIError(t *testing.T) {
 	assert.Contains(t, err.Error(), "not supported")
 }
 
-func strPtr(s string) *string { return &s }
