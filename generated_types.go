@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for CacheControlType.
@@ -1175,6 +1176,69 @@ const (
 func (e TextContentPartType) Valid() bool {
 	switch e {
 	case TextContentPartTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateImageEditMultipartBodyQuality.
+const (
+	CreateImageEditMultipartBodyQualityAuto     CreateImageEditMultipartBodyQuality = "auto"
+	CreateImageEditMultipartBodyQualityHigh     CreateImageEditMultipartBodyQuality = "high"
+	CreateImageEditMultipartBodyQualityLow      CreateImageEditMultipartBodyQuality = "low"
+	CreateImageEditMultipartBodyQualityMedium   CreateImageEditMultipartBodyQuality = "medium"
+	CreateImageEditMultipartBodyQualityStandard CreateImageEditMultipartBodyQuality = "standard"
+)
+
+// Valid indicates whether the value is a known member of the CreateImageEditMultipartBodyQuality enum.
+func (e CreateImageEditMultipartBodyQuality) Valid() bool {
+	switch e {
+	case CreateImageEditMultipartBodyQualityAuto:
+		return true
+	case CreateImageEditMultipartBodyQualityHigh:
+		return true
+	case CreateImageEditMultipartBodyQualityLow:
+		return true
+	case CreateImageEditMultipartBodyQualityMedium:
+		return true
+	case CreateImageEditMultipartBodyQualityStandard:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateImageEditMultipartBodyResponseFormat.
+const (
+	CreateImageEditMultipartBodyResponseFormatB64Json CreateImageEditMultipartBodyResponseFormat = "b64_json"
+	CreateImageEditMultipartBodyResponseFormatURL     CreateImageEditMultipartBodyResponseFormat = "url"
+)
+
+// Valid indicates whether the value is a known member of the CreateImageEditMultipartBodyResponseFormat enum.
+func (e CreateImageEditMultipartBodyResponseFormat) Valid() bool {
+	switch e {
+	case CreateImageEditMultipartBodyResponseFormatB64Json:
+		return true
+	case CreateImageEditMultipartBodyResponseFormatURL:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateImageVariationMultipartBodyResponseFormat.
+const (
+	CreateImageVariationMultipartBodyResponseFormatB64Json CreateImageVariationMultipartBodyResponseFormat = "b64_json"
+	CreateImageVariationMultipartBodyResponseFormatURL     CreateImageVariationMultipartBodyResponseFormat = "url"
+)
+
+// Valid indicates whether the value is a known member of the CreateImageVariationMultipartBodyResponseFormat enum.
+func (e CreateImageVariationMultipartBodyResponseFormat) Valid() bool {
+	switch e {
+	case CreateImageVariationMultipartBodyResponseFormatB64Json:
+		return true
+	case CreateImageVariationMultipartBodyResponseFormatURL:
 		return true
 	default:
 		return false
@@ -2957,11 +3021,87 @@ type CreateChatCompletionParams struct {
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
+// CreateImageEditMultipartBody defines parameters for CreateImageEdit.
+type CreateImageEditMultipartBody struct {
+	// Image The image to edit. For the GPT image models, a `png`, `webp`, or `jpg` file up to 50MB; for `dall-e-2`, a square PNG under 4MB. If `mask` is not provided, the image must have transparency, which will be used as the mask.
+	Image openapi_types.File `json:"image"`
+
+	// Mask An additional image whose fully transparent areas (alpha = 0) indicate where the image should be edited. Must be a valid PNG file with the same dimensions as the image (under 4MB for `dall-e-2`).
+	Mask *openapi_types.File `json:"mask,omitempty"`
+
+	// Model Model ID to use for image editing.
+	Model *string `json:"model,omitempty"`
+
+	// N Number of images to generate.
+	N *int `json:"n,omitempty"`
+
+	// Prompt A text description of the desired image.
+	Prompt string `json:"prompt"`
+
+	// Quality The quality of the edited image. `auto` selects the best
+	// quality for the model. The GPT image models support `low`,
+	// `medium`, and `high`; `dall-e-2` supports only `standard`.
+	Quality *CreateImageEditMultipartBodyQuality `json:"quality,omitempty"`
+
+	// ResponseFormat The format in which the generated images are returned.
+	ResponseFormat *CreateImageEditMultipartBodyResponseFormat `json:"response_format,omitempty"`
+
+	// Size The size of the generated images. The GPT image models support
+	// `1024x1024`, `1536x1024`, `1024x1536`, and `auto`; `gpt-image-2`
+	// also accepts arbitrary `WIDTHxHEIGHT` values such as `1536x864`.
+	// `dall-e-2` supports `256x256`, `512x512`, and `1024x1024`;
+	// `dall-e-3` supports `1024x1024`, `1792x1024`, and `1024x1792`.
+	Size *ImageSize `json:"size,omitempty"`
+}
+
+// CreateImageEditParams defines parameters for CreateImageEdit.
+type CreateImageEditParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// CreateImageEditMultipartBodyQuality defines parameters for CreateImageEdit.
+type CreateImageEditMultipartBodyQuality string
+
+// CreateImageEditMultipartBodyResponseFormat defines parameters for CreateImageEdit.
+type CreateImageEditMultipartBodyResponseFormat string
+
 // CreateImageParams defines parameters for CreateImage.
 type CreateImageParams struct {
 	// Provider Specific provider to use (default determined by model)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
+
+// CreateImageVariationMultipartBody defines parameters for CreateImageVariation.
+type CreateImageVariationMultipartBody struct {
+	// Image The image to use as the basis for the variation. For the GPT image models, a `png`, `webp`, or `jpg` file up to 50MB; for `dall-e-2`, a square PNG under 4MB.
+	Image openapi_types.File `json:"image"`
+
+	// Model Model ID to use for image variation.
+	Model *string `json:"model,omitempty"`
+
+	// N Number of images to generate.
+	N *int `json:"n,omitempty"`
+
+	// ResponseFormat The format in which the generated images are returned.
+	ResponseFormat *CreateImageVariationMultipartBodyResponseFormat `json:"response_format,omitempty"`
+
+	// Size The size of the generated images. The GPT image models support
+	// `1024x1024`, `1536x1024`, `1024x1536`, and `auto`; `gpt-image-2`
+	// also accepts arbitrary `WIDTHxHEIGHT` values such as `1536x864`.
+	// `dall-e-2` supports `256x256`, `512x512`, and `1024x1024`;
+	// `dall-e-3` supports `1024x1024`, `1792x1024`, and `1024x1792`.
+	Size *ImageSize `json:"size,omitempty"`
+}
+
+// CreateImageVariationParams defines parameters for CreateImageVariation.
+type CreateImageVariationParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// CreateImageVariationMultipartBodyResponseFormat defines parameters for CreateImageVariation.
+type CreateImageVariationMultipartBodyResponseFormat string
 
 // CreateMessageParams defines parameters for CreateMessage.
 type CreateMessageParams struct {
@@ -3025,8 +3165,14 @@ type CreateResponseParams struct {
 // CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
 type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
 
+// CreateImageEditMultipartRequestBody defines body for CreateImageEdit for multipart/form-data ContentType.
+type CreateImageEditMultipartRequestBody CreateImageEditMultipartBody
+
 // CreateImageJSONRequestBody defines body for CreateImage for application/json ContentType.
 type CreateImageJSONRequestBody = CreateImageRequest
+
+// CreateImageVariationMultipartRequestBody defines body for CreateImageVariation for multipart/form-data ContentType.
+type CreateImageVariationMultipartRequestBody CreateImageVariationMultipartBody
 
 // CreateMessageJSONRequestBody defines body for CreateMessage for application/json ContentType.
 type CreateMessageJSONRequestBody = CreateMessagesRequest
