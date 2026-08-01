@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 )
@@ -2625,3 +2626,97 @@ func TestCreateImage_APIError(t *testing.T) {
 	assert.Contains(t, err.Error(), "not supported")
 }
 
+func TestCreateImageEdit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/images/edits", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "openai", r.URL.Query().Get("provider"))
+		assert.Contains(t, r.Header.Get("Content-Type"), "multipart/form-data")
+
+		err := r.ParseMultipartForm(1 << 20)
+		assert.NoError(t, err)
+		assert.Equal(t, "Add a hat", r.FormValue("prompt"))
+		assert.Equal(t, "2", r.FormValue("n"))
+		assert.Equal(t, "high", r.FormValue("quality"))
+
+		file, header, err := r.FormFile("image")
+		require.NoError(t, err)
+		defer func() { _ = file.Close() }()
+		assert.Equal(t, "cat.png", header.Filename)
+		data, err := io.ReadAll(file)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("png-bytes"), data)
+
+		mask, _, err := r.FormFile("mask")
+		require.NoError(t, err)
+		defer func() { _ = mask.Close() }()
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(ImagesResponse{
+			Created: 1730419200,
+			Data:    []Image{{URL: new("https://example.com/edited.png")}},
+		})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	var image, maskFile openapi_types.File
+	image.InitFromBytes([]byte("png-bytes"), "cat.png")
+	maskFile.InitFromBytes([]byte("mask-bytes"), "mask.png")
+	quality := CreateImageEditMultipartBodyQualityHigh
+
+	response, err := client.CreateImageEdit(context.Background(), Openai, CreateImageEditMultipartBody{
+		Image:   image,
+		Mask:    &maskFile,
+		Prompt:  "Add a hat",
+		N:       new(2),
+		Quality: &quality,
+	})
+
+	assert.NoError(t, err)
+	require.NotNil(t, response)
+	require.Len(t, response.Data, 1)
+	assert.Equal(t, "https://example.com/edited.png", *response.Data[0].URL)
+}
+
+func TestCreateImageVariation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/images/variations", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+
+		err := r.ParseMultipartForm(1 << 20)
+		assert.NoError(t, err)
+		assert.Equal(t, "b64_json", r.FormValue("response_format"))
+
+		file, header, err := r.FormFile("image")
+		require.NoError(t, err)
+		defer func() { _ = file.Close() }()
+		assert.Equal(t, "cat.png", header.Filename)
+
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(ImagesResponse{
+			Created: 1730419200,
+			Data:    []Image{{B64Json: new("aW1hZ2U=")}},
+		})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	var image openapi_types.File
+	image.InitFromBytes([]byte("png-bytes"), "cat.png")
+	format := CreateImageVariationMultipartBodyResponseFormatB64Json
+
+	response, err := client.CreateImageVariation(context.Background(), Openai, CreateImageVariationMultipartBody{
+		Image:          image,
+		ResponseFormat: &format,
+	})
+
+	assert.NoError(t, err)
+	require.NotNil(t, response)
+	require.Len(t, response.Data, 1)
+	assert.Equal(t, "aW1hZ2U=", *response.Data[0].B64Json)
+}
