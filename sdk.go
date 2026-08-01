@@ -2,6 +2,7 @@ package sdk
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,11 +10,13 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Client represents the SDK client interface
@@ -32,6 +35,8 @@ type Client interface {
 	CreateMessage(ctx context.Context, provider Provider, request CreateMessagesRequest) (*MessagesResponse, error)
 	CreateMessageStream(ctx context.Context, provider Provider, request CreateMessagesRequest) (<-chan SSEvent, error)
 	CreateImage(ctx context.Context, provider Provider, request CreateImageRequest) (*ImagesResponse, error)
+	CreateImageEdit(ctx context.Context, provider Provider, request CreateImageEditMultipartBody) (*ImagesResponse, error)
+	CreateImageVariation(ctx context.Context, provider Provider, request CreateImageVariationMultipartBody) (*ImagesResponse, error)
 	HealthCheck(ctx context.Context) error
 }
 
@@ -970,6 +975,93 @@ func (c *clientImpl) CreateImage(ctx context.Context, provider Provider, request
 			Post(fmt.Sprintf("%s/images/generations", c.baseURL))
 	})
 
+	return imagesResult(resp, err)
+}
+
+// CreateImageEdit edits an image using the OpenAI-compatible Images API
+// (`/images/edits`, multipart/form-data). Build file fields with
+// openapi_types.File.InitFromBytes. Not every provider implements it;
+// unsupported providers return a 400 error.
+func (c *clientImpl) CreateImageEdit(ctx context.Context, provider Provider, request CreateImageEditMultipartBody) (*ImagesResponse, error) {
+	files := map[string]openapi_types.File{"image": request.Image}
+	if request.Mask != nil {
+		files["mask"] = *request.Mask
+	}
+
+	fields := map[string]string{"prompt": request.Prompt}
+	if request.Model != nil {
+		fields["model"] = *request.Model
+	}
+	if request.N != nil {
+		fields["n"] = strconv.Itoa(*request.N)
+	}
+	if request.Quality != nil {
+		fields["quality"] = string(*request.Quality)
+	}
+	if request.ResponseFormat != nil {
+		fields["response_format"] = string(*request.ResponseFormat)
+	}
+	if request.Size != nil {
+		fields["size"] = string(*request.Size)
+	}
+
+	return c.postImagesMultipart(ctx, provider, "/images/edits", fields, files)
+}
+
+// CreateImageVariation creates a variation of an image using the
+// OpenAI-compatible Images API (`/images/variations`, multipart/form-data).
+// Build the image field with openapi_types.File.InitFromBytes. Not every
+// provider implements it; unsupported providers return a 400 error.
+func (c *clientImpl) CreateImageVariation(ctx context.Context, provider Provider, request CreateImageVariationMultipartBody) (*ImagesResponse, error) {
+	files := map[string]openapi_types.File{"image": request.Image}
+
+	fields := map[string]string{}
+	if request.Model != nil {
+		fields["model"] = *request.Model
+	}
+	if request.N != nil {
+		fields["n"] = strconv.Itoa(*request.N)
+	}
+	if request.ResponseFormat != nil {
+		fields["response_format"] = string(*request.ResponseFormat)
+	}
+	if request.Size != nil {
+		fields["size"] = string(*request.Size)
+	}
+
+	return c.postImagesMultipart(ctx, provider, "/images/variations", fields, files)
+}
+
+// postImagesMultipart posts a multipart/form-data request to an Images API
+// endpoint and parses the shared ImagesResponse.
+func (c *clientImpl) postImagesMultipart(ctx context.Context, provider Provider, path string, fields map[string]string, files map[string]openapi_types.File) (*ImagesResponse, error) {
+	queryParams := make(map[string]string)
+	if provider != "" {
+		queryParams["provider"] = string(provider)
+	}
+
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		req := c.http.R().
+			SetContext(ctx).
+			SetQueryParams(queryParams).
+			SetFormData(fields).
+			SetResult(&ImagesResponse{})
+		for field, file := range files {
+			data, err := file.Bytes()
+			if err != nil {
+				return nil, fmt.Errorf("failed to read %s file: %w", field, err)
+			}
+			req.SetFileReader(field, file.Filename(), bytes.NewReader(data))
+		}
+		return req.Post(c.baseURL + path)
+	})
+
+	return imagesResult(resp, err)
+}
+
+// imagesResult turns a resty response from an Images API endpoint into an
+// ImagesResponse or an error.
+func imagesResult(resp *resty.Response, err error) (*ImagesResponse, error) {
 	if err != nil {
 		return nil, err
 	}
@@ -980,7 +1072,7 @@ func (c *clientImpl) CreateImage(ctx context.Context, provider Provider, request
 			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
 		}
 
-		errMsg := fmt.Sprintf("image generation failed with status: %d", resp.StatusCode())
+		errMsg := fmt.Sprintf("image request failed with status: %d", resp.StatusCode())
 
 		if len(resp.Body()) > 0 {
 			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
