@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.34.0](https://github.com/inference-gateway/sdk/compare/v1.33.0...v1.34.0) (2026-08-04)
+
+### ✨ Features
+
+* **examples:** demonstrate CreateImageEdit and CreateImageVariation ([#159](https://github.com/inference-gateway/sdk/issues/159)) ([ee0224c](https://github.com/inference-gateway/sdk/commit/ee0224c11bf5a86b6e8adb72441e76794c076623))
+* **examples:** demonstrate modalities include in models example - schema v0.21.1 ([#160](https://github.com/inference-gateway/sdk/issues/160)) ([45d34fc](https://github.com/inference-gateway/sdk/commit/45d34fc43b68804ae441904a28fa52d137bc2d0b))
+
+### 📚 Documentation
+
+* remove retired Go Report Card badge from README ([#161](https://github.com/inference-gateway/sdk/issues/161)) ([c910b5c](https://github.com/inference-gateway/sdk/commit/c910b5cb81aa302cb0028802a0634f7b8785c195))
+
+### 🔧 Miscellaneous
+
+* update environment variable names for consistency and clarity ([b29261a](https://github.com/inference-gateway/sdk/commit/b29261a2731d7a8291d97ab7e64ac681381af665))
+
 ## [1.33.0](https://github.com/inference-gateway/sdk/compare/v1.32.0...v1.33.0) (2026-08-01)
 
 ### ✨ Features
