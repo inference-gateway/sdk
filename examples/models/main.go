@@ -67,10 +67,10 @@ func main() {
 		}
 	}
 
-	// List models with context window and pricing metadata
-	fmt.Println("\nListing models with context window and pricing metadata...")
+	// List models with context window, pricing, and modalities metadata
+	fmt.Println("\nListing models with context window, pricing, and modalities metadata...")
 	ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
-	detailedModels, err := client.ListModels(ctx, sdk.ListModelsParamsIncludeContextWindow, sdk.ListModelsParamsIncludePricing)
+	detailedModels, err := client.ListModels(ctx, sdk.ListModelsParamsIncludeContextWindow, sdk.ListModelsParamsIncludePricing, sdk.ListModelsParamsIncludeModalities)
 	cancel()
 	if err != nil {
 		log.Printf("Error listing models with include params: %v", err)
@@ -84,6 +84,9 @@ func main() {
 					fmt.Printf("   Pricing: %s input, %s output (%s, source: %s)\n",
 						model.Pricing.InputPerToken, model.Pricing.OutputPerToken,
 						model.Pricing.Currency, model.Pricing.Source)
+			}
+			if model.Modalities != nil {
+					fmt.Printf("   Modalities: %v\n", *model.Modalities)
 			}
 		}
 	}
