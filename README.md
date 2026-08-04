@@ -5,7 +5,6 @@
 ### A powerful and easy-to-use Go SDK for the Inference Gateway
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/inference-gateway/sdk.svg)](https://pkg.go.dev/github.com/inference-gateway/sdk)
-[![Go Report Card](https://goreportcard.com/badge/github.com/inference-gateway/sdk)](https://goreportcard.com/report/github.com/inference-gateway/sdk)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Release](https://img.shields.io/github/release/inference-gateway/sdk.svg)](https://github.com/inference-gateway/sdk/releases)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/inference-gateway/sdk)](https://golang.org/)
