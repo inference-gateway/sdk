@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.35.0](https://github.com/inference-gateway/sdk/compare/v1.34.0...v1.35.0) (2026-08-05)
+
+### ✨ Features
+
+* sync generated types with schemas v0.22.0 ([#162](https://github.com/inference-gateway/sdk/issues/162)) ([fa33b18](https://github.com/inference-gateway/sdk/commit/fa33b18a68c7fe7df774d8a6708fd410034b3440))
+
 ## [1.34.0](https://github.com/inference-gateway/sdk/compare/v1.33.0...v1.34.0) (2026-08-04)
 
 ### ✨ Features
