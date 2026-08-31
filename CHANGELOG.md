@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.36.0](https://github.com/inference-gateway/sdk/compare/v1.35.0...v1.36.0) (2026-08-31)
+
+### ✨ Features
+
+* add text to speech capabilities ([#169](https://github.com/inference-gateway/sdk/issues/169)) ([918ec60](https://github.com/inference-gateway/sdk/commit/918ec60f365efc79324157e29d149e050d8e3496))
+
+### 👷 CI
+
+* **claude:** centralize claude.yml via reusable workflow ([#167](https://github.com/inference-gateway/sdk/issues/167)) ([7470647](https://github.com/inference-gateway/sdk/commit/7470647071d73d51babd07eafd8a706d6a1308a3))
+* **deps:** bump github.com/stretchr/testify in the gomod group ([#165](https://github.com/inference-gateway/sdk/issues/165)) ([3f36b7c](https://github.com/inference-gateway/sdk/commit/3f36b7c81d23028a4b04c0c198e41bbb75c6eee5))
+* **deps:** bump the gomod group with 2 updates ([#164](https://github.com/inference-gateway/sdk/issues/164)) ([01d33ac](https://github.com/inference-gateway/sdk/commit/01d33ac3c12e3e7fb3eb999b8a60ef0710d21085))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.201 -> 2.1.238 ([#166](https://github.com/inference-gateway/sdk/issues/166)) ([d5eddd3](https://github.com/inference-gateway/sdk/commit/d5eddd360eff6f829cd2aec4613ac8d375191905))
+* **deps:** bump infer CLI v0.155.0 -> v0.164.0 ([#163](https://github.com/inference-gateway/sdk/issues/163)) ([9c9e339](https://github.com/inference-gateway/sdk/commit/9c9e339fb4d139e95fae60620c4383d8c2c3de14))
+* **deps:** bump infer CLI v0.164.0 -> v0.183.0 ([#168](https://github.com/inference-gateway/sdk/issues/168)) ([74b87ff](https://github.com/inference-gateway/sdk/commit/74b87ff90d95a12e0b4768a0e2f9e6df8748b7fc))
+
 ## [1.35.0](https://github.com/inference-gateway/sdk/compare/v1.34.0...v1.35.0) (2026-08-05)
 
 ### ✨ Features
