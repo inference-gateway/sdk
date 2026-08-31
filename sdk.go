@@ -37,6 +37,7 @@ type Client interface {
 	CreateImage(ctx context.Context, provider Provider, request CreateImageRequest) (*ImagesResponse, error)
 	CreateImageEdit(ctx context.Context, provider Provider, request CreateImageEditMultipartBody) (*ImagesResponse, error)
 	CreateImageVariation(ctx context.Context, provider Provider, request CreateImageVariationMultipartBody) (*ImagesResponse, error)
+	CreateSpeech(ctx context.Context, provider Provider, request CreateSpeechRequest) ([]byte, error)
 	HealthCheck(ctx context.Context) error
 }
 
@@ -1087,6 +1088,62 @@ func imagesResult(resp *resty.Response, err error) (*ImagesResponse, error) {
 	}
 
 	return result, nil
+}
+
+// CreateSpeech generates speech audio from text using the OpenAI-compatible
+// Audio API (`/audio/speech`). Returns the raw audio bytes in the requested
+// `response_format` (mp3 by default). Not every provider implements it;
+// unsupported providers return a 400 error.
+//
+// Example:
+//
+//	client := sdk.NewClient(&sdk.ClientOptions{
+//	    BaseURL: "http://localhost:8080/v1",
+//	})
+//	ctx := context.Background()
+//	audio, err := client.CreateSpeech(ctx, sdk.Openai, sdk.CreateSpeechRequest{
+//	    Model: "gpt-4o-mini-tts",
+//	    Input: "What is Go?",
+//	    Voice: "alloy",
+//	})
+//	if err != nil {
+//	    log.Fatalf("Error generating speech: %v", err)
+//	}
+//	_ = os.WriteFile("speech.mp3", audio, 0o644)
+func (c *clientImpl) CreateSpeech(ctx context.Context, provider Provider, request CreateSpeechRequest) ([]byte, error) {
+	queryParams := make(map[string]string)
+	if provider != "" {
+		queryParams["provider"] = string(provider)
+	}
+
+	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
+		return c.http.R().
+			SetContext(ctx).
+			SetQueryParams(queryParams).
+			SetBody(request).
+			Post(fmt.Sprintf("%s/audio/speech", c.baseURL))
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.IsError() {
+		var errorResp Error
+		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
+			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
+		}
+
+		errMsg := fmt.Sprintf("speech request failed with status: %d", resp.StatusCode())
+
+		if len(resp.Body()) > 0 {
+			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
+		}
+
+		return nil, fmt.Errorf("%s", errMsg)
+	}
+
+	return resp.Body(), nil
 }
 
 // messagesAPIError builds an error from an Anthropic-format error body,
