@@ -1884,6 +1884,14 @@ type CreateSpeechRequest struct {
 	// Instructions Control the voice of your generated audio with additional instructions. Does not work with `tts-1` or `tts-1-hd`.
 	Instructions *string `json:"instructions,omitempty"`
 
+	// Language ISO 639-1 code for the language of the generated speech.
+	// Non-standard extension: OpenAI's speech API has no language field
+	// (the name matches its transcription API). Forwarded to the
+	// provider as-is; the gateway's built-in local engine
+	// (`local/qwen3-tts`) supports `zh`, `en`, `de`, `it`, `pt`, `es`,
+	// `ja`, `ko`, `fr` and `ru`, and rejects other codes.
+	Language *string `json:"language,omitempty"`
+
 	// Model Model ID to use for speech synthesis (e.g. `gpt-4o-mini-tts` or `tts-1`).
 	Model string `json:"model"`
 
@@ -2493,7 +2501,7 @@ type Model struct {
 	ServedBy Provider `json:"served_by"`
 }
 
-// ModelModalities The input and output modalities of a model, mirroring the models.dev dataset shape. Vision models accept `image` in `input`; image-generation models list `image` in `output` — when `output` carries `image` but not `text`, the model only generates images and cannot chat.
+// ModelModalities The input and output modalities of a model, mirroring the models.dev dataset shape. Vision models accept `image` in `input`; image-generation models list `image` in `output` - when `output` carries `image` but not `text`, the model only generates images and cannot chat.
 type ModelModalities struct {
 	Input  []Modality `json:"input"`
 	Output []Modality `json:"output"`
