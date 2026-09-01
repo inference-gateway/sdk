@@ -1745,7 +1745,7 @@ components:
       description: >-
         The input and output modalities of a model, mirroring the models.dev dataset shape.
         Vision models accept `image` in `input`; image-generation models list `image` in
-        `output` — when `output` carries `image` but not `text`, the model only generates
+        `output` - when `output` carries `image` but not `text`, the model only generates
         images and cannot chat.
       properties:
         input:
@@ -2655,6 +2655,17 @@ components:
           maximum: 4
           default: 1
           description: The speed of the generated audio.
+        language:
+          type: string
+          pattern: '^[a-z]{2}$'
+          default: en
+          description: |-
+            ISO 639-1 code for the language of the generated speech.
+            Non-standard extension: OpenAI's speech API has no language field
+            (the name matches its transcription API). Forwarded to the
+            provider as-is; the gateway's built-in local engine
+            (`local/qwen3-tts`) supports `zh`, `en`, `de`, `it`, `pt`, `es`,
+            `ja`, `ko`, `fr` and `ru`, and rejects other codes.
         reference_audio:
           type: string
           format: byte
@@ -3968,11 +3979,26 @@ components:
                   type: bool
                   default: 'false'
                   description: 'Enable the Images API (POST /v1/images/generations, /v1/images/edits, /v1/images/variations). When disabled, the endpoints return a 404. Only providers with images support (currently openai) can serve these endpoints'
-                - name: enable_audio
-                  env: 'ENABLE_AUDIO'
+                - name: audio_enabled
+                  env: 'AUDIO_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Audio API (POST /v1/audio/speech). When disabled, the endpoint returns a 404. Only providers with speech support (currently openai) can serve this endpoint'
+                  description: 'Enable the Audio API (POST /v1/audio/speech). When disabled, the endpoint returns a 404. Served by providers with speech support (currently openai) or by the local llama-tts engine'
+                - name: audio_local_auto_download
+                  env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
+                  type: bool
+                  default: 'true'
+                  description: 'Allow downloading the llama-tts binary and GGUF models on first use. Anything already present is never re-downloaded: the cache is checked first, whether populated by an earlier run, the CLI, a mounted volume, or a pre-baked image layer. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing'
+                - name: audio_local_max_concurrency
+                  env: 'AUDIO_LOCAL_MAX_CONCURRENCY'
+                  type: int
+                  default: '2'
+                  description: 'Maximum concurrent local speech syntheses; requests beyond the limit queue'
+                - name: audio_local_timeout
+                  env: 'AUDIO_LOCAL_TIMEOUT'
+                  type: int
+                  default: '300'
+                  description: 'Timeout in seconds for a single local speech synthesis'
                 - name: debug_content_truncate_words
                   env: 'DEBUG_CONTENT_TRUNCATE_WORDS'
                   type: int
