@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.37.1](https://github.com/inference-gateway/sdk/compare/v1.37.0...v1.37.1) (2026-09-03)
+
+### ♻️ Improvements
+
+* change gateway env var ENABLE_IMAGES -> IMAGES_ENABLED ([#172](https://github.com/inference-gateway/sdk/issues/172)) ([f0237ab](https://github.com/inference-gateway/sdk/commit/f0237abf44c48d6469115465cde9556af0d73b43))
+
+### 🔧 Miscellaneous
+
+* bump go toolchain to 1.26.7 and pin flox go.version explicitly ([#174](https://github.com/inference-gateway/sdk/issues/174)) ([b5fba95](https://github.com/inference-gateway/sdk/commit/b5fba95489259fb276892082f90f2d640a7ee996))
+* **deps:** bump claude-code 2.1.238 -> 2.1.245 ([#171](https://github.com/inference-gateway/sdk/issues/171)) ([8edd321](https://github.com/inference-gateway/sdk/commit/8edd32112838026852d20e8af9b2d226393791a6))
+
 ## [1.37.0](https://github.com/inference-gateway/sdk/compare/v1.36.0...v1.37.0) (2026-09-01)
 
 ### ✨ Features
