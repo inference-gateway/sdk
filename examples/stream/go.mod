@@ -1,6 +1,6 @@
 module github.com/inference-gateway/examples/stream
 
-go 1.26.4
+go 1.26.7
 
 replace github.com/inference-gateway/sdk => ../..
 
