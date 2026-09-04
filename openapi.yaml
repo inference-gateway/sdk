@@ -3969,11 +3969,11 @@ components:
                   type: string
                   default: ''
                   description: 'Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS'
-                - name: enable_vision
-                  env: 'ENABLE_VISION'
+                - name: vision_enabled
+                  env: 'VISION_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision'
+                  description: 'Enable vision/multimodal handling for all providers. When enabled, image content is stripped from requests to models not known to accept images and passed through to vision-capable models. When disabled, image content is forwarded to the provider untouched'
                 - name: images_enabled
                   env: 'IMAGES_ENABLED'
                   type: bool
