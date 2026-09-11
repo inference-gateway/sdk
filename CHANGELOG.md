@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.37.2](https://github.com/inference-gateway/sdk/compare/v1.37.1...v1.37.2) (2026-09-11)
+
+### ♻️ Improvements
+
+* replace go-resty with net/http ([#178](https://github.com/inference-gateway/sdk/issues/178)) ([a3852d1](https://github.com/inference-gateway/sdk/commit/a3852d1fa0b60ffe2e96f09e6bb502a71a4b62bc)), closes [#177](https://github.com/inference-gateway/sdk/issues/177)
+
+### 🔧 Miscellaneous
+
+* sync generated types with schemas v0.27.4 ([#176](https://github.com/inference-gateway/sdk/issues/176)) ([d25b3b0](https://github.com/inference-gateway/sdk/commit/d25b3b0e3ca2f02ab1214e8a24e7bb9cd2478681))
+
 ## [1.37.1](https://github.com/inference-gateway/sdk/compare/v1.37.0...v1.37.1) (2026-09-03)
 
 ### ♻️ Improvements
