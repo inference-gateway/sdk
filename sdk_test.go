@@ -629,10 +629,10 @@ func TestGenerateContentStreamBodyCloseError(t *testing.T) {
 	payload := `data: {"id":"chatcmpl-1","object":"chat.completion.chunk","created":1698819810,"model":"llama2","choices":[{"delta":{"content":"hi"},"index":0,"finish_reason":"stop"}]}` + "\n\n" +
 		"data: [DONE]\n\n"
 
-	client := NewClient(&ClientOptions{BaseURL: "http://stream.invalid/v1"})
-	impl, ok := client.(*clientImpl)
-	require.True(t, ok)
-	impl.http.SetTransport(closeErrRoundTripper{payload: payload})
+	client := NewClient(&ClientOptions{
+		BaseURL:   "http://stream.invalid/v1",
+		Transport: closeErrRoundTripper{payload: payload},
+	})
 
 	ctx := context.Background()
 	eventCh, err := client.GenerateContentStream(

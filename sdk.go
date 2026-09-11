@@ -8,14 +8,15 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"mime/multipart"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
@@ -131,9 +132,10 @@ func getDefaultRetryConfig() *RetryConfig {
 
 // clientImpl represents the concrete implementation of the SDK client
 type clientImpl struct {
-	baseURL     string        // Base URL of the Inference Gateway API
-	http        *resty.Client // HTTP client for making requests
-	token       string        // Authentication token
+	baseURL     string       // Base URL of the Inference Gateway API
+	http        *http.Client // HTTP client for making requests
+	headers     http.Header  // Headers sent with every request
+	token       string       // Authentication token
 	tools       *[]ChatCompletionTool
 	options     *CreateChatCompletionRequest // Custom request options
 	retryConfig *RetryConfig                 // Retry configuration
@@ -154,22 +156,17 @@ type clientImpl struct {
 //		},
 //	})
 func NewClient(options *ClientOptions) Client {
-	client := resty.New()
-
-	if options.Timeout > 0 {
-		client.SetTimeout(options.Timeout)
-	}
-
-	if options.APIKey != "" {
-		client.SetAuthToken(options.APIKey)
-	}
-
-	if len(options.Headers) > 0 {
-		client.SetHeaders(options.Headers)
-	}
-
+	client := &http.Client{Timeout: options.Timeout}
 	if options.Transport != nil {
-		client.SetTransport(options.Transport)
+		client.Transport = options.Transport
+	}
+
+	headers := http.Header{}
+	if options.APIKey != "" {
+		headers.Set("Authorization", "Bearer "+options.APIKey)
+	}
+	for name, value := range options.Headers {
+		headers.Set(name, value)
 	}
 
 	retryConfig := options.RetryConfig
@@ -180,11 +177,100 @@ func NewClient(options *ClientOptions) Client {
 	return &clientImpl{
 		baseURL:     options.BaseURL,
 		http:        client,
+		headers:     headers,
 		token:       options.APIKey,
 		tools:       options.Tools,
 		options:     nil,
 		retryConfig: retryConfig,
 	}
+}
+
+// response is the subset of an HTTP response the SDK inspects. For buffered
+// requests body holds the full payload and raw is nil; for streaming
+// requests raw is the still-open body and body is nil.
+type response struct {
+	status int
+	header http.Header
+	body   []byte
+	raw    io.ReadCloser
+}
+
+func (r *response) StatusCode() int     { return r.status }
+func (r *response) IsError() bool       { return r.status > 399 }
+func (r *response) Header() http.Header { return r.header }
+func (r *response) Body() []byte        { return r.body }
+func (r *response) RawBody() io.ReadCloser {
+	return r.raw
+}
+
+// do sends one request. A non-nil body is JSON-encoded unless it is an
+// io.Reader, in which case contentType must be set by the caller.
+func (c *clientImpl) do(ctx context.Context, method, endpoint string, query map[string]string, body any, contentType string, stream bool) (*response, error) {
+	if len(query) > 0 {
+		values := url.Values{}
+		for k, v := range query {
+			values.Set(k, v)
+		}
+		sep := "?"
+		if strings.Contains(endpoint, "?") {
+			sep = "&"
+		}
+		endpoint += sep + values.Encode()
+	}
+
+	var reader io.Reader
+	switch b := body.(type) {
+	case nil:
+	case io.Reader:
+		reader = b
+	default:
+		data, err := json.Marshal(b)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encode request: %w", err)
+		}
+		reader = bytes.NewReader(data)
+		contentType = "application/json"
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, endpoint, reader)
+	if err != nil {
+		return nil, err
+	}
+	for name, values := range c.headers {
+		req.Header[name] = append([]string(nil), values...)
+	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	if req.Header.Get("Accept") == "" {
+		req.Header.Set("Accept", "application/json")
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &response{status: resp.StatusCode, header: resp.Header}
+	if stream {
+		out.raw = resp.Body
+		return out, nil
+	}
+
+	defer func() { _ = resp.Body.Close() }()
+	out.body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+	return out, nil
+}
+
+// decode parses a buffered JSON response body into out.
+func decode(resp *response, out any) error {
+	if err := json.Unmarshal(resp.Body(), out); err != nil {
+		return fmt.Errorf("failed to parse response: %w", err)
+	}
+	return nil
 }
 
 // parseRetryAfter parses the Retry-After header and returns the delay duration
@@ -209,13 +295,13 @@ func parseRetryAfter(retryAfter string) (time.Duration, bool) {
 }
 
 // executeWithRetry executes an HTTP request with retry logic
-func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*resty.Response, error)) (*resty.Response, error) {
+func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*response, error)) (*response, error) {
 	if !c.retryConfig.Enabled {
 		return request()
 	}
 
 	var lastErr error
-	var resp *resty.Response
+	var resp *response
 
 	for attempt := 0; attempt < c.retryConfig.MaxAttempts; attempt++ {
 		if attempt > 0 {
@@ -278,7 +364,7 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*rest
 //	resp, err := client.ListModels(ctx)
 func (c *clientImpl) WithAuthToken(token string) Client {
 	c.token = token
-	c.http.SetAuthToken(token)
+	c.headers.Set("Authorization", "Bearer "+token)
 	return c
 }
 
@@ -367,7 +453,7 @@ func (c *clientImpl) WithOptions(options *CreateChatCompletionRequest) Client {
 //	resp, err := client.ListModels(ctx)
 func (c *clientImpl) WithHeaders(headers map[string]string) Client {
 	for name, value := range headers {
-		c.http.Header.Set(name, value)
+		c.headers.Set(name, value)
 	}
 	return c
 }
@@ -382,7 +468,7 @@ func (c *clientImpl) WithHeaders(headers map[string]string) Client {
 //	client = client.WithHeader("X-Custom-Header", "value")
 //	resp, err := client.ListModels(ctx)
 func (c *clientImpl) WithHeader(name, value string) Client {
-	c.http.Header.Set(name, value)
+	c.headers.Set(name, value)
 	return c
 }
 
@@ -407,15 +493,15 @@ func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) Client {
 	}
 
 	if options.SkipMCP {
-		c.http.Header.Set("X-MCP-Bypass", "true")
+		c.headers.Set("X-MCP-Bypass", "true")
 	} else {
-		c.http.Header.Del("X-MCP-Bypass")
+		c.headers.Del("X-MCP-Bypass")
 	}
 
 	if options.DirectProvider {
-		c.http.Header.Set("X-Direct-Provider", "true")
+		c.headers.Set("X-Direct-Provider", "true")
 	} else {
-		c.http.Header.Del("X-Direct-Provider")
+		c.headers.Del("X-Direct-Provider")
 	}
 
 	return c
@@ -440,14 +526,12 @@ func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) Client {
 //
 //	models, err := client.ListModels(ctx, sdk.ListModelsParamsIncludeContextWindow)
 func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParamsInclude) (*ListModelsResponse, error) {
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		req := c.http.R().
-			SetContext(ctx).
-			SetResult(&ListModelsResponse{})
-		if query := joinInclude(include); query != "" {
-			req.SetQueryParam("include", query)
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		query := map[string]string{}
+		if include := joinInclude(include); include != "" {
+			query["include"] = include
 		}
-		return req.Get(fmt.Sprintf("%s/models", c.baseURL))
+		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/models", c.baseURL), query, nil, "", false)
 	})
 
 	if err != nil {
@@ -458,12 +542,12 @@ func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParams
 		return &ListModelsResponse{}, fmt.Errorf("failed to list models, status code: %d", resp.StatusCode())
 	}
 
-	result, ok := resp.Result().(*ListModelsResponse)
-	if !ok || result == nil {
-		return &ListModelsResponse{}, fmt.Errorf("failed to parse response")
+	var result ListModelsResponse
+	if err := decode(resp, &result); err != nil {
+		return &ListModelsResponse{}, err
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 // ListProviderModels returns all available language models for a specific provider.
@@ -486,14 +570,12 @@ func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParams
 //
 //	resp, err := client.ListProviderModels(ctx, sdk.Ollama, sdk.ListModelsParamsIncludeContextWindow)
 func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider, include ...ListModelsParamsInclude) (*ListModelsResponse, error) {
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		req := c.http.R().
-			SetContext(ctx).
-			SetResult(&ListModelsResponse{})
-		if query := joinInclude(include); query != "" {
-			req.SetQueryParam("include", query)
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		query := map[string]string{}
+		if include := joinInclude(include); include != "" {
+			query["include"] = include
 		}
-		return req.Get(fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider))
+		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider), query, nil, "", false)
 	})
 
 	if err != nil {
@@ -515,12 +597,12 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider, 
 		return nil, fmt.Errorf("%s", errMsg)
 	}
 
-	result, ok := resp.Result().(*ListModelsResponse)
-	if !ok || result == nil {
-		return nil, fmt.Errorf("failed to parse response")
+	var result ListModelsResponse
+	if err := decode(resp, &result); err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 // ListTools returns all available MCP tools.
@@ -539,11 +621,8 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider, 
 //	}
 //	fmt.Printf("Available tools: %+v\n", tools.Data)
 func (c *clientImpl) ListTools(ctx context.Context) (*ListToolsResponse, error) {
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetResult(&ListToolsResponse{}).
-			Get(fmt.Sprintf("%s/mcp/tools", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/mcp/tools", c.baseURL), nil, nil, "", false)
 	})
 
 	if err != nil {
@@ -565,12 +644,12 @@ func (c *clientImpl) ListTools(ctx context.Context) (*ListToolsResponse, error) 
 		return nil, fmt.Errorf("%s", errMsg)
 	}
 
-	result, ok := resp.Result().(*ListToolsResponse)
-	if !ok || result == nil {
-		return nil, fmt.Errorf("failed to parse response")
+	var result ListToolsResponse
+	if err := decode(resp, &result); err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 // GenerateContent generates content using the specified provider and model.
@@ -634,13 +713,8 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 		queryParams["provider"] = string(provider)
 	}
 
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetQueryParams(queryParams).
-			SetBody(request).
-			SetResult(&CreateChatCompletionResponse{}).
-			Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/chat/completions", c.baseURL), queryParams, request, "", false)
 	})
 
 	if err != nil {
@@ -662,12 +736,12 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 		return nil, fmt.Errorf("%s", errMsg)
 	}
 
-	result, ok := resp.Result().(*CreateChatCompletionResponse)
-	if !ok || result == nil {
-		return nil, fmt.Errorf("failed to parse response")
+	var result CreateChatCompletionResponse
+	if err := decode(resp, &result); err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 // GenerateContentStream generates content using streaming mode and returns a channel of events.
@@ -749,13 +823,8 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 		queryParams["provider"] = string(provider)
 	}
 
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetQueryParams(queryParams).
-			SetBody(request).
-			SetDoNotParseResponse(true).
-			Post(fmt.Sprintf("%s/chat/completions", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/chat/completions", c.baseURL), queryParams, request, "", true)
 	})
 	if err != nil {
 		close(eventChan)
@@ -879,13 +948,8 @@ func (c *clientImpl) CreateMessage(ctx context.Context, provider Provider, reque
 		queryParams["provider"] = string(provider)
 	}
 
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetQueryParams(queryParams).
-			SetBody(request).
-			SetResult(&MessagesResponse{}).
-			Post(fmt.Sprintf("%s/messages", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/messages", c.baseURL), queryParams, request, "", false)
 	})
 
 	if err != nil {
@@ -896,12 +960,12 @@ func (c *clientImpl) CreateMessage(ctx context.Context, provider Provider, reque
 		return nil, messagesAPIError(resp.StatusCode(), resp.Body())
 	}
 
-	result, ok := resp.Result().(*MessagesResponse)
-	if !ok || result == nil {
-		return nil, fmt.Errorf("failed to parse response")
+	var result MessagesResponse
+	if err := decode(resp, &result); err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 // CreateMessageStream creates a message using the Anthropic-compatible Messages
@@ -917,13 +981,8 @@ func (c *clientImpl) CreateMessageStream(ctx context.Context, provider Provider,
 		queryParams["provider"] = string(provider)
 	}
 
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetQueryParams(queryParams).
-			SetBody(request).
-			SetDoNotParseResponse(true).
-			Post(fmt.Sprintf("%s/messages", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/messages", c.baseURL), queryParams, request, "", true)
 	})
 	if err != nil {
 		close(eventChan)
@@ -967,13 +1026,8 @@ func (c *clientImpl) CreateImage(ctx context.Context, provider Provider, request
 		queryParams["provider"] = string(provider)
 	}
 
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetQueryParams(queryParams).
-			SetBody(request).
-			SetResult(&ImagesResponse{}).
-			Post(fmt.Sprintf("%s/images/generations", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/images/generations", c.baseURL), queryParams, request, "", false)
 	})
 
 	return imagesResult(resp, err)
@@ -1041,28 +1095,39 @@ func (c *clientImpl) postImagesMultipart(ctx context.Context, provider Provider,
 		queryParams["provider"] = string(provider)
 	}
 
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		req := c.http.R().
-			SetContext(ctx).
-			SetQueryParams(queryParams).
-			SetFormData(fields).
-			SetResult(&ImagesResponse{})
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		var buf bytes.Buffer
+		mw := multipart.NewWriter(&buf)
+		for name, value := range fields {
+			if err := mw.WriteField(name, value); err != nil {
+				return nil, err
+			}
+		}
 		for field, file := range files {
 			data, err := file.Bytes()
 			if err != nil {
 				return nil, fmt.Errorf("failed to read %s file: %w", field, err)
 			}
-			req.SetFileReader(field, file.Filename(), bytes.NewReader(data))
+			part, err := mw.CreateFormFile(field, file.Filename())
+			if err != nil {
+				return nil, err
+			}
+			if _, err := part.Write(data); err != nil {
+				return nil, err
+			}
 		}
-		return req.Post(c.baseURL + path)
+		if err := mw.Close(); err != nil {
+			return nil, err
+		}
+		return c.do(ctx, http.MethodPost, c.baseURL+path, queryParams, &buf, mw.FormDataContentType(), false)
 	})
 
 	return imagesResult(resp, err)
 }
 
-// imagesResult turns a resty response from an Images API endpoint into an
+// imagesResult turns a response from an Images API endpoint into an
 // ImagesResponse or an error.
-func imagesResult(resp *resty.Response, err error) (*ImagesResponse, error) {
+func imagesResult(resp *response, err error) (*ImagesResponse, error) {
 	if err != nil {
 		return nil, err
 	}
@@ -1082,12 +1147,12 @@ func imagesResult(resp *resty.Response, err error) (*ImagesResponse, error) {
 		return nil, fmt.Errorf("%s", errMsg)
 	}
 
-	result, ok := resp.Result().(*ImagesResponse)
-	if !ok || result == nil {
-		return nil, fmt.Errorf("failed to parse response")
+	var result ImagesResponse
+	if err := decode(resp, &result); err != nil {
+		return nil, err
 	}
 
-	return result, nil
+	return &result, nil
 }
 
 // CreateSpeech generates speech audio from text using the OpenAI-compatible
@@ -1116,12 +1181,8 @@ func (c *clientImpl) CreateSpeech(ctx context.Context, provider Provider, reques
 		queryParams["provider"] = string(provider)
 	}
 
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			SetQueryParams(queryParams).
-			SetBody(request).
-			Post(fmt.Sprintf("%s/audio/speech", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/audio/speech", c.baseURL), queryParams, request, "", false)
 	})
 
 	if err != nil {
@@ -1165,8 +1226,8 @@ func messagesAPIError(statusCode int, body []byte) error {
 
 // closeRawBody closes an unparsed (SetDoNotParseResponse) response body so the
 // connection isn't leaked on error/retry paths. Safe on parsed responses,
-// whose body resty has already closed.
-func closeRawBody(resp *resty.Response) {
+// whose body has already been closed.
+func closeRawBody(resp *response) {
 	if resp == nil {
 		return
 	}
@@ -1201,10 +1262,8 @@ func joinInclude(include []ListModelsParamsInclude) string {
 //	    log.Fatalf("Health check failed: %v", err)
 //	}
 func (c *clientImpl) HealthCheck(ctx context.Context) error {
-	resp, err := c.executeWithRetry(ctx, func() (*resty.Response, error) {
-		return c.http.R().
-			SetContext(ctx).
-			Get(fmt.Sprintf("%s/health", c.baseURL))
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/health", c.baseURL), nil, nil, "", false)
 	})
 
 	if err != nil {
