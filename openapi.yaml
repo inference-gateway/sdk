@@ -3973,7 +3973,7 @@ components:
                   env: 'VISION_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable vision/multimodal handling for all providers. When enabled, image content is stripped from requests to models not known to accept images and passed through to vision-capable models. When disabled, image content is forwarded to the provider untouched'
+                  description: 'Enable vision/multimodal handling for all providers. When enabled, image content is stripped from requests to models known to accept only non-image input; unknown models are passed through. When disabled, image content is forwarded to the provider untouched'
                 - name: images_enabled
                   env: 'IMAGES_ENABLED'
                   type: bool
@@ -4153,19 +4153,15 @@ components:
                 - name: auth_oidc_issuer
                   env: 'AUTH_OIDC_ISSUER'
                   type: string
-                  default: 'http://keycloak:8080/realms/inference-gateway-realm'
-                  description: 'OIDC issuer URL'
+                  description: 'OIDC issuer URL. Discovery runs once at startup against {issuer}/.well-known/openid-configuration'
                 - name: auth_oidc_client_id
                   env: 'AUTH_OIDC_CLIENT_ID'
                   type: string
-                  default: 'inference-gateway-client'
-                  description: 'OIDC client ID'
-                  secret: true
-                - name: auth_oidc_client_secret
-                  env: 'AUTH_OIDC_CLIENT_SECRET'
+                  description: 'OIDC client ID. Used as the expected token audience when AUTH_OIDC_AUDIENCE is empty'
+                - name: auth_oidc_audience
+                  env: 'AUTH_OIDC_AUDIENCE'
                   type: string
-                  description: 'OIDC client secret'
-                  secret: true
+                  description: 'Comma-separated list of accepted aud values, for example an API identifier. Defaults to AUTH_OIDC_CLIENT_ID'
           - guardrails:
               title: 'Guardrails'
               settings:
