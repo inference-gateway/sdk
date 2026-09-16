@@ -78,15 +78,15 @@ func main() {
 		for i, model := range detailedModels.Data {
 			fmt.Printf("%d. %s (owned by %s)\n", i+1, model.ID, model.OwnedBy)
 			if model.ContextWindow != nil {
-					fmt.Printf("   Context window: %d tokens (source: %s)\n", model.ContextWindow.Tokens, model.ContextWindow.Source)
+				fmt.Printf("   Context window: %d tokens (source: %s)\n", model.ContextWindow.Tokens, model.ContextWindow.Source)
 			}
 			if model.Pricing != nil {
-					fmt.Printf("   Pricing: %s input, %s output (%s, source: %s)\n",
-						model.Pricing.InputPerToken, model.Pricing.OutputPerToken,
-						model.Pricing.Currency, model.Pricing.Source)
+				fmt.Printf("   Pricing: %s input, %s output (%s, source: %s)\n",
+					model.Pricing.InputPerToken, model.Pricing.OutputPerToken,
+					model.Pricing.Currency, model.Pricing.Source)
 			}
 			if model.Modalities != nil {
-					fmt.Printf("   Modalities: %v\n", *model.Modalities)
+				fmt.Printf("   Modalities: %v\n", *model.Modalities)
 			}
 		}
 	}
