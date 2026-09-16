@@ -78,6 +78,11 @@ task test
 task lint
 ```
 
+Imports are grouped by `gci` (standard library, `testify`, third-party,
+`github.com/inference-gateway/*`, this module) and every non-standard-library
+import must be named after its last path element, checked by `importas`. Fix
+both locally with `golangci-lint fmt` and `golangci-lint run --fix`.
+
 5. Format your code before committing:
 
 ```sh

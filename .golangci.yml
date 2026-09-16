@@ -1,0 +1,30 @@
+version: '2'
+linters:
+  enable:
+    - importas
+  settings:
+    importas:
+      no-unaliased: true
+      alias:
+        - pkg: github.com/oapi-codegen/runtime/types
+          alias: openapi_types
+        - pkg: '^[^/]+\.[^/]+/.*?([a-z][a-z0-9]*)(?:\.v[0-9]+)?(?:/v[0-9][0-9.]*)?$'
+          alias: '$1'
+  exclusions:
+    generated: lax
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gci
+  settings:
+    gci:
+      custom-order: true
+      sections:
+        - standard
+        - prefix(github.com/stretchr/testify)
+        - default
+        - prefix(github.com/inference-gateway/)
+        - prefix(github.com/inference-gateway/sdk)
+  exclusions:
+    generated: lax

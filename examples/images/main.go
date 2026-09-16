@@ -24,8 +24,9 @@ import (
 	"os"
 	"time"
 
-	sdk "github.com/inference-gateway/sdk"
 	openapi_types "github.com/oapi-codegen/runtime/types"
+
+	sdk "github.com/inference-gateway/sdk"
 )
 
 func main() {

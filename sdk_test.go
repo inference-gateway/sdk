@@ -13,9 +13,10 @@ import (
 	"testing"
 	"time"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Test helper functions - using the public NewMessageContent helper

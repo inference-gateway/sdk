@@ -34,6 +34,8 @@ Common commands:
 
 Follow Go conventions and run `gofmt` before committing. `.editorconfig` requires tabs for Go files and two-space indentation for YAML, JSON, TOML, and most other files. Keep public identifiers clear and documented when exported. Tests use Go's `TestName` naming pattern and `testify/assert` or `testify/require`.
 
+Import order is enforced by the `gci` formatter (see `.golangci.yml`): standard library, `github.com/stretchr/testify`, third-party, `github.com/inference-gateway/*`, then this module. Every non-standard-library import must be named after its last path element (`sdk "github.com/inference-gateway/sdk"`), enforced by `importas`; pin an alias in `.golangci.yml` only when two packages would collide. Fix locally with `golangci-lint fmt` and `golangci-lint run --fix`.
+
 Do not hand-edit generated OpenAPI types when the schema changed; update `openapi.yaml` and run `task generate`.
 
 ## Testing Guidelines

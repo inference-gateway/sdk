@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/inference-gateway/sdk"
+	sdk "github.com/inference-gateway/sdk"
 )
 
 func main() {

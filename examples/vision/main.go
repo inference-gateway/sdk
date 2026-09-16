@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/inference-gateway/sdk"
+	sdk "github.com/inference-gateway/sdk"
 )
 
 func main() {
