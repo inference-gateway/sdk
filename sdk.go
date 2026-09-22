@@ -39,6 +39,11 @@ type Client interface {
 	CreateImageEdit(ctx context.Context, provider Provider, request CreateImageEditMultipartBody) (*ImagesResponse, error)
 	CreateImageVariation(ctx context.Context, provider Provider, request CreateImageVariationMultipartBody) (*ImagesResponse, error)
 	CreateSpeech(ctx context.Context, provider Provider, request CreateSpeechRequest) ([]byte, error)
+	CreateSFX(ctx context.Context, provider Provider, request CreateSFXRequest) ([]byte, error)
+	CreateMusic(ctx context.Context, provider Provider, request CreateMusicRequest) ([]byte, error)
+	CreateVideo(ctx context.Context, provider Provider, request CreateVideoRequest) (*VideoJob, error)
+	RetrieveVideo(ctx context.Context, provider Provider, videoID string) (*VideoJob, error)
+	DownloadVideoContent(ctx context.Context, provider Provider, videoID string) ([]byte, error)
 	HealthCheck(ctx context.Context) error
 }
 
@@ -1060,7 +1065,7 @@ func (c *clientImpl) CreateImageEdit(ctx context.Context, provider Provider, req
 		fields["size"] = string(*request.Size)
 	}
 
-	return c.postImagesMultipart(ctx, provider, "/images/edits", fields, files)
+	return imagesResult(c.postMultipart(ctx, provider, "/images/edits", fields, files))
 }
 
 // CreateImageVariation creates a variation of an image using the
@@ -1084,18 +1089,20 @@ func (c *clientImpl) CreateImageVariation(ctx context.Context, provider Provider
 		fields["size"] = string(*request.Size)
 	}
 
-	return c.postImagesMultipart(ctx, provider, "/images/variations", fields, files)
+	return imagesResult(c.postMultipart(ctx, provider, "/images/variations", fields, files))
 }
 
-// postImagesMultipart posts a multipart/form-data request to an Images API
-// endpoint and parses the shared ImagesResponse.
-func (c *clientImpl) postImagesMultipart(ctx context.Context, provider Provider, path string, fields map[string]string, files map[string]openapi_types.File) (*ImagesResponse, error) {
-	queryParams := make(map[string]string)
-	if provider != "" {
-		queryParams["provider"] = string(provider)
+// providerQuery renders the optional ?provider= query parameter.
+func providerQuery(provider Provider) map[string]string {
+	if provider == "" {
+		return nil
 	}
+	return map[string]string{"provider": string(provider)}
+}
 
-	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+// postMultipart posts a multipart/form-data request to the given path.
+func (c *clientImpl) postMultipart(ctx context.Context, provider Provider, path string, fields map[string]string, files map[string]openapi_types.File) (*response, error) {
+	return c.executeWithRetry(ctx, func() (*response, error) {
 		var buf bytes.Buffer
 		mw := multipart.NewWriter(&buf)
 		for name, value := range fields {
@@ -1119,40 +1126,67 @@ func (c *clientImpl) postImagesMultipart(ctx context.Context, provider Provider,
 		if err := mw.Close(); err != nil {
 			return nil, err
 		}
-		return c.do(ctx, http.MethodPost, c.baseURL+path, queryParams, &buf, mw.FormDataContentType(), false)
+		return c.do(ctx, http.MethodPost, c.baseURL+path, providerQuery(provider), &buf, mw.FormDataContentType(), false)
 	})
-
-	return imagesResult(resp, err)
 }
 
-// imagesResult turns a response from an Images API endpoint into an
-// ImagesResponse or an error.
-func imagesResult(resp *response, err error) (*ImagesResponse, error) {
+// apiError returns the transport error, or an error built from a non-2xx
+// response (preferring the gateway's `{"error": "..."}` body). Nil on success.
+func apiError(resp *response, err error, what string) error {
 	if err != nil {
+		return err
+	}
+
+	if !resp.IsError() {
+		return nil
+	}
+
+	var errorResp Error
+	if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
+		return fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
+	}
+
+	errMsg := fmt.Sprintf("%s request failed with status: %d", what, resp.StatusCode())
+
+	if len(resp.Body()) > 0 {
+		errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
+	}
+
+	return fmt.Errorf("%s", errMsg)
+}
+
+// jsonResult decodes a successful response body into T.
+func jsonResult[T any](resp *response, err error, what string) (*T, error) {
+	if err := apiError(resp, err, what); err != nil {
 		return nil, err
 	}
 
-	if resp.IsError() {
-		var errorResp Error
-		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-		}
-
-		errMsg := fmt.Sprintf("image request failed with status: %d", resp.StatusCode())
-
-		if len(resp.Body()) > 0 {
-			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
-		}
-
-		return nil, fmt.Errorf("%s", errMsg)
-	}
-
-	var result ImagesResponse
+	var result T
 	if err := decode(resp, &result); err != nil {
 		return nil, err
 	}
 
 	return &result, nil
+}
+
+// imagesResult turns a response from an Images API endpoint into an
+// ImagesResponse or an error.
+func imagesResult(resp *response, err error) (*ImagesResponse, error) {
+	return jsonResult[ImagesResponse](resp, err, "image")
+}
+
+// rawBytes sends a request and returns the raw response body, for endpoints
+// that answer with binary media instead of JSON.
+func (c *clientImpl) rawBytes(ctx context.Context, method, path string, provider Provider, body any, what string) ([]byte, error) {
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, method, c.baseURL+path, providerQuery(provider), body, "", false)
+	})
+
+	if err := apiError(resp, err, what); err != nil {
+		return nil, err
+	}
+
+	return resp.Body(), nil
 }
 
 // CreateSpeech generates speech audio from text using the OpenAI-compatible
@@ -1176,35 +1210,75 @@ func imagesResult(resp *response, err error) (*ImagesResponse, error) {
 //	}
 //	_ = os.WriteFile("speech.mp3", audio, 0o644)
 func (c *clientImpl) CreateSpeech(ctx context.Context, provider Provider, request CreateSpeechRequest) ([]byte, error) {
-	queryParams := make(map[string]string)
-	if provider != "" {
-		queryParams["provider"] = string(provider)
+	return c.rawBytes(ctx, http.MethodPost, "/audio/speech", provider, request, "speech")
+}
+
+// CreateSFX generates a sound effect or ambience clip from a text prompt
+// (`/audio/sfx`, a gateway extension shaped like `/audio/speech`). Returns the
+// raw audio bytes in the requested `response_format`. Unsupported providers
+// return a 400 error.
+func (c *clientImpl) CreateSFX(ctx context.Context, provider Provider, request CreateSFXRequest) ([]byte, error) {
+	return c.rawBytes(ctx, http.MethodPost, "/audio/sfx", provider, request, "sfx")
+}
+
+// CreateMusic composes a music clip from a text prompt (`/audio/music`, a
+// gateway extension shaped like `/audio/speech`). Returns the raw audio bytes
+// in the requested `response_format`. Unsupported providers return a 400 error.
+func (c *clientImpl) CreateMusic(ctx context.Context, provider Provider, request CreateMusicRequest) ([]byte, error) {
+	return c.rawBytes(ctx, http.MethodPost, "/audio/music", provider, request, "music")
+}
+
+// CreateVideo starts an asynchronous video generation job using the
+// OpenAI-compatible Videos API (`/videos`, multipart/form-data). Poll the
+// returned job with RetrieveVideo until Status is completed, then fetch the
+// bytes with DownloadVideoContent. Build file fields with
+// openapi_types.File.InitFromBytes. Unsupported providers return a 400 error.
+//
+// Example:
+//
+//	job, err := client.CreateVideo(ctx, sdk.Openai, sdk.CreateVideoRequest{
+//	    Model:  "sora-2",
+//	    Prompt: new("A cat surfing"),
+//	})
+func (c *clientImpl) CreateVideo(ctx context.Context, provider Provider, request CreateVideoRequest) (*VideoJob, error) {
+	files := map[string]openapi_types.File{}
+	if request.InputReference != nil {
+		files["input_reference"] = *request.InputReference
+	}
+	if request.Audio != nil {
+		files["audio"] = *request.Audio
 	}
 
+	fields := map[string]string{"model": request.Model}
+	if request.Prompt != nil {
+		fields["prompt"] = *request.Prompt
+	}
+	if request.Seconds != nil {
+		fields["seconds"] = *request.Seconds
+	}
+	if request.Size != nil {
+		fields["size"] = *request.Size
+	}
+
+	resp, err := c.postMultipart(ctx, provider, "/videos", fields, files)
+	return jsonResult[VideoJob](resp, err, "video")
+}
+
+// RetrieveVideo fetches the current state of a video generation job
+// (`/videos/{video_id}`). The gateway keeps no job state, so pass the provider
+// that created the job when the id alone is not enough to route the request.
+func (c *clientImpl) RetrieveVideo(ctx context.Context, provider Provider, videoID string) (*VideoJob, error) {
 	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
-		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/audio/speech", c.baseURL), queryParams, request, "", false)
+		return c.do(ctx, http.MethodGet, c.baseURL+"/videos/"+url.PathEscape(videoID), providerQuery(provider), nil, "", false)
 	})
+	return jsonResult[VideoJob](resp, err, "video")
+}
 
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errorResp Error
-		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-		}
-
-		errMsg := fmt.Sprintf("speech request failed with status: %d", resp.StatusCode())
-
-		if len(resp.Body()) > 0 {
-			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
-		}
-
-		return nil, fmt.Errorf("%s", errMsg)
-	}
-
-	return resp.Body(), nil
+// DownloadVideoContent returns the rendered video bytes of a completed job
+// (`/videos/{video_id}/content`). The gateway answers 404 while the job is
+// still queued or in progress, or if it failed.
+func (c *clientImpl) DownloadVideoContent(ctx context.Context, provider Provider, videoID string) ([]byte, error) {
+	return c.rawBytes(ctx, http.MethodGet, "/videos/"+url.PathEscape(videoID)+"/content", provider, nil, "video")
 }
 
 // messagesAPIError builds an error from an Anthropic-format error body,
