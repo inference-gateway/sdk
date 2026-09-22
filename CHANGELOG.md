@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.39.0](https://github.com/inference-gateway/sdk/compare/v1.38.1...v1.39.0) (2026-09-22)
+
+### ✨ Features
+
+* sync generated types with schemas v0.31.0 ([#188](https://github.com/inference-gateway/sdk/issues/188)) ([80f90d0](https://github.com/inference-gateway/sdk/commit/80f90d0e5e4f503f39666359bc2fa377d64cae77))
+* **videos:** send reference_images as repeated multipart parts ([#189](https://github.com/inference-gateway/sdk/issues/189)) ([ca6403d](https://github.com/inference-gateway/sdk/commit/ca6403d39d6efe486ce09530e04487db58d383c1))
+
 ## [1.38.1](https://github.com/inference-gateway/sdk/compare/v1.38.0...v1.38.1) (2026-09-22)
 
 ### ♻️ Improvements
