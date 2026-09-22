@@ -8,9 +8,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 func TestCreateSFX(t *testing.T) {
