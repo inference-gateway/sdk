@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.38.0](https://github.com/inference-gateway/sdk/compare/v1.37.2...v1.38.0) (2026-09-22)
+
+### ✨ Features
+
+* add sfx, music and video client methods (schemas v0.30.2) ([#183](https://github.com/inference-gateway/sdk/issues/183)) ([520f889](https://github.com/inference-gateway/sdk/commit/520f88927261a3c1cff737833cbff0a4466f43cb))
+
+### 👷 CI
+
+* **infer:** centralize infer.yml via reusable workflow ([#180](https://github.com/inference-gateway/sdk/issues/180)) ([39a84ed](https://github.com/inference-gateway/sdk/commit/39a84edbcf3abdab73216bae73c576dd52697a45))
+
+### 🔧 Miscellaneous
+
+* bump flox dependency versions ([be4184c](https://github.com/inference-gateway/sdk/commit/be4184c6ae59173935c8ff084f18e929e78b6904))
+* **lint:** enforce Go import grouping and named imports ([#182](https://github.com/inference-gateway/sdk/issues/182)) ([b0d4522](https://github.com/inference-gateway/sdk/commit/b0d4522f64ec003b2873bb03cda6da822796e118))
+* sync generated types with schemas v0.28.0 ([#179](https://github.com/inference-gateway/sdk/issues/179)) ([33ffd99](https://github.com/inference-gateway/sdk/commit/33ffd9936af464e1883812d7e178e02769550206))
+
 ## [1.37.2](https://github.com/inference-gateway/sdk/compare/v1.37.1...v1.37.2) (2026-09-11)
 
 ### ♻️ Improvements
