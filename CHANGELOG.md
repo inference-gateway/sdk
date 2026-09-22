@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.38.1](https://github.com/inference-gateway/sdk/compare/v1.38.0...v1.38.1) (2026-09-22)
+
+### ♻️ Improvements
+
+* **music,sfx:** remove wav file format from the options (schemas v0.30.3) ([941bdd4](https://github.com/inference-gateway/sdk/commit/941bdd42a33d23ab9c43b5b17908e2c1ecbececa))
+
 ## [1.38.0](https://github.com/inference-gateway/sdk/compare/v1.37.2...v1.38.0) (2026-09-22)
 
 ### ✨ Features
