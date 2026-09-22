@@ -1043,9 +1043,9 @@ func (c *clientImpl) CreateImage(ctx context.Context, provider Provider, request
 // openapi_types.File.InitFromBytes. Not every provider implements it;
 // unsupported providers return a 400 error.
 func (c *clientImpl) CreateImageEdit(ctx context.Context, provider Provider, request CreateImageEditMultipartBody) (*ImagesResponse, error) {
-	files := map[string]openapi_types.File{"image": request.Image}
+	files := map[string][]openapi_types.File{"image": {request.Image}}
 	if request.Mask != nil {
-		files["mask"] = *request.Mask
+		files["mask"] = []openapi_types.File{*request.Mask}
 	}
 
 	fields := map[string]string{"prompt": request.Prompt}
@@ -1073,7 +1073,7 @@ func (c *clientImpl) CreateImageEdit(ctx context.Context, provider Provider, req
 // Build the image field with openapi_types.File.InitFromBytes. Not every
 // provider implements it; unsupported providers return a 400 error.
 func (c *clientImpl) CreateImageVariation(ctx context.Context, provider Provider, request CreateImageVariationMultipartBody) (*ImagesResponse, error) {
-	files := map[string]openapi_types.File{"image": request.Image}
+	files := map[string][]openapi_types.File{"image": {request.Image}}
 
 	fields := map[string]string{}
 	if request.Model != nil {
@@ -1100,8 +1100,9 @@ func providerQuery(provider Provider) map[string]string {
 	return map[string]string{"provider": string(provider)}
 }
 
-// postMultipart posts a multipart/form-data request to the given path.
-func (c *clientImpl) postMultipart(ctx context.Context, provider Provider, path string, fields map[string]string, files map[string]openapi_types.File) (*response, error) {
+// postMultipart posts a multipart/form-data request to the given path. Each
+// file under a field becomes its own part, so array fields repeat the name.
+func (c *clientImpl) postMultipart(ctx context.Context, provider Provider, path string, fields map[string]string, files map[string][]openapi_types.File) (*response, error) {
 	return c.executeWithRetry(ctx, func() (*response, error) {
 		var buf bytes.Buffer
 		mw := multipart.NewWriter(&buf)
@@ -1110,17 +1111,19 @@ func (c *clientImpl) postMultipart(ctx context.Context, provider Provider, path 
 				return nil, err
 			}
 		}
-		for field, file := range files {
-			data, err := file.Bytes()
-			if err != nil {
-				return nil, fmt.Errorf("failed to read %s file: %w", field, err)
-			}
-			part, err := mw.CreateFormFile(field, file.Filename())
-			if err != nil {
-				return nil, err
-			}
-			if _, err := part.Write(data); err != nil {
-				return nil, err
+		for field, fieldFiles := range files {
+			for _, file := range fieldFiles {
+				data, err := file.Bytes()
+				if err != nil {
+					return nil, fmt.Errorf("failed to read %s file: %w", field, err)
+				}
+				part, err := mw.CreateFormFile(field, file.Filename())
+				if err != nil {
+					return nil, err
+				}
+				if _, err := part.Write(data); err != nil {
+					return nil, err
+				}
 			}
 		}
 		if err := mw.Close(); err != nil {
@@ -1241,12 +1244,15 @@ func (c *clientImpl) CreateMusic(ctx context.Context, provider Provider, request
 //	    Prompt: new("A cat surfing"),
 //	})
 func (c *clientImpl) CreateVideo(ctx context.Context, provider Provider, request CreateVideoRequest) (*VideoJob, error) {
-	files := map[string]openapi_types.File{}
+	files := map[string][]openapi_types.File{}
 	if request.InputReference != nil {
-		files["input_reference"] = *request.InputReference
+		files["input_reference"] = []openapi_types.File{*request.InputReference}
+	}
+	if request.ReferenceImages != nil {
+		files["reference_images"] = *request.ReferenceImages
 	}
 	if request.Audio != nil {
-		files["audio"] = *request.Audio
+		files["audio"] = []openapi_types.File{*request.Audio}
 	}
 
 	fields := map[string]string{"model": request.Model}

@@ -103,6 +103,40 @@ func TestCreateVideo(t *testing.T) {
 	assert.Equal(t, VideoJobStatus("queued"), job.Status)
 }
 
+func TestCreateVideo_ReferenceImages(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, r.ParseMultipartForm(1<<20))
+		headers := r.MultipartForm.File["reference_images"]
+		require.Len(t, headers, 2, "each reference image must be its own part")
+		for i, want := range []string{"front.png", "side.png"} {
+			assert.Equal(t, want, headers[i].Filename)
+			file, err := headers[i].Open()
+			require.NoError(t, err)
+			data, err := io.ReadAll(file)
+			_ = file.Close()
+			require.NoError(t, err)
+			assert.Equal(t, []byte(want+"-bytes"), data)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		assert.NoError(t, json.NewEncoder(w).Encode(VideoJob{ID: "video_123", Status: "queued"}))
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	var front, side openapi_types.File
+	front.InitFromBytes([]byte("front.png-bytes"), "front.png")
+	side.InitFromBytes([]byte("side.png-bytes"), "side.png")
+
+	_, err := client.CreateVideo(context.Background(), Elevenlabs, CreateVideoRequest{
+		Model:           "veo-3.1-generate-001",
+		Prompt:          new("The same woman walking through a market"),
+		ReferenceImages: &[]openapi_types.File{front, side},
+	})
+	require.NoError(t, err)
+}
+
 func TestRetrieveVideo(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v1/videos/video_123", r.URL.Path)
