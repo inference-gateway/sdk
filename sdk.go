@@ -37,7 +37,6 @@ type Client interface {
 	CreateMessageStream(ctx context.Context, provider Provider, request CreateMessagesRequest) (<-chan SSEvent, error)
 	CreateImage(ctx context.Context, provider Provider, request CreateImageRequest) (*ImagesResponse, error)
 	CreateImageEdit(ctx context.Context, provider Provider, request CreateImageEditMultipartBody) (*ImagesResponse, error)
-	CreateImageVariation(ctx context.Context, provider Provider, request CreateImageVariationMultipartBody) (*ImagesResponse, error)
 	CreateSpeech(ctx context.Context, provider Provider, request CreateSpeechRequest) ([]byte, error)
 	CreateSFX(ctx context.Context, provider Provider, request CreateSFXRequest) ([]byte, error)
 	CreateMusic(ctx context.Context, provider Provider, request CreateMusicRequest) ([]byte, error)
@@ -1066,30 +1065,6 @@ func (c *clientImpl) CreateImageEdit(ctx context.Context, provider Provider, req
 	}
 
 	return imagesResult(c.postMultipart(ctx, provider, "/images/edits", fields, files))
-}
-
-// CreateImageVariation creates a variation of an image using the
-// OpenAI-compatible Images API (`/images/variations`, multipart/form-data).
-// Build the image field with openapi_types.File.InitFromBytes. Not every
-// provider implements it; unsupported providers return a 400 error.
-func (c *clientImpl) CreateImageVariation(ctx context.Context, provider Provider, request CreateImageVariationMultipartBody) (*ImagesResponse, error) {
-	files := map[string][]openapi_types.File{"image": {request.Image}}
-
-	fields := map[string]string{}
-	if request.Model != nil {
-		fields["model"] = *request.Model
-	}
-	if request.N != nil {
-		fields["n"] = strconv.Itoa(*request.N)
-	}
-	if request.ResponseFormat != nil {
-		fields["response_format"] = string(*request.ResponseFormat)
-	}
-	if request.Size != nil {
-		fields["size"] = string(*request.Size)
-	}
-
-	return imagesResult(c.postMultipart(ctx, provider, "/images/variations", fields, files))
 }
 
 // providerQuery renders the optional ?provider= query parameter.
