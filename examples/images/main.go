@@ -7,14 +7,6 @@
 //	IMAGE_EDIT_PATH=/path/to/image.png \
 //	  INFERENCE_GATEWAY_URL=http://localhost:8080/v1 go run main.go
 //
-//	# Image variation - set IMAGE_VARIATION_PATH to a PNG/JPEG file:
-//	IMAGE_VARIATION_PATH=/path/to/image.png \
-//	  INFERENCE_GATEWAY_URL=http://localhost:8080/v1 go run main.go
-//
-//	# All three:
-//	IMAGE_EDIT_PATH=/path/to/edit.png \
-//	  IMAGE_VARIATION_PATH=/path/to/variation.png \
-//	  INFERENCE_GATEWAY_URL=http://localhost:8080/v1 go run main.go
 package main
 
 import (
@@ -76,31 +68,6 @@ func main() {
 		for _, img := range resp.Data {
 			if img.URL != nil {
 				fmt.Println("Edited:", *img.URL)
-			}
-		}
-	}
-
-	// --- CreateImageVariation ---
-	if path := os.Getenv("IMAGE_VARIATION_PATH"); path != "" {
-		data, err := os.ReadFile(path)
-		if err != nil {
-			log.Fatalf("Error reading variation image: %v", err)
-		}
-		var imageFile openapi_types.File
-		imageFile.InitFromBytes(data, path)
-
-		resp, err := client.CreateImageVariation(ctx, sdk.Openai, sdk.CreateImageVariationMultipartBody{
-			Image: imageFile,
-			Model: new("gpt-image-2"),
-			N:     new(1),
-			Size:  new(sdk.ImageSize1024X1024),
-		})
-		if err != nil {
-			log.Fatalf("Error: %v", err)
-		}
-		for _, img := range resp.Data {
-			if img.URL != nil {
-				fmt.Println("Variation:", *img.URL)
 			}
 		}
 	}
