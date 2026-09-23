@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.39.1](https://github.com/inference-gateway/sdk/compare/v1.39.0...v1.39.1) (2026-09-23)
+
+### ♻️ Improvements
+
+* remove image variations - schemas v0.31.1 ([#192](https://github.com/inference-gateway/sdk/issues/192)) ([6663168](https://github.com/inference-gateway/sdk/commit/6663168b027dab70c7f82251d8391ab407886512)), closes [#190](https://github.com/inference-gateway/sdk/issues/190)
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.266 -> 2.1.278 ([#191](https://github.com/inference-gateway/sdk/issues/191)) ([c07e0dc](https://github.com/inference-gateway/sdk/commit/c07e0dcc11f3496413a151dab6c3486312c5d271))
+
 ## [1.39.0](https://github.com/inference-gateway/sdk/compare/v1.38.1...v1.39.0) (2026-09-22)
 
 ### ✨ Features
