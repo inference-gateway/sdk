@@ -189,7 +189,7 @@ client := sdk.NewClient(&sdk.ClientOptions{
 })
 ```
 
-This is the only supported way to turn retries off - `executeWithRetry` sends exactly one request when `Enabled` is false. Do not use `MaxAttempts: 0` together with `Enabled: true` ([#200](https://github.com/inference-gateway/sdk/issues/200)).
+This is the only supported way to turn retries off - `executeWithRetry` sends exactly one request when `Enabled` is false. Do not use `MaxAttempts: 0` together with `Enabled: true`.
 
 **Rate Limiting (429 Status):**
 
