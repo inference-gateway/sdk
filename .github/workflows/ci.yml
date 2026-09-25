@@ -39,5 +39,8 @@ jobs:
       - name: Build
         run: go build -v ./...
 
+      - name: Build examples
+        run: find examples -name go.mod -printf '%h\n' | xargs -I{} sh -c 'cd {} && go build -o /dev/null ./...'
+
       - name: Test
         run: go test -v ./...
