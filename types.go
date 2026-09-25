@@ -119,6 +119,44 @@ func NewImageContentPart(imageURL string, detail *ImageURLDetail) (ContentPart, 
 	return part, err
 }
 
+// NewMCPJSONRPCRequest builds a JSON-RPC request for the gateway's MCP
+// endpoint. id may be a string or an int; pass nil to send a notification.
+//
+// Example:
+//
+//	req, err := sdk.NewMCPJSONRPCRequest(1, sdk.ToolsCall, map[string]any{
+//		"name":      "mcp_deepwiki_ask_question",
+//		"arguments": map[string]any{"question": "How is MCP wired up?"},
+//	})
+func NewMCPJSONRPCRequest(id any, method MCPJSONRPCRequestMethod, params map[string]any) (MCPJSONRPCRequest, error) {
+	request := MCPJSONRPCRequest{
+		Jsonrpc: MCPJSONRPCRequestJsonrpcN20,
+		Method:  method,
+	}
+	if params != nil {
+		request.Params = &params
+	}
+
+	var union MCPJSONRPCRequest_ID
+	switch v := id.(type) {
+	case nil:
+		return request, nil
+	case string:
+		if err := union.FromMCPJSONRPCRequestID0(v); err != nil {
+			return request, err
+		}
+	case int:
+		if err := union.FromMCPJSONRPCRequestID1(v); err != nil {
+			return request, err
+		}
+	default:
+		return request, fmt.Errorf("unsupported JSON-RPC id type %T: want string or int", id)
+	}
+	request.ID = &union
+
+	return request, nil
+}
+
 // Backwards-compatible aliases for enum values renamed by the schemas
 // v0.11.1 generated-code sync.
 const (

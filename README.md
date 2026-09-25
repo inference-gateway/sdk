@@ -342,7 +342,64 @@ for _, tool := range tools.Data {
 }
 ```
 
-> **Note:** The MCP tools endpoint requires authentication and is only accessible when the server has `EXPOSE_MCP=true` configured. If the endpoint is not exposed, you'll receive a 403 error with the message "MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable."
+> **Note:** The MCP tools endpoint requires authentication and is only accessible when the server has `MCP_ENABLED=true` and `MCP_EXPOSE=true` configured. If the endpoint is not exposed, you'll receive a 403 error with the message "MCP endpoint is not exposed. Set MCP_EXPOSE=true to enable."
+
+### MCP JSON-RPC Endpoint
+
+The gateway also exposes itself as an MCP server over JSON-RPC 2.0 at `POST /mcp`, aggregating every server in `MCP_SERVERS` behind one URL. Use `MCPJSONRPC`; the required `MCP-Protocol-Version`, `Mcp-Method` and `Mcp-Name` headers and the `params._meta` object are filled in for you:
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: "http://localhost:8080/v1", // the /v1 suffix is stripped, /mcp lives at the root
+    APIKey:  "your-api-key",
+})
+
+ctx := context.Background()
+
+request, err := sdk.NewMCPJSONRPCRequest(1, sdk.ToolsList, nil)
+if err != nil {
+    log.Fatalf("Error building request: %v", err)
+}
+
+response, err := client.MCPJSONRPC(ctx, request)
+if err != nil {
+    log.Fatalf("Error calling MCP endpoint: %v", err)
+}
+
+if response.Error != nil {
+    log.Fatalf("JSON-RPC error %d: %s", response.Error.Code, response.Error.Message)
+}
+
+fmt.Printf("Result: %+v\n", *response.Result)
+```
+
+Calling a tool works the same way - tool names are namespaced `mcp_<server alias>_<tool name>`:
+
+```go
+request, _ := sdk.NewMCPJSONRPCRequest(2, sdk.ToolsCall, map[string]any{
+    "name": "mcp_deepwiki_ask_question",
+    "arguments": map[string]any{
+        "repoName": "inference-gateway/inference-gateway",
+        "question": "How is MCP wired up?",
+    },
+})
+
+response, err := client.MCPJSONRPC(ctx, request)
+```
+
+Methods are `sdk.ServerDiscover`, `sdk.ToolsList` and `sdk.ToolsCall`. Pass `nil` as the id to send a notification, which the gateway acknowledges with `202` and no body (`MCPJSONRPC` then returns `nil, nil`). JSON-RPC level failures come back in `response.Error` rather than as a Go error; transport and gateway errors (such as a `403` when the endpoint isn't exposed) are returned as errors.
+
+When the gateway has authentication enabled, clients can discover the authorization server through the OAuth 2.0 Protected Resource Metadata document (RFC 9728):
+
+```go
+metadata, err := client.GetMCPProtectedResourceMetadata(ctx)
+if err != nil {
+    log.Fatalf("Error fetching metadata: %v", err)
+}
+
+fmt.Printf("Resource: %s\n", metadata.Resource)
+fmt.Printf("Authorization servers: %v\n", metadata.AuthorizationServers)
+```
 
 ### Generating Content
 

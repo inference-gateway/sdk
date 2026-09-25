@@ -354,6 +354,57 @@ func (e ImageURLDetail) Valid() bool {
 	}
 }
 
+// Defines values for MCPJSONRPCRequestJsonrpc.
+const (
+	MCPJSONRPCRequestJsonrpcN20 MCPJSONRPCRequestJsonrpc = "2.0"
+)
+
+// Valid indicates whether the value is a known member of the MCPJSONRPCRequestJsonrpc enum.
+func (e MCPJSONRPCRequestJsonrpc) Valid() bool {
+	switch e {
+	case MCPJSONRPCRequestJsonrpcN20:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MCPJSONRPCRequestMethod.
+const (
+	ServerDiscover MCPJSONRPCRequestMethod = "server/discover"
+	ToolsCall      MCPJSONRPCRequestMethod = "tools/call"
+	ToolsList      MCPJSONRPCRequestMethod = "tools/list"
+)
+
+// Valid indicates whether the value is a known member of the MCPJSONRPCRequestMethod enum.
+func (e MCPJSONRPCRequestMethod) Valid() bool {
+	switch e {
+	case ServerDiscover:
+		return true
+	case ToolsCall:
+		return true
+	case ToolsList:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MCPJSONRPCResponseJsonrpc.
+const (
+	MCPJSONRPCResponseJsonrpcN20 MCPJSONRPCResponseJsonrpc = "2.0"
+)
+
+// Valid indicates whether the value is a known member of the MCPJSONRPCResponseJsonrpc enum.
+func (e MCPJSONRPCResponseJsonrpc) Valid() bool {
+	switch e {
+	case MCPJSONRPCResponseJsonrpcN20:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MessageRole.
 const (
 	Assistant MessageRole = "assistant"
@@ -2215,6 +2266,111 @@ type ListToolsResponse struct {
 	Object string `json:"object"`
 }
 
+// MCPJSONRPCError A JSON-RPC 2.0 error object
+type MCPJSONRPCError struct {
+	// Code JSON-RPC error code: `-32700` parse error, `-32600` invalid request,
+	// `-32601` method not found, `-32602` invalid params, `-32603` internal
+	// error (including upstream MCP server failures), `-32001` request
+	// blocked by guardrails at any phase (`pre_call`, `tool_args`,
+	// `tool_output`), answered with HTTP `403` and the policy message,
+	// `-32020` header mismatch, `-32022` unsupported protocol version
+	// (`data` carries `requested` and `supported`).
+	Code int `json:"code"`
+
+	// Data Optional additional error detail
+	Data any `json:"data,omitempty"`
+
+	// Message Short description of the error
+	Message string `json:"message"`
+}
+
+// MCPJSONRPCRequest A JSON-RPC 2.0 request sent to `POST /mcp`, MCP protocol version
+// `2026-07-28`. A message without `id` is a notification; this protocol
+// version defines none over HTTP, so the gateway acknowledges it with `202`
+// and ignores it.
+//
+// `params` and the corresponding `result` follow the vendored MCP spec
+// types in `mcp/mcp-schema.yaml`. Every request's `params._meta` is a
+// `RequestMetaObject` (`io.modelcontextprotocol/protocolVersion`,
+// `io.modelcontextprotocol/clientInfo`,
+// `io.modelcontextprotocol/clientCapabilities`); `server/discover` takes
+// nothing else, `tools/list` takes an optional `cursor` and `tools/call`
+// takes `CallToolRequestParams`.
+//
+// Tool names are namespaced `mcp_<server alias>_<tool name>`, e.g.
+// `mcp_deepwiki_ask_question`. The alias comes from the `alias=url` syntax
+// in `MCP_SERVERS` and is derived from the URL host when omitted; it must
+// match `^[a-z0-9_-]+$` so the resulting tool name stays valid across all
+// LLM providers. The same namespacing applies to the tools injected into
+// `/v1/chat/completions`. `mcp_tools_get` and `mcp_tools_execute` are
+// reserved for the gateway's own selector meta-tools and cannot be used by
+// a configured server.
+type MCPJSONRPCRequest struct {
+	// ID Request identifier echoed back in the response. Absent for
+	// notifications.
+	ID *MCPJSONRPCRequest_ID `json:"id,omitempty"`
+
+	// Jsonrpc JSON-RPC protocol version, always "2.0"
+	Jsonrpc MCPJSONRPCRequestJsonrpc `json:"jsonrpc"`
+
+	// Method The MCP method to invoke
+	Method MCPJSONRPCRequestMethod `json:"method"`
+
+	// Params Method parameters, as defined by the MCP specification
+	Params *map[string]any `json:"params,omitempty"`
+}
+
+// MCPJSONRPCRequestID0 defines model for MCPJSONRPCRequest.ID.0.
+type MCPJSONRPCRequestID0 = string
+
+// MCPJSONRPCRequestID1 defines model for MCPJSONRPCRequest.ID.1.
+type MCPJSONRPCRequestID1 = int
+
+// MCPJSONRPCRequest_ID Request identifier echoed back in the response. Absent for
+// notifications.
+type MCPJSONRPCRequest_ID struct {
+	union json.RawMessage
+}
+
+// MCPJSONRPCRequestJsonrpc JSON-RPC protocol version, always "2.0"
+type MCPJSONRPCRequestJsonrpc string
+
+// MCPJSONRPCRequestMethod The MCP method to invoke
+type MCPJSONRPCRequestMethod string
+
+// MCPJSONRPCResponse A JSON-RPC 2.0 response envelope. Exactly one of `result` or `error` is
+// present. `result` carries the MCP result type for the requested method
+// (`DiscoverResult` for `server/discover`, `ListToolsResult` for
+// `tools/list`, `CallToolResult` for `tools/call`) as defined in
+// `mcp/mcp-schema.yaml`.
+type MCPJSONRPCResponse struct {
+	// Error A JSON-RPC 2.0 error object
+	Error *MCPJSONRPCError `json:"error,omitempty"`
+
+	// ID The `id` of the request this responds to
+	ID MCPJSONRPCResponse_ID `json:"id"`
+
+	// Jsonrpc JSON-RPC protocol version, always "2.0"
+	Jsonrpc MCPJSONRPCResponseJsonrpc `json:"jsonrpc"`
+
+	// Result The method result, present on success
+	Result *map[string]any `json:"result,omitempty"`
+}
+
+// MCPJSONRPCResponseID0 defines model for MCPJSONRPCResponse.ID.0.
+type MCPJSONRPCResponseID0 = string
+
+// MCPJSONRPCResponseID1 defines model for MCPJSONRPCResponse.ID.1.
+type MCPJSONRPCResponseID1 = int
+
+// MCPJSONRPCResponse_ID The `id` of the request this responds to
+type MCPJSONRPCResponse_ID struct {
+	union json.RawMessage
+}
+
+// MCPJSONRPCResponseJsonrpc JSON-RPC protocol version, always "2.0"
+type MCPJSONRPCResponseJsonrpc string
+
 // MCPTool An MCP tool definition
 type MCPTool struct {
 	// Description A description of what the tool does
@@ -2681,6 +2837,20 @@ type Model struct {
 type ModelModalities struct {
 	Input  []Modality `json:"input"`
 	Output []Modality `json:"output"`
+}
+
+// OAuthProtectedResourceMetadata OAuth 2.0 Protected Resource Metadata (RFC 9728) for the gateway's MCP
+// endpoint. Only the fields a client needs to find the authorization
+// server are published.
+type OAuthProtectedResourceMetadata struct {
+	// AuthorizationServers Issuer identifiers of the authorization servers that mint tokens for this resource
+	AuthorizationServers []string `json:"authorization_servers"`
+
+	// BearerMethodsSupported How a bearer token may be sent; the gateway reads the Authorization header only
+	BearerMethodsSupported []string `json:"bearer_methods_supported"`
+
+	// Resource The canonical public URL of the protected resource
+	Resource string `json:"resource"`
 }
 
 // Pricing Pricing information for a model
@@ -3442,6 +3612,19 @@ type CreateImageParams struct {
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
+// McpJSONRPCParams defines parameters for McpJSONRPC.
+type McpJSONRPCParams struct {
+	// MCPProtocolVersion Must equal `params._meta["io.modelcontextprotocol/protocolVersion"]`.
+	MCPProtocolVersion string `json:"MCP-Protocol-Version"`
+
+	// McpMethod Must equal the JSON-RPC `method`.
+	McpMethod string `json:"Mcp-Method"`
+
+	// McpName Required for `tools/call`; must equal `params.name`. Values that are
+	// not plain ASCII are sent as `=?base64?<value>?=`.
+	McpName *string `json:"Mcp-Name,omitempty"`
+}
+
 // CreateMessageParams defines parameters for CreateMessage.
 type CreateMessageParams struct {
 	// Provider Specific provider to use (default determined by model)
@@ -3536,6 +3719,9 @@ type CreateImageEditMultipartRequestBody CreateImageEditMultipartBody
 
 // CreateImageJSONRequestBody defines body for CreateImage for application/json ContentType.
 type CreateImageJSONRequestBody = CreateImageRequest
+
+// McpJSONRPCJSONRequestBody defines body for McpJSONRPC for application/json ContentType.
+type McpJSONRPCJSONRequestBody = MCPJSONRPCRequest
 
 // CreateMessageJSONRequestBody defines body for CreateMessage for application/json ContentType.
 type CreateMessageJSONRequestBody = CreateMessagesRequest
@@ -3958,6 +4144,130 @@ func (t CreateMessagesRequest_System) MarshalJSON() ([]byte, error) {
 }
 
 func (t *CreateMessagesRequest_System) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMCPJSONRPCRequestID0 returns the union data inside the MCPJSONRPCRequest_ID as a MCPJSONRPCRequestID0
+func (t MCPJSONRPCRequest_ID) AsMCPJSONRPCRequestID0() (MCPJSONRPCRequestID0, error) {
+	var body MCPJSONRPCRequestID0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMCPJSONRPCRequestID0 overwrites any union data inside the MCPJSONRPCRequest_ID as the provided MCPJSONRPCRequestID0
+func (t *MCPJSONRPCRequest_ID) FromMCPJSONRPCRequestID0(v MCPJSONRPCRequestID0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMCPJSONRPCRequestID0 performs a merge with any union data inside the MCPJSONRPCRequest_ID, using the provided MCPJSONRPCRequestID0
+func (t *MCPJSONRPCRequest_ID) MergeMCPJSONRPCRequestID0(v MCPJSONRPCRequestID0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMCPJSONRPCRequestID1 returns the union data inside the MCPJSONRPCRequest_ID as a MCPJSONRPCRequestID1
+func (t MCPJSONRPCRequest_ID) AsMCPJSONRPCRequestID1() (MCPJSONRPCRequestID1, error) {
+	var body MCPJSONRPCRequestID1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMCPJSONRPCRequestID1 overwrites any union data inside the MCPJSONRPCRequest_ID as the provided MCPJSONRPCRequestID1
+func (t *MCPJSONRPCRequest_ID) FromMCPJSONRPCRequestID1(v MCPJSONRPCRequestID1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMCPJSONRPCRequestID1 performs a merge with any union data inside the MCPJSONRPCRequest_ID, using the provided MCPJSONRPCRequestID1
+func (t *MCPJSONRPCRequest_ID) MergeMCPJSONRPCRequestID1(v MCPJSONRPCRequestID1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MCPJSONRPCRequest_ID) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MCPJSONRPCRequest_ID) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMCPJSONRPCResponseID0 returns the union data inside the MCPJSONRPCResponse_ID as a MCPJSONRPCResponseID0
+func (t MCPJSONRPCResponse_ID) AsMCPJSONRPCResponseID0() (MCPJSONRPCResponseID0, error) {
+	var body MCPJSONRPCResponseID0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMCPJSONRPCResponseID0 overwrites any union data inside the MCPJSONRPCResponse_ID as the provided MCPJSONRPCResponseID0
+func (t *MCPJSONRPCResponse_ID) FromMCPJSONRPCResponseID0(v MCPJSONRPCResponseID0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMCPJSONRPCResponseID0 performs a merge with any union data inside the MCPJSONRPCResponse_ID, using the provided MCPJSONRPCResponseID0
+func (t *MCPJSONRPCResponse_ID) MergeMCPJSONRPCResponseID0(v MCPJSONRPCResponseID0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMCPJSONRPCResponseID1 returns the union data inside the MCPJSONRPCResponse_ID as a MCPJSONRPCResponseID1
+func (t MCPJSONRPCResponse_ID) AsMCPJSONRPCResponseID1() (MCPJSONRPCResponseID1, error) {
+	var body MCPJSONRPCResponseID1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMCPJSONRPCResponseID1 overwrites any union data inside the MCPJSONRPCResponse_ID as the provided MCPJSONRPCResponseID1
+func (t *MCPJSONRPCResponse_ID) FromMCPJSONRPCResponseID1(v MCPJSONRPCResponseID1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMCPJSONRPCResponseID1 performs a merge with any union data inside the MCPJSONRPCResponse_ID, using the provided MCPJSONRPCResponseID1
+func (t *MCPJSONRPCResponse_ID) MergeMCPJSONRPCResponseID1(v MCPJSONRPCResponseID1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MCPJSONRPCResponse_ID) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MCPJSONRPCResponse_ID) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

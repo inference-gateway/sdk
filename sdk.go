@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,6 +32,8 @@ type Client interface {
 	ListModels(ctx context.Context, include ...ListModelsParamsInclude) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider, include ...ListModelsParamsInclude) (*ListModelsResponse, error)
 	ListTools(ctx context.Context) (*ListToolsResponse, error)
+	MCPJSONRPC(ctx context.Context, request MCPJSONRPCRequest) (*MCPJSONRPCResponse, error)
+	GetMCPProtectedResourceMetadata(ctx context.Context) (*OAuthProtectedResourceMetadata, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
 	GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error)
 	CreateMessage(ctx context.Context, provider Provider, request CreateMessagesRequest) (*MessagesResponse, error)
@@ -209,7 +212,7 @@ func (r *response) RawBody() io.ReadCloser {
 
 // do sends one request. A non-nil body is JSON-encoded unless it is an
 // io.Reader, in which case contentType must be set by the caller.
-func (c *clientImpl) do(ctx context.Context, method, endpoint string, query map[string]string, body any, contentType string, stream bool) (*response, error) {
+func (c *clientImpl) do(ctx context.Context, method, endpoint string, query map[string]string, body any, contentType string, stream bool, extraHeaders ...http.Header) (*response, error) {
 	if len(query) > 0 {
 		values := url.Values{}
 		for k, v := range query {
@@ -242,6 +245,11 @@ func (c *clientImpl) do(ctx context.Context, method, endpoint string, query map[
 	}
 	for name, values := range c.headers {
 		req.Header[name] = append([]string(nil), values...)
+	}
+	for _, headers := range extraHeaders {
+		for name, values := range headers {
+			req.Header[name] = append([]string(nil), values...)
+		}
 	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
@@ -654,6 +662,109 @@ func (c *clientImpl) ListTools(ctx context.Context) (*ListToolsResponse, error) 
 	}
 
 	return &result, nil
+}
+
+// MCPProtocolVersion is the MCP protocol version spoken by the gateway's
+// JSON-RPC endpoint.
+const MCPProtocolVersion = "2026-07-28"
+
+// rootURL strips the API version suffix from the base URL: the MCP JSON-RPC
+// endpoint and its OAuth metadata document live at the root, not under /v1.
+func (c *clientImpl) rootURL() string {
+	return strings.TrimSuffix(strings.TrimSuffix(c.baseURL, "/"), "/v1")
+}
+
+// encodeMCPName returns the Mcp-Name header value for a tool name, using the
+// `=?base64?<value>?=` encoding for names that are not plain ASCII.
+func encodeMCPName(name string) string {
+	for _, r := range name {
+		if r < 0x20 || r > 0x7e {
+			return "=?base64?" + base64.StdEncoding.EncodeToString([]byte(name)) + "?="
+		}
+	}
+
+	return name
+}
+
+// MCPJSONRPC sends a JSON-RPC 2.0 request to the gateway's MCP endpoint
+// (POST /mcp) and returns the response envelope. The required MCP headers are
+// derived from the request, and the `_meta` object every method needs is
+// filled in when params don't already carry one.
+//
+// JSON-RPC level failures are returned in the envelope's Error field, not as a
+// Go error. A notification (a request without an id) returns (nil, nil).
+//
+// Example:
+//
+//	req, _ := sdk.NewMCPJSONRPCRequest(1, sdk.ToolsList, nil)
+//	resp, err := client.MCPJSONRPC(ctx, req)
+func (c *clientImpl) MCPJSONRPC(ctx context.Context, request MCPJSONRPCRequest) (*MCPJSONRPCResponse, error) {
+	if request.Jsonrpc == "" {
+		request.Jsonrpc = MCPJSONRPCRequestJsonrpcN20
+	}
+
+	params := map[string]any{}
+	if request.Params != nil {
+		for key, value := range *request.Params {
+			params[key] = value
+		}
+	}
+	if _, ok := params["_meta"]; !ok {
+		params["_meta"] = map[string]any{
+			"io.modelcontextprotocol/protocolVersion": MCPProtocolVersion,
+			"io.modelcontextprotocol/clientInfo": map[string]any{
+				"name":    "inference-gateway-sdk-go",
+				"version": "unknown",
+			},
+			"io.modelcontextprotocol/clientCapabilities": map[string]any{},
+		}
+	}
+	request.Params = &params
+
+	headers := http.Header{}
+	headers.Set("MCP-Protocol-Version", MCPProtocolVersion)
+	headers.Set("Mcp-Method", string(request.Method))
+	if request.Method == ToolsCall {
+		name, ok := params["name"].(string)
+		if !ok || name == "" {
+			return nil, fmt.Errorf("tools/call requires a string params.name")
+		}
+		headers.Set("Mcp-Name", encodeMCPName(name))
+	}
+
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodPost, c.rootURL()+"/mcp", nil, request, "", false, headers)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode() == http.StatusAccepted {
+		return nil, nil
+	}
+
+	var result MCPJSONRPCResponse
+	if jsonErr := json.Unmarshal(resp.Body(), &result); jsonErr == nil && result.Jsonrpc != "" {
+		return &result, nil
+	}
+
+	if err := apiError(resp, nil, "MCP JSON-RPC"); err != nil {
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("failed to parse response: not a JSON-RPC envelope: %s", string(resp.Body()))
+}
+
+// GetMCPProtectedResourceMetadata fetches the OAuth 2.0 Protected Resource
+// Metadata (RFC 9728) the gateway publishes for its MCP endpoint, which tells
+// a client which authorization server mints tokens for it. Served without
+// authentication; 404 unless gateway auth and the MCP endpoint are enabled.
+func (c *clientImpl) GetMCPProtectedResourceMetadata(ctx context.Context) (*OAuthProtectedResourceMetadata, error) {
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodGet, c.rootURL()+"/.well-known/oauth-protected-resource/mcp", nil, nil, "", false)
+	})
+
+	return jsonResult[OAuthProtectedResourceMetadata](resp, err, "OAuth protected resource metadata")
 }
 
 // GenerateContent generates content using the specified provider and model.
