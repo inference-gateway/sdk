@@ -795,15 +795,18 @@ if err != nil {
 For more detailed examples and use cases, check out the [examples directory](./examples/). The examples include:
 
 -   **[Generation Example](./examples/generation/)** - Basic content generation examples
+-   **[Images Example](./examples/images/)** - Image generation and editing with `CreateImage` and `CreateImageEdit`
 -   **[MCP List Tools Example](./examples/mcp-list-tools/)** - How to list available MCP tools over the MCP JSON-RPC endpoint
 -   **[Messages Example](./examples/messages/)** - Anthropic-compatible Messages API (sync + streaming)
 -   **[Middleware Bypass Example](./examples/middleware-bypass/)** - How to bypass middleware layers for direct provider access
 -   **[Models Example](./examples/models/)** - How to list and work with different models
+-   **[Reasoning Example](./examples/reasoning/)** - Streamed reasoning output via `GenerateContentStream`
 -   **[Stream Example](./examples/stream/)** - Streaming content generation
 -   **[Stream Tools Example](./examples/stream-tools/)** - Advanced streaming with tool usage
 -   **[Tools Example](./examples/tools/)** - Function calling and tool usage
+-   **[Vision Example](./examples/vision/)** - Multimodal messages with image content parts
 
-Each example includes its own README with specific instructions and explanations.
+Most examples include their own README with specific instructions and explanations; the rest are documented inline in `main.go`.
 
 ## Supported Providers
 
@@ -821,6 +824,10 @@ The SDK supports the following LLM providers:
 -   Mistral AI (sdk.Mistral)
 -   MiniMax (sdk.Minimax)
 -   Moonshot (sdk.Moonshot)
+-   ElevenLabs (sdk.Elevenlabs)
+-   llama.cpp (sdk.Llamacpp)
+-   NVIDIA (sdk.Nvidia)
+-   Z.ai (sdk.Zai)
 
 ## Documentation
 
