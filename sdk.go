@@ -739,12 +739,10 @@ func (c *clientImpl) MCPJSONRPC(ctx context.Context, request MCPJSONRPCRequest) 
 		return nil, err
 	}
 
-	// A notification is acknowledged with 202 and no body.
 	if resp.StatusCode() == http.StatusAccepted {
 		return nil, nil
 	}
 
-	// JSON-RPC errors come back as an envelope, including on 400 and 404.
 	var result MCPJSONRPCResponse
 	if jsonErr := json.Unmarshal(resp.Body(), &result); jsonErr == nil && result.Jsonrpc != "" {
 		return &result, nil
