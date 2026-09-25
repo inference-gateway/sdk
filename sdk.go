@@ -31,7 +31,6 @@ type Client interface {
 	WithMiddlewareOptions(options *MiddlewareOptions) Client
 	ListModels(ctx context.Context, include ...ListModelsParamsInclude) (*ListModelsResponse, error)
 	ListProviderModels(ctx context.Context, provider Provider, include ...ListModelsParamsInclude) (*ListModelsResponse, error)
-	ListTools(ctx context.Context) (*ListToolsResponse, error)
 	MCPJSONRPC(ctx context.Context, request MCPJSONRPCRequest) (*MCPJSONRPCResponse, error)
 	GetMCPProtectedResourceMetadata(ctx context.Context) (*OAuthProtectedResourceMetadata, error)
 	GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error)
@@ -610,53 +609,6 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider, 
 	}
 
 	var result ListModelsResponse
-	if err := decode(resp, &result); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
-// ListTools returns all available MCP tools.
-// Only accessible when EXPOSE_MCP is enabled on the server.
-//
-// Example:
-//
-//	client := sdk.NewClient(&sdk.ClientOptions{
-//		BaseURL: "http://localhost:8080/v1",
-//		APIKey: "your-api-key",
-//	})
-//	ctx := context.Background()
-//	tools, err := client.ListTools(ctx)
-//	if err != nil {
-//	    log.Fatalf("Error listing tools: %v", err)
-//	}
-//	fmt.Printf("Available tools: %+v\n", tools.Data)
-func (c *clientImpl) ListTools(ctx context.Context) (*ListToolsResponse, error) {
-	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
-		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/mcp/tools", c.baseURL), nil, nil, "", false)
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errorResp Error
-		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-		}
-
-		errMsg := fmt.Sprintf("failed to list MCP tools, status code: %d", resp.StatusCode())
-
-		if len(resp.Body()) > 0 {
-			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
-		}
-
-		return nil, fmt.Errorf("%s", errMsg)
-	}
-
-	var result ListToolsResponse
 	if err := decode(resp, &result); err != nil {
 		return nil, err
 	}

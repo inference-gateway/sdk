@@ -26,7 +26,7 @@ Connect to multiple LLM providers through a unified interface • Stream respons
     - [Retry Mechanism](#retry-mechanism)
     - [Middleware Options](#middleware-options)
     - [Listing Models](#listing-models)
-    - [Listing MCP Tools](#listing-mcp-tools)
+    - [MCP JSON-RPC Endpoint](#mcp-json-rpc-endpoint)
     - [Generating Content](#generating-content)
     - [Vision Support](#vision-support)
     - [Using ReasoningFormat](#using-reasoningformat)
@@ -316,33 +316,6 @@ for _, model := range withCtx.Data {
     }
 }
 ```
-
-### Listing MCP Tools
-
-To list available MCP (Model Context Protocol) tools, use the `ListTools` method. This functionality is only available when `EXPOSE_MCP=true` is set on the Inference Gateway server:
-
-```go
-client := sdk.NewClient(&sdk.ClientOptions{
-    BaseURL: "http://localhost:8080/v1",
-    APIKey:  "your-api-key", // Required for MCP tools access
-})
-
-ctx := context.Background()
-tools, err := client.ListTools(ctx)
-if err != nil {
-    log.Fatalf("Error listing tools: %v", err)
-}
-
-fmt.Printf("Found %d MCP tools:\n", len(tools.Data))
-for _, tool := range tools.Data {
-    fmt.Printf("- %s: %s (Server: %s)\n", tool.Name, tool.Description, tool.Server)
-    if tool.InputSchema != nil {
-        fmt.Printf("  Input Schema: %+v\n", *tool.InputSchema)
-    }
-}
-```
-
-> **Note:** The MCP tools endpoint requires authentication and is only accessible when the server has `MCP_ENABLED=true` and `MCP_EXPOSE=true` configured. If the endpoint is not exposed, you'll receive a 403 error with the message "MCP endpoint is not exposed. Set MCP_EXPOSE=true to enable."
 
 ### MCP JSON-RPC Endpoint
 
@@ -815,7 +788,7 @@ if err != nil {
 For more detailed examples and use cases, check out the [examples directory](./examples/). The examples include:
 
 -   **[Generation Example](./examples/generation/)** - Basic content generation examples
--   **[MCP List Tools Example](./examples/mcp-list-tools/)** - How to list available MCP tools
+-   **[MCP List Tools Example](./examples/mcp-list-tools/)** - How to list available MCP tools over the MCP JSON-RPC endpoint
 -   **[Messages Example](./examples/messages/)** - Anthropic-compatible Messages API (sync + streaming)
 -   **[Middleware Bypass Example](./examples/middleware-bypass/)** - How to bypass middleware layers for direct provider access
 -   **[Models Example](./examples/models/)** - How to list and work with different models
