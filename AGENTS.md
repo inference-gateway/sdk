@@ -46,7 +46,9 @@ Add or update tests for new client behavior, request construction, response pars
 
 The project uses Conventional Commit-style messages, such as `feat:`, `fix:`, `docs:`, `test:`, `chore:`, and scoped variants like `chore(docs):`. Release notes and versions are derived from commit messages, so keep them specific and accurate.
 
-Pull requests should include a concise description, linked issues when relevant, tests for behavior changes, and documentation updates for user-facing changes. Confirm that lint, build, and tests pass before requesting review.
+Pull requests should include a concise description, tests for behavior changes, and documentation updates for user-facing changes. Confirm that lint, build, and tests pass before requesting review.
+
+Documentation must never reference GitHub issues or tickets - do not include issue numbers, issue URLs, or cross-reference lines such as "Closes" followed by an issue. Describe the behavior, configuration, or rationale directly instead.
 
 ## Security & Configuration Tips
 

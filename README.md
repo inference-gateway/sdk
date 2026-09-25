@@ -136,14 +136,16 @@ client := sdk.NewClient(&sdk.ClientOptions{
 ```
 
 The default configuration includes:
-- **Max Retries:** 3 attempts
-- **Timeout:** 30 seconds per request
-- **Backoff Strategy:** Exponential backoff with jitter
-- **Retryable Status Codes:** 429 (Too Many Requests), 500 (Internal Server Error), 502 (Bad Gateway), 503 (Service Unavailable), 504 (Gateway Timeout)
+- **Max Attempts:** 3 in total (the first request plus 2 retries)
+- **Backoff Strategy:** exponential, starting at 2 seconds and multiplied by 2 per retry, capped at 30 seconds
+- **Retryable Status Codes:** 408 (Request Timeout), 429 (Too Many Requests), 500 (Internal Server Error), 502 (Bad Gateway), 503 (Service Unavailable), 504 (Gateway Timeout)
+- **Retryable Network Errors:** timeouts, connection refused, connection reset, DNS errors and unexpected EOF
+
+There is no default request timeout. `ClientOptions.Timeout` is passed to the underlying `http.Client` unchanged, so leaving it unset means requests never time out on their own.
 
 **Custom Retry Configuration:**
 
-You can customize the retry behavior by providing your own retry options:
+You can customize the retry behavior by providing your own retry configuration:
 
 ```go
 client := sdk.NewClient(&sdk.ClientOptions{
@@ -152,27 +154,27 @@ client := sdk.NewClient(&sdk.ClientOptions{
         Enabled:              true,
         MaxAttempts:          5,
         InitialBackoffSec:    1,
-        MaxBackoffSec:        30, 
+        MaxBackoffSec:        30,
         BackoffMultiplier:    2,
         RetryableStatusCodes: []int{408, 429, 500, 502, 503, 504},
     },
 })
 ```
 
-**Exponential Backoff with Jitter:**
+`RetryConfig` also accepts `OnRetry func(attempt int, err error, delay time.Duration)`, called before each retry.
 
-The retry mechanism uses exponential backoff with jitter to prevent thundering herd problems. The delay between retries is calculated as:
+A custom `RetryConfig` replaces the defaults entirely - the defaults are only applied when `RetryConfig` is nil. Set `Enabled: true` and every backoff field yourself, otherwise the zero values apply. For example, `&sdk.RetryConfig{MaxAttempts: 5}` leaves `Enabled` false and the client silently makes a single attempt.
 
-1. Base delay starts at `InitialBackoffSec` and is multiplied by `BackoffMultiplier` with each retry
-2. Capped at `MaxBackoffSec` to prevent excessive waiting
-3. Random jitter (±25%) is added to spread out retry attempts
+**Exponential Backoff:**
 
-Example delay sequence (with 1s InitialBackoffSec, 30s MaxBackoffSec):
-- 1st retry: ~1s (0.75s - 1.25s with jitter)
-- 2nd retry: ~2s (1.5s - 2.5s with jitter)  
-- 3rd retry: ~4s (3s - 5s with jitter)
-- 4th retry: ~8s (6s - 10s with jitter)
-- 5th retry: ~16s (12s - 20s with jitter)
+The delay before retry `n` is `InitialBackoffSec * BackoffMultiplier^(n-1)` seconds, capped at `MaxBackoffSec`. There is no jitter.
+
+Example delay sequence (with the defaults: 2s InitialBackoffSec, multiplier 2, 30s MaxBackoffSec):
+- 1st retry: 2s
+- 2nd retry: 4s
+- 3rd retry: 8s
+- 4th retry: 16s
+- 5th retry: 30s (capped)
 
 **Disabling Retries:**
 
@@ -187,7 +189,7 @@ client := sdk.NewClient(&sdk.ClientOptions{
 })
 ```
 
-Setting `MaxAttempts` to 0 or a negative value has the same effect: the request is sent exactly once.
+This is the only supported way to turn retries off - `executeWithRetry` sends exactly one request when `Enabled` is false. Do not use `MaxAttempts: 0` together with `Enabled: true`.
 
 **Rate Limiting (429 Status):**
 
