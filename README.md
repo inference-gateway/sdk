@@ -154,7 +154,7 @@ client := sdk.NewClient(&sdk.ClientOptions{
         InitialBackoffSec:    1,
         MaxBackoffSec:        30, 
         BackoffMultiplier:    2,
-        RetryableStatusCodes: []int{408, 429, 500, 502, 503, 504}, // HTTP status codes to retry
+        RetryableStatusCodes: []int{408, 429, 500, 502, 503, 504},
     },
 })
 ```
