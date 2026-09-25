@@ -283,100 +283,6 @@ func TestListProviderModels_APIError(t *testing.T) {
 	assert.Contains(t, err.Error(), "API error")
 }
 
-func TestListTools(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/v1/mcp/tools", r.URL.Path, "Path should be /v1/mcp/tools")
-		assert.Equal(t, http.MethodGet, r.Method, "Method should be GET")
-
-		response := ListToolsResponse{
-			Object: "list",
-			Data: []MCPTool{
-				{
-					Name:        "read_file",
-					Description: "Read content from a file",
-					Server:      "http://mcp-filesystem-server:8083/mcp",
-					InputSchema: &map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"file_path": map[string]any{
-								"type":        "string",
-								"description": "Path to the file to read",
-							},
-						},
-						"required": []string{"file_path"},
-					},
-				},
-				{
-					Name:        "write_file",
-					Description: "Write content to a file",
-					Server:      "http://mcp-filesystem-server:8083/mcp",
-					InputSchema: &map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"file_path": map[string]any{
-								"type":        "string",
-								"description": "Path to the file to write",
-							},
-							"content": map[string]any{
-								"type":        "string",
-								"description": "Content to write to the file",
-							},
-						},
-						"required": []string{"file_path", "content"},
-					},
-				},
-			},
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoError(t, err)
-	}))
-	defer server.Close()
-
-	baseURL := server.URL + "/v1"
-	client := NewClient(&ClientOptions{
-		BaseURL: baseURL,
-	})
-
-	ctx := context.Background()
-	tools, err := client.ListTools(ctx)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, tools)
-	assert.Equal(t, "list", tools.Object)
-	assert.Len(t, tools.Data, 2)
-
-	assert.Equal(t, "read_file", tools.Data[0].Name)
-	assert.Equal(t, "Read content from a file", tools.Data[0].Description)
-	assert.Equal(t, "http://mcp-filesystem-server:8083/mcp", tools.Data[0].Server)
-	assert.NotNil(t, tools.Data[0].InputSchema)
-}
-
-func TestListTools_APIError(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusForbidden)
-		response := map[string]any{
-			"error": "MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable.",
-		}
-		err := json.NewEncoder(w).Encode(response)
-		assert.NoError(t, err)
-	}))
-	defer server.Close()
-
-	baseURL := server.URL + "/v1"
-	client := NewClient(&ClientOptions{
-		BaseURL: baseURL,
-	})
-
-	ctx := context.Background()
-	tools, err := client.ListTools(ctx)
-
-	assert.Error(t, err)
-	assert.Nil(t, tools)
-	assert.Contains(t, err.Error(), "API error")
-}
-
 func TestGenerateContent(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v1/chat/completions", r.URL.Path, "Path should be /v1/chat/completions")
@@ -1187,14 +1093,6 @@ func TestHeadersInAllRequests(t *testing.T) {
 			},
 		},
 		{
-			name:     "ListTools",
-			endpoint: "/v1/mcp/tools",
-			makeCall: func(client Client) error {
-				_, err := client.ListTools(context.Background())
-				return err
-			},
-		},
-		{
 			name:     "HealthCheck",
 			endpoint: "/v1/health",
 			makeCall: func(client Client) error {
@@ -1223,10 +1121,6 @@ func TestHeadersInAllRequests(t *testing.T) {
 				switch r.URL.Path {
 				case "/v1/models":
 					response := ListModelsResponse{Object: "list", Data: []Model{}}
-					err := json.NewEncoder(w).Encode(response)
-					assert.NoError(t, err)
-				case "/v1/mcp/tools":
-					response := ListToolsResponse{Data: []MCPTool{}}
 					err := json.NewEncoder(w).Encode(response)
 					assert.NoError(t, err)
 				case "/v1/health":
@@ -1385,14 +1279,6 @@ func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 			},
 		},
 		{
-			name:     "ListTools",
-			endpoint: "/v1/mcp/tools",
-			makeCall: func(client Client) error {
-				_, err := client.ListTools(context.Background())
-				return err
-			},
-		},
-		{
 			name:     "GenerateContent",
 			endpoint: "/v1/chat/completions",
 			makeCall: func(client Client) error {
@@ -1422,11 +1308,6 @@ func TestMiddlewareOptionsInAllRequests(t *testing.T) {
 				switch r.URL.Path {
 				case "/v1/models":
 					response := ListModelsResponse{Object: "list", Data: []Model{}}
-					w.Header().Set("Content-Type", "application/json")
-					err := json.NewEncoder(w).Encode(response)
-					assert.NoError(t, err)
-				case "/v1/mcp/tools":
-					response := ListToolsResponse{Data: []MCPTool{}}
 					w.Header().Set("Content-Type", "application/json")
 					err := json.NewEncoder(w).Encode(response)
 					assert.NoError(t, err)

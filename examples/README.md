@@ -10,7 +10,7 @@ Shows how to list available models from different providers using the SDK.
 
 ### [List MCP Tools](mcp-list-tools/)
 
-Demonstrates how to list available MCP (Model Context Protocol) tools when the server has `EXPOSE_MCP=true` configured.
+Demonstrates how to list available MCP (Model Context Protocol) tools via the gateway's MCP JSON-RPC endpoint (`tools/list`), when the server has `MCP_ENABLED=true` and `MCP_EXPOSE=true` configured.
 
 ### [Tokens Generation](generation/)
 
