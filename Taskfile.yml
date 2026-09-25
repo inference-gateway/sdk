@@ -29,6 +29,11 @@ tasks:
     cmds:
       - find . -name go.mod -execdir go mod tidy \;
 
+  build-examples:
+    desc: Builds every standalone example module
+    cmds:
+      - find examples -name go.mod -printf '%h\n' | xargs -I{} sh -c 'cd {} && go build -o /dev/null ./...'
+
   test:
     desc: Runs go test
     cmds:
