@@ -32,7 +32,6 @@ tasks:
   build-examples:
     desc: Builds every standalone example module
     cmds:
-      # xargs (unlike find -execdir) exits non-zero when a build fails, so CI catches it
       - find examples -name go.mod -printf '%h\n' | xargs -I{} sh -c 'cd {} && go build -o /dev/null ./...'
 
   test:
