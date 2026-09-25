@@ -30,7 +30,8 @@ type ClientOptions struct {
 type RetryConfig struct {
 	// Enabled controls whether retry logic is enabled
 	Enabled bool
-	// MaxAttempts is the maximum number of retry attempts (including initial request)
+	// MaxAttempts is the maximum number of retry attempts (including initial request).
+	// A value below 1 sends the request exactly once, the same as Enabled: false.
 	MaxAttempts int
 	// InitialBackoffSec is the initial backoff delay in seconds
 	InitialBackoffSec int
