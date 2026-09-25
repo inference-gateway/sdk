@@ -150,10 +150,10 @@ client := sdk.NewClient(&sdk.ClientOptions{
     BaseURL: "http://localhost:8080/v1",
     RetryConfig: &sdk.RetryConfig{
         Enabled:              true,
-        MaxAttempts:          5,   // Total attempts, including the initial request
-        InitialBackoffSec:    1,   // Initial delay between attempts, in seconds
-        MaxBackoffSec:        30,  // Maximum delay between attempts, in seconds
-        BackoffMultiplier:    2,   // Exponential backoff multiplier
+        MaxAttempts:          5,
+        InitialBackoffSec:    1,
+        MaxBackoffSec:        30, 
+        BackoffMultiplier:    2,
         RetryableStatusCodes: []int{408, 429, 500, 502, 503, 504}, // HTTP status codes to retry
     },
 })
