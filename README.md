@@ -148,12 +148,13 @@ You can customize the retry behavior by providing your own retry options:
 ```go
 client := sdk.NewClient(&sdk.ClientOptions{
     BaseURL: "http://localhost:8080/v1",
-    RetryOptions: &sdk.RetryOptions{
-        MaxRetries:    5,                            // Maximum number of retry attempts
-        Timeout:       time.Duration(60) * time.Second, // Timeout per request
-        MinDelay:      time.Duration(1) * time.Second,  // Minimum delay between retries
-        MaxDelay:      time.Duration(30) * time.Second, // Maximum delay between retries
-        RetryableStatusCodes: []int{429, 500, 502, 503, 504}, // HTTP status codes to retry
+    RetryConfig: &sdk.RetryConfig{
+        Enabled:              true,
+        MaxAttempts:          5,   // Total attempts, including the initial request
+        InitialBackoffSec:    1,   // Initial delay between attempts, in seconds
+        MaxBackoffSec:        30,  // Maximum delay between attempts, in seconds
+        BackoffMultiplier:    2,   // Exponential backoff multiplier
+        RetryableStatusCodes: []int{408, 429, 500, 502, 503, 504}, // HTTP status codes to retry
     },
 })
 ```
@@ -162,11 +163,11 @@ client := sdk.NewClient(&sdk.ClientOptions{
 
 The retry mechanism uses exponential backoff with jitter to prevent thundering herd problems. The delay between retries is calculated as:
 
-1. Base delay starts at `MinDelay` and doubles with each retry
-2. Capped at `MaxDelay` to prevent excessive waiting
+1. Base delay starts at `InitialBackoffSec` and is multiplied by `BackoffMultiplier` with each retry
+2. Capped at `MaxBackoffSec` to prevent excessive waiting
 3. Random jitter (±25%) is added to spread out retry attempts
 
-Example delay sequence (with 1s MinDelay, 30s MaxDelay):
+Example delay sequence (with 1s InitialBackoffSec, 30s MaxBackoffSec):
 - 1st retry: ~1s (0.75s - 1.25s with jitter)
 - 2nd retry: ~2s (1.5s - 2.5s with jitter)  
 - 3rd retry: ~4s (3s - 5s with jitter)
@@ -175,16 +176,18 @@ Example delay sequence (with 1s MinDelay, 30s MaxDelay):
 
 **Disabling Retries:**
 
-To disable automatic retries, set `MaxRetries` to 0:
+To disable automatic retries, set `Enabled` to false:
 
 ```go
 client := sdk.NewClient(&sdk.ClientOptions{
     BaseURL: "http://localhost:8080/v1",
-    RetryOptions: &sdk.RetryOptions{
-        MaxRetries: 0, // Disables retries
+    RetryConfig: &sdk.RetryConfig{
+        Enabled: false, // Disables retries
     },
 })
 ```
+
+Setting `MaxAttempts` to 0 or a negative value has the same effect: the request is sent exactly once.
 
 **Rate Limiting (429 Status):**
 

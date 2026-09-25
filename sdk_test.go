@@ -2562,3 +2562,31 @@ func TestCreateImageEdit(t *testing.T) {
 	require.Len(t, response.Data, 1)
 	assert.Equal(t, "https://example.com/edited.png", *response.Data[0].URL)
 }
+
+func TestNonPositiveMaxAttemptsSendsSingleRequest(t *testing.T) {
+	for _, maxAttempts := range []int{0, -1} {
+		t.Run(fmt.Sprintf("MaxAttempts=%d", maxAttempts), func(t *testing.T) {
+			requests := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				requests++
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"object":"list","data":[]}`))
+			}))
+			defer server.Close()
+
+			client := NewClient(&ClientOptions{
+				BaseURL: server.URL + "/v1",
+				RetryConfig: &RetryConfig{
+					Enabled:     true,
+					MaxAttempts: maxAttempts,
+				},
+			})
+
+			response, err := client.ListModels(context.Background())
+
+			assert.NoError(t, err)
+			require.NotNil(t, response)
+			assert.Equal(t, 1, requests)
+		})
+	}
+}

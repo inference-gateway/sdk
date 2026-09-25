@@ -307,7 +307,7 @@ func parseRetryAfter(retryAfter string) (time.Duration, bool) {
 
 // executeWithRetry executes an HTTP request with retry logic
 func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*response, error)) (*response, error) {
-	if !c.retryConfig.Enabled {
+	if !c.retryConfig.Enabled || c.retryConfig.MaxAttempts < 1 {
 		return request()
 	}
 
