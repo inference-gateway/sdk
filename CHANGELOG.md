@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.40.1](https://github.com/inference-gateway/sdk/compare/v1.40.0...v1.40.1) (2026-09-25)
+
+### ♻️ Improvements
+
+* sync schemas v0.34.2 and remove ListTools ([#196](https://github.com/inference-gateway/sdk/issues/196)) ([d16f986](https://github.com/inference-gateway/sdk/commit/d16f986e85d153fa14ff4f21be990a2a9c3784b5))
+
 ## [1.40.0](https://github.com/inference-gateway/sdk/compare/v1.39.1...v1.40.0) (2026-09-25)
 
 ### ✨ Features
