@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.40.0](https://github.com/inference-gateway/sdk/compare/v1.39.1...v1.40.0) (2026-09-25)
+
+### ✨ Features
+
+* add MCP JSON-RPC client surface for schemas v0.34.0 ([#195](https://github.com/inference-gateway/sdk/issues/195)) ([bde8861](https://github.com/inference-gateway/sdk/commit/bde8861d534cf839818c399e8e6573816ec70a00))
+
+### 👷 CI
+
+* **claude:** centralize claude.yml via reusable workflow ([#194](https://github.com/inference-gateway/sdk/issues/194)) ([203aef5](https://github.com/inference-gateway/sdk/commit/203aef52967bd4cd4be5352af87d8e39f68ce346))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump infer CLI v0.192.0 -> v0.205.3 ([#193](https://github.com/inference-gateway/sdk/issues/193)) ([628add0](https://github.com/inference-gateway/sdk/commit/628add050c3d5fbf22bf6e4866b8ee5913123751))
+
 ## [1.39.1](https://github.com/inference-gateway/sdk/compare/v1.39.0...v1.39.1) (2026-09-23)
 
 ### ♻️ Improvements
