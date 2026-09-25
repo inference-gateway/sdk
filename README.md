@@ -214,7 +214,6 @@ package main
 
 import (
     "context"
-    "fmt"
     "log"
 
     sdk "github.com/inference-gateway/sdk"
@@ -232,19 +231,18 @@ func main() {
     }
 
     // 1. Skip MCP middleware only
-    response1, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
+    if _, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
         SkipMCP: true,
-    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages); err != nil {
+        log.Fatalf("Error generating content: %v", err)
+    }
 
     // 2. Direct provider access (bypasses all middleware)
-    response3, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
+    if _, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
         DirectProvider: true,
-    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
-
-    // 3. Skip MCP middleware
-    response4, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
-        SkipMCP: true,
-    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+    }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages); err != nil {
+        log.Fatalf("Error generating content: %v", err)
+    }
 }
 ```
 
@@ -306,13 +304,13 @@ fmt.Printf("Provider: %s\n", *groqResp.Provider)
 fmt.Printf("Available Groq models: %+v\n", groqResp.Data)
 
 // Request additional per-model metadata (?include=context_window)
-withCtx, err := client.ListModels(ctx, sdk.ContextWindow)
+withCtx, err := client.ListModels(ctx, sdk.ListModelsParamsIncludeContextWindow)
 if err != nil {
     log.Fatalf("Error listing models: %v", err)
 }
 for _, model := range withCtx.Data {
     if model.ContextWindow != nil {
-        fmt.Printf("%s context window: %d tokens\n", model.ID, *model.ContextWindow)
+        fmt.Printf("%s context window: %d tokens\n", model.ID, model.ContextWindow.Tokens)
     }
 }
 ```
@@ -406,17 +404,19 @@ if err != nil {
     return
 }
 
-var chatCompletion CreateChatCompletionResponse
-if err := json.Unmarshal(response.RawResponse, &chatCompletion); err != nil {
-    log.Printf("Error unmarshaling response: %v", err)
+// GenerateContent already returns a decoded *sdk.CreateChatCompletionResponse
+message := response.Choices[0].Message
+
+content, err := message.Content.AsMessageContent0()
+if err != nil {
+    log.Printf("Error reading content: %v", err)
     return
 }
-
-fmt.Printf("Generated content: %s\n", chatCompletion.Choices[0].Message.Content)
+fmt.Printf("Generated content: %s\n", content)
 
 // If reasoning was requested and the model supports it
-if chatCompletion.Choices[0].Message.Reasoning != nil {
-    fmt.Printf("Reasoning: %s\n", *chatCompletion.Choices[0].Message.Reasoning)
+if message.Reasoning != nil {
+    fmt.Printf("Reasoning: %s\n", *message.Reasoning)
 }
 ```
 
@@ -457,7 +457,7 @@ contentParts = append(contentParts, textPart)
 // Add image part (auto detail level by default)
 imagePart, err := sdk.NewImageContentPart(
     "https://example.com/image.jpg",
-    nil, // detail level: nil for auto, or &sdk.High, &sdk.Low
+    nil, // detail level: nil for auto, or a *sdk.ImageURLDetail
 )
 if err != nil {
     log.Fatal(err)
@@ -482,7 +482,7 @@ response, err := client.GenerateContent(
 
 ```go
 // Use high detail level for better image analysis
-highDetail := sdk.High
+highDetail := sdk.ImageURLDetailHigh
 imagePart, err := sdk.NewImageContentPart(
     "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
     &highDetail,
@@ -512,10 +512,11 @@ contentParts = append(contentParts, image2)
 visionMessage, _ := sdk.NewImageMessage(sdk.User, contentParts)
 ```
 
-**Image Detail Levels:**
-- `nil` or `&sdk.Auto`: Automatic detail level (default)
-- `&sdk.Low`: Lower resolution, faster and cheaper
-- `&sdk.High`: Higher resolution, better quality but more expensive
+**Image Detail Levels:** pass a `*sdk.ImageURLDetail` (the constants are not addressable, so assign one to a variable first, as above)
+
+- `nil` or `sdk.ImageURLDetailAuto`: Automatic detail level (default)
+- `sdk.ImageURLDetailLow`: Lower resolution, faster and cheaper
+- `sdk.ImageURLDetailHigh`: Higher resolution, better quality but more expensive
 
 For a complete example, see [examples/vision/main.go](examples/vision/main.go).
 
@@ -560,7 +561,12 @@ if err != nil {
     log.Fatalf("Error generating content: %v", err)
 }
 
-fmt.Printf("Content: %s\n", response.Choices[0].Message.Content)
+content, err := response.Choices[0].Message.Content.AsMessageContent0()
+if err != nil {
+    log.Fatalf("Error reading content: %v", err)
+}
+
+fmt.Printf("Content: %s\n", content)
 if response.Choices[0].Message.Reasoning != nil {
     fmt.Printf("Reasoning: %s\n", *response.Choices[0].Message.Reasoning)
 }
@@ -596,7 +602,18 @@ if err != nil {
 
 // Read events from the stream / channel
 for event := range events {
-    if event.Event != nil {
+    if event.Event == nil {
+        // A read error on the stream: Data holds {"error": "..."}
+        if event.Data != nil {
+            var errResp struct {
+                Error string `json:"error"`
+            }
+            if err := json.Unmarshal(*event.Data, &errResp); err != nil {
+                log.Printf("Error parsing error: %v", err)
+                continue
+            }
+            log.Printf("Error: %s", errResp.Error)
+        }
         continue
     }
 
@@ -619,7 +636,7 @@ for event := range events {
                 if choice.Delta.ReasoningContent != nil && *choice.Delta.ReasoningContent != "" {
                     fmt.Printf("💭 Reasoning: %s\n", *choice.Delta.ReasoningContent)
                 }
-                
+
                 if choice.Delta.Content != "" {
                     // Just print the content as it comes in
                     fmt.Print(choice.Delta.Content)
@@ -630,19 +647,6 @@ for event := range events {
     case sdk.StreamEnd:
         // Stream has ended
         fmt.Println("\nStream ended")
-
-    case sdk.MessageError:
-        // Handle error events
-        if event.Data != nil {
-            var errResp struct {
-                Error string `json:"error"`
-            }
-            if err := json.Unmarshal(*event.Data, &errResp); err != nil {
-                log.Printf("Error parsing error: %v", err)
-                continue
-            }
-            log.Printf("Error: %s", errResp.Error)
-        }
     }
 }
 ```
@@ -741,7 +745,7 @@ tools := []sdk.ChatCompletionTool{
                 },
                 "required": []string{"location"},
             },
-        }
+        },
     },
     {
         Type:     sdk.Function,
@@ -759,8 +763,8 @@ tools := []sdk.ChatCompletionTool{
                 },
                 "required": []string{"location"},
             },
-        }
-    }
+        },
+    },
 }
 
 // Provide the tool to the client

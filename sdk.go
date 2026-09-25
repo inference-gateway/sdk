@@ -833,8 +833,21 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //	}
 //
 //	for event := range events {
-//		switch event.Event {
-//		case sdk.StreamEventContentDelta:
+//		// A nil Event is a read error; Data holds {"error": "..."}
+//		if event.Event == nil {
+//			var errResp struct {
+//				Error string `json:"error"`
+//			}
+//			if err := json.Unmarshal(*event.Data, &errResp); err != nil {
+//				log.Printf("Error parsing error: %v", err)
+//				continue
+//			}
+//			log.Printf("Error: %s", errResp.Error)
+//			continue
+//		}
+//
+//		switch *event.Event {
+//		case sdk.ContentDelta:
 //			var streamResponse CreateChatCompletionStreamResponse
 //			if err := json.Unmarshal(*event.Data, &streamResponse); err != nil {
 //				log.Printf("Error parsing stream response: %v", err)
@@ -846,15 +859,8 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //					log.Printf("Content: %s", choice.Delta.Content)
 //				}
 //			}
-//		case sdk.StreamEventMessageError:
-//			var errResp struct {
-//				Error string `json:"error"`
-//			}
-//			if err := json.Unmarshal(event.Data, &errResp); err != nil {
-//				log.Printf("Error parsing error: %v", err)
-//				continue
-//			}
-//			log.Printf("Error: %s", errResp.Error)
+//		case sdk.StreamEnd:
+//			log.Println("Stream ended")
 //		}
 //	}
 func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provider, model string, messages []Message) (<-chan SSEvent, error) {
