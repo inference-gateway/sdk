@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.40.2](https://github.com/inference-gateway/sdk/compare/v1.40.1...v1.40.2) (2026-09-26)
+
+### 🐛 Bug Fixes
+
+* tidy stale example go.mod files after resty removal ([#208](https://github.com/inference-gateway/sdk/issues/208)) ([c5cec60](https://github.com/inference-gateway/sdk/commit/c5cec60963dcbaf55e0f0e05e100566169d37044))
+* treat non-positive MaxAttempts as a single request ([#204](https://github.com/inference-gateway/sdk/issues/204)) ([ac57108](https://github.com/inference-gateway/sdk/commit/ac57108ad47d1a323ce649ec41ea9cf76bd198b7))
+
+### 👷 CI
+
+* **examples:** build every standalone example module in CI ([#210](https://github.com/inference-gateway/sdk/issues/210)) ([020b979](https://github.com/inference-gateway/sdk/commit/020b97933b26af97295005d9b3acf081add796f7))
+
+### 📚 Documentation
+
+* correct retry mechanism section in readme ([#206](https://github.com/inference-gateway/sdk/issues/206)) ([137f8ce](https://github.com/inference-gateway/sdk/commit/137f8cecc86c1bf19c021d01e7b076bef41cdf22))
+* fix readme samples to compile against current sdk ([#205](https://github.com/inference-gateway/sdk/issues/205)) ([be54933](https://github.com/inference-gateway/sdk/commit/be5493326c576fa5e4eadb02809a4f7a4dc9cd73))
+* sync readme providers and examples lists ([#207](https://github.com/inference-gateway/sdk/issues/207)) ([1b97075](https://github.com/inference-gateway/sdk/commit/1b97075e9d4ecbfec662e6f3c057830c43b70ad1))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.278 -> 2.1.280 ([#197](https://github.com/inference-gateway/sdk/issues/197)) ([35b9455](https://github.com/inference-gateway/sdk/commit/35b9455c7106844a04d4cf96a68607ae9c931fd2))
+* **deps:** bump infer CLI v0.205.3 -> v0.208.0 ([#198](https://github.com/inference-gateway/sdk/issues/198)) ([1557a8a](https://github.com/inference-gateway/sdk/commit/1557a8a6873ff5b645e77518229c0970e9262041))
+
 ## [1.40.1](https://github.com/inference-gateway/sdk/compare/v1.40.0...v1.40.1) (2026-09-25)
 
 ### ♻️ Improvements
