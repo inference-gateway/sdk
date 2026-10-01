@@ -2112,6 +2112,37 @@ func TestRetryAfterHeaderWithHTTPDate(t *testing.T) {
 		"Retry delay should be approximately 3 seconds based on HTTP-date header")
 }
 
+func TestRateLimitErrorWhenRetryAfterExceedsMaxBackoff(t *testing.T) {
+	callCount := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.Header().Set("Retry-After", "7200")
+		w.WriteHeader(http.StatusTooManyRequests)
+		assert.NoError(t, json.NewEncoder(w).Encode(Error{Error: new("you have reached your session usage limit")}))
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{
+		BaseURL: server.URL + "/v1",
+		RetryConfig: &RetryConfig{
+			Enabled:           true,
+			MaxAttempts:       3,
+			InitialBackoffSec: 1,
+			MaxBackoffSec:     30,
+			BackoffMultiplier: 2,
+		},
+	})
+
+	_, err := client.GenerateContentStream(context.Background(), Openai, "gpt-4", nil)
+
+	var rateLimit *RateLimitError
+	require.ErrorAs(t, err, &rateLimit)
+	assert.Equal(t, 1, callCount, "a quota wall must not be retried")
+	assert.Equal(t, http.StatusTooManyRequests, rateLimit.StatusCode)
+	assert.Equal(t, 2*time.Hour, rateLimit.RetryAfter)
+	assert.Equal(t, "you have reached your session usage limit", rateLimit.Message)
+}
+
 func TestRetryConfigWithNilCallback(t *testing.T) {
 	retryConfig := &RetryConfig{
 		Enabled:           true,

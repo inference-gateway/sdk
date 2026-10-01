@@ -48,6 +48,47 @@ type Client interface {
 	HealthCheck(ctx context.Context) error
 }
 
+// RateLimitError is returned for a 429 whose Retry-After exceeds the retry
+// policy's maximum backoff: a quota wall rather than a transient spike, so
+// retrying is pointless and the caller gets the upstream message and the wait.
+type RateLimitError struct {
+	StatusCode int
+	Message    string
+	RetryAfter time.Duration
+}
+
+func (e *RateLimitError) Error() string {
+	return fmt.Sprintf("rate limited: %s (retry after %s)", e.Message, e.RetryAfter.Round(time.Second))
+}
+
+// quotaWall reports whether resp is a 429 that asks the client to wait longer
+// than the retry policy would ever back off.
+func quotaWall(resp *response, config *RetryConfig) (time.Duration, bool) {
+	if resp == nil || resp.StatusCode() != http.StatusTooManyRequests || config.MaxBackoffSec <= 0 {
+		return 0, false
+	}
+	delay, ok := parseRetryAfter(resp.Header().Get("Retry-After"))
+	if !ok || delay <= time.Duration(config.MaxBackoffSec)*time.Second {
+		return 0, false
+	}
+	return delay, true
+}
+
+// readErrorMessage drains the error response body and returns the message of
+// an {"error": ...} envelope, or the raw body when it is not one.
+func readErrorMessage(resp *response) string {
+	body := resp.Body()
+	if raw := resp.RawBody(); raw != nil {
+		body, _ = io.ReadAll(raw)
+		closeRawBody(resp)
+	}
+	var errorResp Error
+	if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error != nil {
+		return *errorResp.Error
+	}
+	return strings.TrimSpace(string(body))
+}
+
 // isRetryableError determines if an error should trigger a retry
 func isRetryableError(err error) bool {
 	if err == nil {
@@ -348,8 +389,10 @@ func (c *clientImpl) executeWithRetry(ctx context.Context, request func() (*resp
 			if !resp.IsError() || !isRetryableStatusCode(resp.StatusCode(), c.retryConfig) {
 				return resp, nil
 			}
-			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode())
-			closeRawBody(resp)
+			if wait, ok := quotaWall(resp, c.retryConfig); ok {
+				return nil, &RateLimitError{StatusCode: resp.StatusCode(), Message: readErrorMessage(resp), RetryAfter: wait}
+			}
+			lastErr = fmt.Errorf("HTTP %d: %s", resp.StatusCode(), readErrorMessage(resp))
 		}
 
 		if !isRetryableError(lastErr) && (resp == nil || !isRetryableStatusCode(resp.StatusCode(), c.retryConfig)) {
