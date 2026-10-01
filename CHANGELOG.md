@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.41.0](https://github.com/inference-gateway/sdk/compare/v1.40.2...v1.41.0) (2026-10-01)
+
+### ✨ Features
+
+* return RateLimitError instead of retrying a 429 with a long Retry-After ([#216](https://github.com/inference-gateway/sdk/issues/216)) ([5379ee4](https://github.com/inference-gateway/sdk/commit/5379ee4e6c1a4b23681a0013077eb4fe3cbb4845))
+* sync generated types with schemas v0.34.4 ([#214](https://github.com/inference-gateway/sdk/issues/214)) ([cb14e6b](https://github.com/inference-gateway/sdk/commit/cb14e6be12d6dfaf80a0f4553bbc1472f6d9783c))
+
+### 📚 Documentation
+
+* **agents:** add code readability guidelines ([#211](https://github.com/inference-gateway/sdk/issues/211)) ([4b7bb57](https://github.com/inference-gateway/sdk/commit/4b7bb57a736c62e237fa11e84c7f3235693c9acc))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.280 -> 2.1.283 ([#212](https://github.com/inference-gateway/sdk/issues/212)) ([df89bf3](https://github.com/inference-gateway/sdk/commit/df89bf3ad58cc1bf73b8604f1969f5f16f1f8597))
+* **deps:** bump infer CLI v0.208.0 -> v0.218.0 ([#213](https://github.com/inference-gateway/sdk/issues/213)) ([8e2e1ae](https://github.com/inference-gateway/sdk/commit/8e2e1ae5458c4e525e67b09f49fe653289447d67))
+* **deps:** bump infer CLI v0.218.0 -> v0.221.1 ([#215](https://github.com/inference-gateway/sdk/issues/215)) ([d99df62](https://github.com/inference-gateway/sdk/commit/d99df62bd259dbe6a140f25d3e3e64153f706740))
+
 ## [1.40.2](https://github.com/inference-gateway/sdk/compare/v1.40.1...v1.40.2) (2026-09-26)
 
 ### 🐛 Bug Fixes
