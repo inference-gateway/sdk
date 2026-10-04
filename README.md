@@ -189,14 +189,28 @@ client := sdk.NewClient(&sdk.ClientOptions{
 })
 ```
 
-This is the only supported way to turn retries off - `executeWithRetry` sends exactly one request when `Enabled` is false. Do not use `MaxAttempts: 0` together with `Enabled: true`.
+`executeWithRetry` sends exactly one request when `Enabled` is false or when `MaxAttempts` is below 1, so `MaxAttempts: 0` also turns retries off.
 
 **Rate Limiting (429 Status):**
 
 When the server returns a 429 (Too Many Requests) status code, the SDK will:
 1. Check for a `Retry-After` header
-2. If present, wait for the specified duration before retrying
+2. If present and at most `MaxBackoffSec`, wait for that duration before retrying. If it is longer than `MaxBackoffSec` (and `MaxBackoffSec` is greater than 0), the SDK treats it as a quota wall: it stops without retrying and returns a `*sdk.RateLimitError`
 3. If not present, use the standard exponential backoff strategy
+
+**Rate Limit Errors:**
+
+`sdk.RateLimitError` carries the gateway's status code, its error message (the `{"error": ...}` message or the raw body) and the requested wait, so callers can schedule their own retry:
+
+```go
+response, err := client.GenerateContent(ctx, provider, model, messages)
+
+var rateLimitErr *sdk.RateLimitError
+if errors.As(err, &rateLimitErr) {
+    log.Printf("rate limited by %s, retry in %s", provider, rateLimitErr.RetryAfter)
+    return
+}
+```
 
 **Context and Cancellation:**
 
