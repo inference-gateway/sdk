@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.42.0](https://github.com/inference-gateway/sdk/compare/v1.41.0...v1.42.0) (2026-10-04)
+
+### ✨ Features
+
+* sync generated types with schemas v1.2.0 ([#221](https://github.com/inference-gateway/sdk/issues/221)) ([a5cfc41](https://github.com/inference-gateway/sdk/commit/a5cfc41286c50691a4ec536d5b508913e8307d4b))
+
+### ♻️ Improvements
+
+* bump go toolchain to 1.26.8 ([#225](https://github.com/inference-gateway/sdk/issues/225)) ([0d11ca4](https://github.com/inference-gateway/sdk/commit/0d11ca4f9049954c0506ba19cb3effb4f6762502))
+
+### 📚 Documentation
+
+* **agents:** add code readability guidelines ([#220](https://github.com/inference-gateway/sdk/issues/220)) ([f733f75](https://github.com/inference-gateway/sdk/commit/f733f7577cc31720df35bfa8116022e01fce576f))
+* align retry section with executeWithRetry ([#222](https://github.com/inference-gateway/sdk/issues/222)) ([03d43aa](https://github.com/inference-gateway/sdk/commit/03d43aac0c8e7fb6f94e99aaca41301c6e93f752))
+* fix client snippet and add godoc install step ([#223](https://github.com/inference-gateway/sdk/issues/223)) ([10dffd6](https://github.com/inference-gateway/sdk/commit/10dffd6989257df830be2a25d26c1043edcc5ab6))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.283 -> 2.1.285 ([#217](https://github.com/inference-gateway/sdk/issues/217)) ([137c210](https://github.com/inference-gateway/sdk/commit/137c210e8f0c5d89aea1162996d3444ed9912b71))
+
 ## [1.41.0](https://github.com/inference-gateway/sdk/compare/v1.40.2...v1.41.0) (2026-10-01)
 
 ### ✨ Features
