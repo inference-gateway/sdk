@@ -1,6 +1,6 @@
 module github.com/inference-gateway/sdk
 
-go 1.26.7
+go 1.26.8
 
 require (
 	github.com/oapi-codegen/runtime v1.7.0
