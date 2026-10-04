@@ -1,6 +1,6 @@
 module github.com/inference-gateway/sdk/examples/mcp-list-tools
 
-go 1.26.7
+go 1.26.8
 
 replace github.com/inference-gateway/sdk => ../..
 
