@@ -58,7 +58,7 @@ To create a client, use the `NewClient` function:
 package main
 
 import (
-    "fmt"
+    "context"
     "log"
 
     sdk "github.com/inference-gateway/sdk"
@@ -68,6 +68,10 @@ func main() {
     client := sdk.NewClient(&sdk.ClientOptions{
         BaseURL: "http://localhost:8080/v1",
     })
+
+    if err := client.HealthCheck(context.Background()); err != nil {
+        log.Fatalf("gateway is not healthy: %v", err)
+    }
 }
 ```
 
@@ -847,8 +851,9 @@ The SDK supports the following LLM providers:
 
 ## Documentation
 
-1. Run: `task docs`
-2. Open: `http://localhost:6060/pkg/github.com/inference-gateway/sdk`
+1. Install `godoc` (not part of the Go distribution): `go install golang.org/x/tools/cmd/godoc@latest`
+2. Run: `task docs`
+3. Open: `http://localhost:6060/pkg/github.com/inference-gateway/sdk`
 
 ## Contributing
 
