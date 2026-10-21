@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.43.0](https://github.com/inference-gateway/sdk/compare/v1.42.0...v1.43.0) (2026-10-21)
+
+### ✨ Features
+
+* add deprecated include filter to model listing (sync schemas v1.4.1) ([#230](https://github.com/inference-gateway/sdk/issues/230)) ([a471ea7](https://github.com/inference-gateway/sdk/commit/a471ea73819e3008e31bac40b0bdaa64c158bb76))
+* add WebWright provider with schemas v1.5.0 ([156eb1c](https://github.com/inference-gateway/sdk/commit/156eb1cfe99a05823f8773483ce2e75ffedb30b4))
+* sync generated types with schemas v1.2.2 ([#228](https://github.com/inference-gateway/sdk/issues/228)) ([936e274](https://github.com/inference-gateway/sdk/commit/936e274480a85820e1d0a5afb58e7dd1d999a9ae))
+
+### 👷 CI
+
+* **deps:** bump actions/create-github-app-token ([#233](https://github.com/inference-gateway/sdk/issues/233)) ([f262c70](https://github.com/inference-gateway/sdk/commit/f262c709c656cb9bf7af5d0b5ef5368601732ba1))
+* **deps:** bump actions/setup-node ([#229](https://github.com/inference-gateway/sdk/issues/229)) ([c45040f](https://github.com/inference-gateway/sdk/commit/c45040f52a5405ca4886ae70b9b3fd22b56970ab))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.285 -> 2.1.289 ([#226](https://github.com/inference-gateway/sdk/issues/226)) ([89e64ed](https://github.com/inference-gateway/sdk/commit/89e64eda8d962f496d88bbf00a9d9b293a40e2f5))
+* **deps:** bump claude-code 2.1.289 -> 2.1.296 ([#231](https://github.com/inference-gateway/sdk/issues/231)) ([eb0687e](https://github.com/inference-gateway/sdk/commit/eb0687edb520cd9d273272f5b93b73aacb31e0fd))
+* **deps:** bump infer CLI v0.221.1 -> v0.226.0 ([#227](https://github.com/inference-gateway/sdk/issues/227)) ([61cbe90](https://github.com/inference-gateway/sdk/commit/61cbe908c6b6a25befde1e3e42b4bec509bd5cd6))
+* **deps:** bump infer CLI v0.226.0 -> v0.231.1 ([#232](https://github.com/inference-gateway/sdk/issues/232)) ([50dfb0d](https://github.com/inference-gateway/sdk/commit/50dfb0d14e9372020f7158b607cc3c7babf6a6e2))
+
 ## [1.42.0](https://github.com/inference-gateway/sdk/compare/v1.41.0...v1.42.0) (2026-10-04)
 
 ### ✨ Features
