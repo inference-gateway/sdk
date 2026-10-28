@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.43.1](https://github.com/inference-gateway/sdk/compare/v1.43.0...v1.43.1) (2026-10-28)
+
+### 🐛 Bug Fixes
+
+* **deps:** let dependabot update the example modules with the root go.mod ([#238](https://github.com/inference-gateway/sdk/issues/238)) ([2dd86a7](https://github.com/inference-gateway/sdk/commit/2dd86a71f36c1164f0ffde07853b2b4e18462eef))
+
+### 👷 CI
+
+* **deps:** bump github.com/oapi-codegen/runtime from 1.7.0 to 1.8.0 in the gomod group ([#236](https://github.com/inference-gateway/sdk/issues/236)) ([6d7e63c](https://github.com/inference-gateway/sdk/commit/6d7e63cefc63a97385f74124160c20e5e23d1141))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.296 -> 2.1.308 ([#235](https://github.com/inference-gateway/sdk/issues/235)) ([aad22fc](https://github.com/inference-gateway/sdk/commit/aad22fc8ed356c5d87ff2fa1068b37861f62fb69))
+
 ## [1.43.0](https://github.com/inference-gateway/sdk/compare/v1.42.0...v1.43.0) (2026-10-21)
 
 ### ✨ Features
