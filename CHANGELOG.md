@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.43.2](https://github.com/inference-gateway/sdk/compare/v1.43.1...v1.43.2) (2026-11-01)
+
+### 👷 CI
+
+* **release:** label issues and PRs shipped in an rc with rc ([#239](https://github.com/inference-gateway/sdk/issues/239)) ([9b8c944](https://github.com/inference-gateway/sdk/commit/9b8c944cc23fa795b87530ac9d5874c73e0b6ee0))
+
+### 🔧 Miscellaneous
+
+* sync generated types with schemas v1.6.0 ([#240](https://github.com/inference-gateway/sdk/issues/240)) ([e44c399](https://github.com/inference-gateway/sdk/commit/e44c3992f00620d89c7ee7754b56773b4722e8af))
+
 ## [1.43.1](https://github.com/inference-gateway/sdk/compare/v1.43.0...v1.43.1) (2026-10-28)
 
 ### 🐛 Bug Fixes
