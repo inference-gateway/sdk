@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.44.0](https://github.com/inference-gateway/sdk/compare/v1.43.2...v1.44.0) (2026-11-03)
+
+### ✨ Features
+
+* **client:** add CreateDecision for the OpenAI Decisions API (schemas v1.7.0) ([#241](https://github.com/inference-gateway/sdk/issues/241)) ([c24dd01](https://github.com/inference-gateway/sdk/commit/c24dd01b99aa681ef3b88ef2d3f9aaa8e491287b))
+
 ## [1.43.2](https://github.com/inference-gateway/sdk/compare/v1.43.1...v1.43.2) (2026-11-01)
 
 ### 👷 CI
