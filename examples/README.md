@@ -28,6 +28,10 @@ Demonstrates advanced streaming with tool usage and agent-like interactions.
 
 Shows how to implement function calling and use tools with compatible models.
 
+### [Decisions](decisions/)
+
+Asks structured questions (predicate, choice, score) over shared evidence through the OpenAI Decisions API relay (`POST /v1/decisions`).
+
 ## Running the Examples
 
 First you need to have an Inference Gateway instance running. You can use the [Inference Gateway Docker image](ghcr.io/inference-gateway/inference-gateway) to run a local instance.

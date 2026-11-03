@@ -2517,6 +2517,78 @@ func TestCreateImage(t *testing.T) {
 	assert.Equal(t, int64(67), *response.Usage.TotalTokens)
 }
 
+const (
+	decisionsPath             = "/v1/decisions"
+	decisionsModel            = "openai/gpt-6-luna"
+	decisionsInput            = "Buy now!!!"
+	decisionsQuestionName     = "is_spam"
+	decisionsNotSupportedBody = `{"error":"The Decisions API is not supported by this provider yet."}`
+	decisionsNotSupportedMsg  = "The Decisions API is not supported by this provider yet."
+)
+
+func spamDecisionRequest(t *testing.T) CreateDecisionRequest {
+	t.Helper()
+	var input CreateDecisionRequest_Input
+	require.NoError(t, input.FromCreateDecisionRequestInput0(decisionsInput))
+	return CreateDecisionRequest{
+		Model: decisionsModel,
+		Input: input,
+		Questions: []DecisionQuestion{{
+			Name:         decisionsQuestionName,
+			Type:         Predicate,
+			Instructions: "Is this message spam?",
+		}},
+	}
+}
+
+func TestCreateDecision(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, decisionsPath, r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "openai", r.URL.Query().Get("provider"))
+
+		var requestBody CreateDecisionRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&requestBody))
+		assert.Equal(t, decisionsModel, requestBody.Model)
+		require.Len(t, requestBody.Questions, 1)
+		assert.Equal(t, decisionsQuestionName, requestBody.Questions[0].Name)
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err := w.Write([]byte(`{"answers":[{"name":"is_spam","type":"predicate","answer":true}],"usage":{"input_tokens":12}}`))
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+	decision, err := client.CreateDecision(context.Background(), Openai, spamDecisionRequest(t))
+
+	require.NoError(t, err)
+	require.NotNil(t, decision)
+	require.NotNil(t, decision.Answers)
+	require.Len(t, *decision.Answers, 1)
+	assert.Equal(t, decisionsQuestionName, (*decision.Answers)[0]["name"])
+	assert.Equal(t, true, (*decision.Answers)[0]["answer"])
+	require.NotNil(t, decision.Usage)
+	assert.Equal(t, 12, *decision.Usage.InputTokens)
+}
+
+func TestCreateDecision_ProviderNotSupported(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, decisionsPath, r.URL.Path)
+		w.WriteHeader(http.StatusBadRequest)
+		_, err := w.Write([]byte(decisionsNotSupportedBody))
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+	decision, err := client.CreateDecision(context.Background(), Openai, spamDecisionRequest(t))
+
+	require.Error(t, err)
+	assert.Nil(t, decision)
+	assert.Contains(t, err.Error(), decisionsNotSupportedMsg)
+}
+
 func TestCreateImage_APIError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
