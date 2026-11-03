@@ -38,6 +38,7 @@ type Client interface {
 	CreateMessage(ctx context.Context, provider Provider, request CreateMessagesRequest) (*MessagesResponse, error)
 	CreateMessageStream(ctx context.Context, provider Provider, request CreateMessagesRequest) (<-chan SSEvent, error)
 	CreateImage(ctx context.Context, provider Provider, request CreateImageRequest) (*ImagesResponse, error)
+	CreateDecision(ctx context.Context, provider Provider, request CreateDecisionRequest) (*Decision, error)
 	CreateImageEdit(ctx context.Context, provider Provider, request CreateImageEditMultipartBody) (*ImagesResponse, error)
 	CreateSpeech(ctx context.Context, provider Provider, request CreateSpeechRequest) ([]byte, error)
 	CreateSFX(ctx context.Context, provider Provider, request CreateSFXRequest) ([]byte, error)
@@ -1147,6 +1148,22 @@ func (c *clientImpl) CreateImage(ctx context.Context, provider Provider, request
 	})
 
 	return imagesResult(resp, err)
+}
+
+// CreateDecision asks structured questions over shared evidence via the
+// OpenAI Decisions API relay (`/decisions`). Not every provider implements
+// it; unsupported providers return a 400 error.
+func (c *clientImpl) CreateDecision(ctx context.Context, provider Provider, request CreateDecisionRequest) (*Decision, error) {
+	queryParams := make(map[string]string)
+	if provider != "" {
+		queryParams["provider"] = string(provider)
+	}
+
+	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
+		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/decisions", c.baseURL), queryParams, request, "", false)
+	})
+
+	return jsonResult[Decision](resp, err, "decision")
 }
 
 // CreateImageEdit edits an image using the OpenAI-compatible Images API
