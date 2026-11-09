@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.45.1](https://github.com/inference-gateway/sdk/compare/v1.45.0...v1.45.1) (2026-11-09)
+
+### ♻️ Improvements
+
+* bump go toolchain to 1.27.3 ([#243](https://github.com/inference-gateway/sdk/issues/243)) ([2febbec](https://github.com/inference-gateway/sdk/commit/2febbecb28a43608944d944fd1e9257dba166b2b))
+
 ## [1.45.0](https://github.com/inference-gateway/sdk/compare/v1.44.0...v1.45.0) (2026-11-03)
 
 ### ✨ Features
