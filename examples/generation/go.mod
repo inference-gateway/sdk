@@ -1,6 +1,6 @@
 module github.com/inference-gateway/sdk/examples/generation
 
-go 1.26.8
+go 1.27.3
 
 replace github.com/inference-gateway/sdk => ../..
 

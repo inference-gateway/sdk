@@ -6,7 +6,6 @@
 //	# Image edit - set IMAGE_EDIT_PATH to a PNG/JPEG file:
 //	IMAGE_EDIT_PATH=/path/to/image.png \
 //	  INFERENCE_GATEWAY_URL=http://localhost:8080/v1 go run main.go
-//
 package main
 
 import (

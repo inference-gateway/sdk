@@ -30,7 +30,8 @@ func main() {
 	if err != nil {
 		log.Printf("Error with middleware: %v", err)
 	} else {
-		fmt.Printf("Response: %s\n", response1.Choices[0].Message.Content)
+		text, _ := response1.Choices[0].Message.Content.AsMessageContent0()
+		fmt.Printf("Response: %s\n", text)
 	}
 
 	// Example 2: Bypass MCP middleware
@@ -51,7 +52,8 @@ func main() {
 	if err != nil {
 		log.Printf("Error bypassing MCP: %v", err)
 	} else {
-		fmt.Printf("Response: %s\n", response2.Choices[0].Message.Content)
+		text, _ := response2.Choices[0].Message.Content.AsMessageContent0()
+		fmt.Printf("Response: %s\n", text)
 	}
 
 	// Example 3: Bypass both MCP middleware
@@ -72,7 +74,8 @@ func main() {
 	if err != nil {
 		log.Printf("Error bypassing middleware: %v", err)
 	} else {
-		fmt.Printf("Response: %s\n", response3.Choices[0].Message.Content)
+		text, _ := response3.Choices[0].Message.Content.AsMessageContent0()
+		fmt.Printf("Response: %s\n", text)
 	}
 
 	// Example 4: Direct provider access
@@ -93,7 +96,8 @@ func main() {
 	if err != nil {
 		log.Printf("Error with direct provider: %v", err)
 	} else {
-		fmt.Printf("Response: %s\n", response4.Choices[0].Message.Content)
+		text, _ := response4.Choices[0].Message.Content.AsMessageContent0()
+		fmt.Printf("Response: %s\n", text)
 	}
 
 	// Example 5: Using custom headers directly (alternative approach)
@@ -111,6 +115,7 @@ func main() {
 	if err != nil {
 		log.Printf("Error with custom headers: %v", err)
 	} else {
-		fmt.Printf("Response: %s\n", response5.Choices[0].Message.Content)
+		text, _ := response5.Choices[0].Message.Content.AsMessageContent0()
+		fmt.Printf("Response: %s\n", text)
 	}
 }

@@ -200,7 +200,8 @@ func main() {
 		messageQueue = messageQueue[1:]
 		conversationHistory = append(conversationHistory, nextMessage)
 
-		fmt.Printf("👤 User: %s\n\n", nextMessage.Content)
+		text, _ := nextMessage.Content.AsMessageContent0()
+		fmt.Printf("👤 User: %s\n\n", text)
 
 		// Keep processing until no more tool calls
 		for {
