@@ -34,7 +34,7 @@ go mod download
 
 1. Install:
 
--   [Go](https://go.dev/dl/) 1.26 or newer
+-   [Go](https://go.dev/dl/) 1.27 or newer
 -   [Task](https://taskfile.dev)
 -   [golangci-lint](https://golangci-lint.run)
 -   Git

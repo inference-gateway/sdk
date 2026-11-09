@@ -85,7 +85,8 @@ func main() {
 	if response.Choices[0].Message.Reasoning != nil {
 		fmt.Printf("Reasoning: %s\n", *response.Choices[0].Message.Reasoning)
 	}
-	fmt.Printf("Response: %s\n", response.Choices[0].Message.Content)
+	text, _ := response.Choices[0].Message.Content.AsMessageContent0()
+	fmt.Printf("Response: %s\n", text)
 
 	// Print usage information if available
 	if response.Usage != nil {

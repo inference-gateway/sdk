@@ -163,9 +163,11 @@ func main() {
 		}
 
 		// Print the final response
-		fmt.Printf("Final response: %s\n", finalResponse.Choices[0].Message.Content)
+		text, _ := finalResponse.Choices[0].Message.Content.AsMessageContent0()
+		fmt.Printf("Final response: %s\n", text)
 	} else {
 		// Model responded directly without calling function
-		fmt.Printf("Model response: %s\n", response.Choices[0].Message.Content)
+		text, _ := response.Choices[0].Message.Content.AsMessageContent0()
+		fmt.Printf("Model response: %s\n", text)
 	}
 }
