@@ -1004,7 +1004,8 @@ func readSSEStream(ctx context.Context, rawBody io.ReadCloser, eventChan chan SS
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			if err != io.EOF {
-				errorData := fmt.Appendf(nil, `{"error": "%s"}`, err.Error())
+				message := err.Error()
+				errorData, _ := json.Marshal(Error{Error: &message})
 				send(SSEvent{
 					Event: nil,
 					Data:  &errorData,

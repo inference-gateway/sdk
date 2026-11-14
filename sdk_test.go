@@ -14,6 +14,7 @@ import (
 	"strings"
 	"syscall"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	assert "github.com/stretchr/testify/assert"
@@ -2720,4 +2721,21 @@ func TestNonPositiveMaxAttemptsSendsSingleRequest(t *testing.T) {
 			assert.Equal(t, 1, requests)
 		})
 	}
+}
+
+func TestReadSSEStreamReadErrorIsValidJSON(t *testing.T) {
+	message := `upstream said "no" \ closing`
+	body := io.NopCloser(iotest.ErrReader(errors.New(message)))
+	eventChan := make(chan SSEvent, 1)
+
+	readSSEStream(context.Background(), body, eventChan)
+
+	event, ok := <-eventChan
+	require.True(t, ok, "expected an error event before the channel closes")
+	require.NotNil(t, event.Data)
+
+	var payload Error
+	require.NoError(t, json.Unmarshal(*event.Data, &payload))
+	require.NotNil(t, payload.Error)
+	assert.Equal(t, message, *payload.Error)
 }
