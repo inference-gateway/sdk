@@ -57,7 +57,7 @@ tags:
   - name: Audio
     description: Generate speech audio from text using the OpenAI-compatible Speech API.
   - name: Videos
-    description: Generate videos using the OpenAI-compatible Videos API.
+    description: Generate videos as jobs shaped like the Videos API OpenAI retired.
   - name: MCP
     description: |
       Model Context Protocol surface. The gateway aggregates every server in
@@ -888,6 +888,13 @@ paths:
         Not every provider implements the Images API. Requests routed to a
         provider that does not support it return `400 Bad Request` with an
         explanatory error message; use `/chat/completions` for those providers.
+
+        ElevenLabs has no OpenAI-shaped Images API, so the gateway translates
+        the request into an ElevenLabs image generation and waits for it to
+        finish. `image`, `mask`, `prompt`, `size`, `quality` and
+        `response_format` are honored. A generation yields one image, so `n`
+        above 1 is rejected, and `size` has to be `auto` or one of the aspect
+        ratios the model accepts.
       summary: Create an image edit or extension
       security:
         - bearerAuth: []
@@ -963,17 +970,26 @@ paths:
         - Audio
       description: |
         Generates a non-speech audio clip - a sound effect or ambience - from
-        a text prompt. Gateway extension: OpenAI has no sound-effects
-        endpoint, so this mirrors the shape of `POST /audio/speech` (JSON in,
-        raw audio bytes out) rather than an upstream OpenAI operation. The
-        response is the generated audio as raw binary bytes; the actual
-        `Content-Type` header of the response reflects the requested
-        `response_format` (e.g. `audio/mpeg` for `mp3`).
+        a text prompt, or scores a video with the sound it shows. Gateway
+        extension: OpenAI has no sound-effects endpoint, so this mirrors the
+        shape of `POST /audio/speech` (raw audio bytes out) rather than an
+        upstream OpenAI operation. The response is the generated audio as raw
+        binary bytes; the actual `Content-Type` header of the response
+        reflects the requested `response_format` (e.g. `audio/mpeg` for
+        `mp3`).
 
-        Not every provider implements sound-effect generation. Requests routed
-        to a provider that does not support it return `400 Bad Request` with an
+        A JSON body is text-to-sfx. A `multipart/form-data` body carrying a
+        `video` part is video-to-sfx: the provider watches the clip and
+        generates the sound that fits it, optionally keeping or separating the
+        speech already in the clip. The request stays open until the audio is
+        ready, and a video larger than the gateway's request body limit
+        returns `413`.
+
+        Not every provider implements sound-effect generation, and fewer
+        implement video-to-sfx. Requests routed to a provider that does not
+        support the requested form return `400 Bad Request` with an
         explanatory error message.
-      summary: Generate a sound effect from a text prompt
+      summary: Generate a sound effect from a text prompt or a video
       security:
         - bearerAuth: []
       parameters:
@@ -999,6 +1015,12 @@ paths:
           $ref: '#/components/responses/SFXNotSupported'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: The uploaded video exceeds the gateway's request body limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/InternalError'
   /audio/music:
@@ -1051,8 +1073,9 @@ paths:
       tags:
         - Videos
       description: |
-        Creates a video generation job using the OpenAI-compatible Videos API.
-        Mirrors the OpenAI `POST /v1/videos` request body. Video generation is
+        Creates a video generation job. The request and the `VideoJob` keep the
+        shape of the Videos API OpenAI retired in September 2026, which stays
+        the gateway's contract for every provider. Video generation is
         asynchronous at every provider: this operation returns a `VideoJob`
         immediately, the client polls `GET /videos/{video_id}` until `status`
         is `completed`, then downloads the bytes from
@@ -1062,6 +1085,8 @@ paths:
         uploaded as binary. The non-standard `audio` field drives a
         talking-avatar render: when present, the model lip-syncs
         `input_reference` to the clip and the video lasts as long as the audio.
+        A model known to render from a prompt takes no `audio` and the request
+        returns `400 Bad Request`.
 
         Not every provider implements the Videos API. Requests routed to a
         provider that does not support it return `400 Bad Request` with an
@@ -1348,11 +1373,19 @@ components:
     CreateSFXRequest:
       required: true
       description: |
-        Request payload for generating a sound effect from a text prompt.
+        Request payload for generating a sound effect. JSON describes the
+        sound in a text prompt. `multipart/form-data` uploads a video to score
+        instead.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/CreateSFXRequest'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/CreateSFXFromVideoRequest'
+          encoding:
+            video:
+              contentType: video/*
     CreateMusicRequest:
       required: true
       description: |
@@ -1581,6 +1614,7 @@ components:
         - nvidia
         - zai
         - webwright
+        - mirelo
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -1767,6 +1801,22 @@ components:
               name: 'retrieve_video'
               method: 'GET'
               endpoint: '/flows/video/{generation_id}'
+            voices:
+              name: 'list_voices'
+              method: 'GET'
+              endpoint: '/voices'
+            voices_create:
+              name: 'create_voice'
+              method: 'POST'
+              endpoint: '/voices/add'
+            images_edits:
+              name: 'create_image_edit'
+              method: 'POST'
+              endpoint: '/flows/image'
+            images_retrieve:
+              name: 'retrieve_image'
+              method: 'GET'
+              endpoint: '/flows/image/{generation_id}'
         google:
           id: 'google'
           url: 'https://generativelanguage.googleapis.com/v1beta/openai'
@@ -1858,6 +1908,27 @@ components:
               name: 'chat_completions'
               method: 'POST'
               endpoint: '/chat/completions'
+        mirelo:
+          id: 'mirelo'
+          url: 'https://api.mirelo.ai/v3'
+          auth_type: 'bearer'
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            sfx:
+              name: 'create_sfx'
+              method: 'POST'
+              endpoint: '/text-to-sfx/generations'
+            sfx_video:
+              name: 'create_sfx_from_video'
+              method: 'POST'
+              endpoint: '/video-to-sfx/generations'
+            assets:
+              name: 'create_asset'
+              method: 'POST'
+              endpoint: '/assets'
     ProviderSpecificResponse:
       type: object
       description: |
@@ -1937,6 +2008,8 @@ components:
           type: string
         images_edits:
           type: string
+        images_retrieve:
+          type: string
         speech:
           type: string
         music:
@@ -1944,9 +2017,18 @@ components:
         sfx:
           type: string
           x-go-name: SFX
+        sfx_video:
+          type: string
+          x-go-name: SFXVideo
+        assets:
+          type: string
         videos:
           type: string
         videos_retrieve:
+          type: string
+        voices:
+          type: string
+        voices_create:
           type: string
       required:
         - models
@@ -3386,6 +3468,9 @@ components:
             container. Forwarded to the provider as-is - only providers with
             voice-cloning support honor it (e.g. Qwen3-TTS-compatible
             backends); others ignore or reject it. Not supported by OpenAI.
+            ElevenLabs has no per-request sample, so the gateway adds the
+            sample to the account of the API key as an instant voice clone,
+            once per sample, and speaks in that voice instead of `voice`.
       required:
         - model
         - input
@@ -3398,7 +3483,7 @@ components:
       properties:
         model:
           type: string
-          description: Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`).
+          description: Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`, `mirelo/sfx-2.0`).
         prompt:
           type: string
           description: Description of the sound to generate (e.g. `distant thunder rolling over a valley`).
@@ -3433,6 +3518,65 @@ components:
       required:
         - model
         - prompt
+    CreateSFXFromVideoRequest:
+      type: object
+      description: |
+        Multipart request body for scoring a video: the provider watches the
+        clip and generates the sound that fits it. Speech already in the clip
+        can be kept under the new sound or returned on its own.
+      properties:
+        model:
+          type: string
+          description: Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`).
+        video:
+          type: string
+          format: binary
+          description: The video to score. Its container type is passed on to the provider.
+        prompt:
+          type: string
+          description: Optional guidance on the sound to generate. The video itself drives the result.
+        duration_seconds:
+          type: number
+          minimum: 1
+          description: |-
+            Length of the scored window in seconds, counted from
+            `start_offset_seconds`. Omit to score the rest of the clip, up to
+            the provider's ceiling.
+        start_offset_seconds:
+          type: number
+          minimum: 0
+          default: 0
+          description: Where in the clip the scored window starts, in seconds.
+        preserve_speech:
+          type: boolean
+          description: |-
+            Keep the speech already in the clip under the generated sound.
+            Omit to use the provider default.
+        output:
+          type: string
+          enum:
+            - mix
+            - sfx
+            - speech
+          default: mix
+          description: |-
+            Which track to return. `mix` is the generated sound with any
+            preserved speech, `sfx` is the generated sound alone and `speech`
+            is the clip's own speech separated out. A clip without speech has
+            no `speech` track.
+        response_format:
+          type: string
+          enum:
+            - mp3
+            - opus
+            - aac
+            - flac
+            - pcm
+          default: mp3
+          description: The audio format of the response.
+      required:
+        - model
+        - video
     CreateMusicRequest:
       type: object
       description: |
@@ -3471,8 +3615,8 @@ components:
     CreateVideoRequest:
       type: object
       description: |
-        Request body for creating a video generation job via the
-        OpenAI-compatible Videos API. Sent as `multipart/form-data`.
+        Request body for creating a video generation job, shaped like the
+        Videos API OpenAI retired. Sent as `multipart/form-data`.
       properties:
         model:
           type: string
@@ -3512,9 +3656,9 @@ components:
             an audio clip - `audio/wav` or `audio/mpeg` - that drives the
             render. When present, the model lip-syncs `input_reference` to it
             and the generated video lasts as long as the clip, so `seconds` is
-            ignored. Forwarded to the provider as-is; only providers with
-            talking-avatar support honor it (e.g. ElevenLabs
-            `creatify-aurora`), others ignore or reject it.
+            ignored. Only models with talking-avatar support honor it (e.g.
+            ElevenLabs `creatify-aurora`). A model known to render from a
+            prompt is refused with `400 Bad Request`.
         seconds:
           type: string
           description: |-
@@ -4895,7 +5039,7 @@ components:
                   env: 'AUDIO_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx, POST /v1/audio/music). When disabled, the endpoints return a 404. Served by providers with speech, sound-effect or music support (currently openai and elevenlabs) or by the local llama-tts engine'
+                  description: 'Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx, POST /v1/audio/music). When disabled, the endpoints return a 404. Served by providers with speech, sound-effect or music support (currently openai, elevenlabs and mirelo) or by the local llama-tts engine'
                 - name: decisions_enabled
                   env: 'DECISIONS_ENABLED'
                   type: bool
@@ -4910,7 +5054,7 @@ components:
                   env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
                   type: bool
                   default: 'true'
-                  description: 'Allow downloading the llama-tts binary and GGUF models, in the background at startup when the Audio API is enabled. The pinned GGUF models are treated as done once present in the cache, whoever wrote them (an earlier run, the CLI, a mounted volume, a pre-baked image layer), while a cached binary whose sha256 differs from the latest release is replaced. A llama-tts found on PATH is left alone - upgrading it is the operator''s job. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing'
+                  description: "Allow downloading the llama-tts binary and GGUF models, in the background at startup when the Audio API is enabled. The pinned GGUF models are treated as done once present in the cache, whoever wrote them (an earlier run, the CLI, a mounted volume, a pre-baked image layer), while a cached binary whose sha256 differs from the latest release is replaced. A llama-tts found on PATH is left alone - upgrading it is the operator's job. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing"
                 - name: audio_local_max_concurrency
                   env: 'AUDIO_LOCAL_MAX_CONCURRENCY'
                   type: int
@@ -5412,6 +5556,16 @@ components:
                   env: 'WEBWRIGHT_API_KEY'
                   type: string
                   description: 'WebWright API Key'
+                  secret: true
+                - name: mirelo_api_url
+                  env: 'MIRELO_API_URL'
+                  type: string
+                  default: 'https://api.mirelo.ai/v3'
+                  description: 'Mirelo API URL'
+                - name: mirelo_api_key
+                  env: 'MIRELO_API_KEY'
+                  type: string
+                  description: 'Mirelo API Key'
                   secret: true
           - routing:
               title: 'Routing'
