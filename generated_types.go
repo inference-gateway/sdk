@@ -2244,6 +2244,10 @@ type CreateVideoRequest struct {
 	// Model Model ID to use for video generation (e.g. `elevenlabs/creatify-aurora`).
 	Model string `json:"model"`
 
+	// PreserveSpeech Video input only. Keep the speech already in the clip under the
+	// generated sound. Omit to use the provider default.
+	PreserveSpeech *bool `json:"preserve_speech,omitempty"`
+
 	// Prompt Text description of the video to generate. Optional for
 	// audio-driven avatar models, where the dialogue comes from `audio`
 	// and the prompt only describes framing, never the spoken words.
@@ -2263,6 +2267,8 @@ type CreateVideoRequest struct {
 	// Seconds Requested duration of the generated video in seconds, as a string
 	// (e.g. `4`, `8`, `12`). Providers accept a limited set of values;
 	// omit to use the provider default. Ignored when `audio` is present.
+	// With `video` it is the length of the dubbed window, at least 1,
+	// counted from `start_offset_seconds`.
 	Seconds *string `json:"seconds,omitempty"`
 
 	// Size Requested output resolution as `widthxheight` (e.g. `720x1280`).
@@ -2270,6 +2276,22 @@ type CreateVideoRequest struct {
 	// `creatify-aurora` maps to `480p` and `720p`. Omit to use the
 	// provider default.
 	Size *string `json:"size,omitempty"`
+
+	// StartOffsetSeconds Video input only. Where in the clip the dubbed window starts, in
+	// seconds.
+	StartOffsetSeconds *float32 `json:"start_offset_seconds,omitempty"`
+
+	// Video Non-standard extension (OpenAI's Videos API has no video field):
+	// a clip to dub - the provider generates the sound that fits it and
+	// re-renders the clip with that sound as its new soundtrack, so the
+	// job returns a video downloadable from
+	// `GET /videos/{video_id}/content`. Mutually exclusive with
+	// `input_reference` and `reference_images`. Only providers with
+	// video-to-sfx support honor it (e.g. Mirelo `sfx-2.0`), where only
+	// the generated mix is laid onto the clip - the separated tracks come
+	// back as audio from `POST /audio/sfx` - and `sfx-1.6` with
+	// `preserve_speech` caps the scored window at 60 seconds.
+	Video *openapi_types.File `json:"video,omitempty"`
 }
 
 // Decision Response of the OpenAI Decisions API, relayed unchanged.
