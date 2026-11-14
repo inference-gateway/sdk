@@ -1088,7 +1088,10 @@ paths:
         talking-avatar render: when present, the model lip-syncs
         `input_reference` to the clip and the video lasts as long as the audio.
         A model known to render from a prompt takes no `audio` and the request
-        returns `400 Bad Request`.
+        returns `400 Bad Request`. The non-standard `video` field dubs a clip:
+        the job returns the clip with generated sound in place of its
+        soundtrack - see `video` for the providers that support it and their
+        limits.
 
         Not every provider implements the Videos API. Requests routed to a
         provider that does not support it return `400 Bad Request` with an
@@ -1402,6 +1405,8 @@ components:
           encoding:
             reference_images:
               contentType: image/*
+            video:
+              contentType: video/*
   responses:
     BadRequest:
       description: Bad request
@@ -1930,6 +1935,14 @@ components:
               name: 'create_asset'
               method: 'POST'
               endpoint: '/assets'
+            videos:
+              name: 'create_video'
+              method: 'POST'
+              endpoint: '/video-to-sfx/generations'
+            videos_retrieve:
+              name: 'retrieve_video'
+              method: 'GET'
+              endpoint: '/video-to-sfx/generations/{generation_id}'
     ProviderSpecificResponse:
       type: object
       description: |
@@ -3652,12 +3665,40 @@ components:
             ignored. Only models with talking-avatar support honor it (e.g.
             ElevenLabs `creatify-aurora`). A model known to render from a
             prompt is refused with `400 Bad Request`.
+        video:
+          type: string
+          format: binary
+          description: |-
+            Non-standard extension (OpenAI's Videos API has no video field):
+            a clip to dub - the provider generates the sound that fits it and
+            re-renders the clip with that sound as its new soundtrack, so the
+            job returns a video downloadable from
+            `GET /videos/{video_id}/content`. Mutually exclusive with
+            `input_reference` and `reference_images`. Only providers with
+            video-to-sfx support honor it (e.g. Mirelo `sfx-2.0`), where only
+            the generated mix is laid onto the clip - the separated tracks come
+            back as audio from `POST /audio/sfx` - and `sfx-1.6` with
+            `preserve_speech` caps the scored window at 60 seconds.
+        start_offset_seconds:
+          type: number
+          minimum: 0
+          default: 0
+          description: |-
+            Video input only. Where in the clip the dubbed window starts, in
+            seconds.
+        preserve_speech:
+          type: boolean
+          description: |-
+            Video input only. Keep the speech already in the clip under the
+            generated sound. Omit to use the provider default.
         seconds:
           type: string
           description: |-
             Requested duration of the generated video in seconds, as a string
             (e.g. `4`, `8`, `12`). Providers accept a limited set of values;
             omit to use the provider default. Ignored when `audio` is present.
+            With `video` it is the length of the dubbed window, at least 1,
+            counted from `start_offset_seconds`.
         size:
           type: string
           description: |-
@@ -5042,7 +5083,7 @@ components:
                   env: 'VIDEOS_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Videos API (POST /v1/videos, GET /v1/videos/{video_id}, GET /v1/videos/{video_id}/content). When disabled, the endpoints return a 404. Only providers with video support (currently elevenlabs) can serve these endpoints'
+                  description: 'Enable the Videos API (POST /v1/videos, GET /v1/videos/{video_id}, GET /v1/videos/{video_id}/content). When disabled, the endpoints return a 404. Only providers with video support (currently elevenlabs and mirelo) can serve these endpoints'
                 - name: audio_local_auto_download
                   env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
                   type: bool
