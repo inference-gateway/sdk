@@ -849,6 +849,7 @@ The SDK supports the following LLM providers:
 -   llama.cpp (sdk.Llamacpp)
 -   NVIDIA (sdk.Nvidia)
 -   Z.ai (sdk.Zai)
+-   Webwright (sdk.Webwright)
 
 ## Documentation
 
