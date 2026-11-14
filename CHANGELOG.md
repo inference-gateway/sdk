@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.46.0](https://github.com/inference-gateway/sdk/compare/v1.45.1...v1.46.0) (2026-11-14)
+
+### ✨ Features
+
+* sync generated types with schemas v1.13.2 ([#245](https://github.com/inference-gateway/sdk/issues/245)) ([8acdb13](https://github.com/inference-gateway/sdk/commit/8acdb13a6d518c95abb07225603dea0b49a1223d))
+
+### ♻️ Improvements
+
+* use fmt.Appendf for the stream read error payload ([#249](https://github.com/inference-gateway/sdk/issues/249)) ([4d7cf80](https://github.com/inference-gateway/sdk/commit/4d7cf80844b1587b58f6892325414770ec28b58f))
+
+### 🐛 Bug Fixes
+
+* detect wrapped ECONNREFUSED and ECONNRESET in retry classification ([#247](https://github.com/inference-gateway/sdk/issues/247)) ([b9acbc2](https://github.com/inference-gateway/sdk/commit/b9acbc20dd4ecc6596a0a9ea23361f6b99aa11e3))
+* escape the stream read error message in the SSE error payload ([#250](https://github.com/inference-gateway/sdk/issues/250)) ([93104ba](https://github.com/inference-gateway/sdk/commit/93104babb23a01fd9176c62e4c92d231c28fd4f0))
+
+### 📚 Documentation
+
+* describe video input on CreateSFX and list the Mirelo provider ([#251](https://github.com/inference-gateway/sdk/issues/251)) ([bbba396](https://github.com/inference-gateway/sdk/commit/bbba3960b55681806c86b52475793b3b5d26f238))
+* list the Webwright provider in the README ([#252](https://github.com/inference-gateway/sdk/issues/252)) ([3ce4996](https://github.com/inference-gateway/sdk/commit/3ce4996c53732b03a36e18cc78de5e402ca15871))
+* trim derivable content from AGENTS.md ([#248](https://github.com/inference-gateway/sdk/issues/248)) ([3430191](https://github.com/inference-gateway/sdk/commit/3430191a28ace0f88514bf5b239af71293ef35a1))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.308 -> 2.1.318 ([#244](https://github.com/inference-gateway/sdk/issues/244)) ([6320ebe](https://github.com/inference-gateway/sdk/commit/6320ebe388d0e698f17cecc2dabe30e1dfc30e0b))
+
 ## [1.45.1](https://github.com/inference-gateway/sdk/compare/v1.45.0...v1.45.1) (2026-11-09)
 
 ### ♻️ Improvements
