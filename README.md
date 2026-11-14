@@ -845,6 +845,7 @@ The SDK supports the following LLM providers:
 -   MiniMax (sdk.Minimax)
 -   Moonshot (sdk.Moonshot)
 -   ElevenLabs (sdk.Elevenlabs)
+-   Mirelo (sdk.Mirelo)
 -   llama.cpp (sdk.Llamacpp)
 -   NVIDIA (sdk.Nvidia)
 -   Z.ai (sdk.Zai)
