@@ -40,6 +40,82 @@ func TestCreateSFX(t *testing.T) {
 	assert.Equal(t, []byte("fake-sfx"), audio)
 }
 
+func TestCreateSFXFromVideo(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/audio/sfx", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "mirelo", r.URL.Query().Get("provider"))
+		assert.Contains(t, r.Header.Get("Content-Type"), "multipart/form-data")
+
+		require.NoError(t, r.ParseMultipartForm(1<<20))
+		assert.Equal(t, "mirelo/sfx-2.0", r.FormValue("model"))
+		assert.Equal(t, "footsteps on gravel", r.FormValue("prompt"))
+		assert.Equal(t, "4.5", r.FormValue("duration_seconds"))
+		assert.Equal(t, "0", r.FormValue("start_offset_seconds"))
+		assert.Equal(t, "true", r.FormValue("preserve_speech"))
+		assert.Equal(t, "mix", r.FormValue("output"))
+		assert.Equal(t, "flac", r.FormValue("response_format"))
+
+		file, _, err := r.FormFile("video")
+		require.NoError(t, err)
+		defer func() { _ = file.Close() }()
+		data, err := io.ReadAll(file)
+		require.NoError(t, err)
+		assert.Equal(t, []byte("fake-video"), data)
+
+		_, err = w.Write([]byte("fake-sfx"))
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	var video openapi_types.File
+	video.InitFromBytes([]byte("fake-video"), "clip.mp4")
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+	output := Mix
+	format := CreateSFXFromVideoRequestResponseFormatFlac
+	preserveSpeech := true
+	duration := float32(4.5)
+	startOffset := float32(0)
+	prompt := "footsteps on gravel"
+
+	audio, err := client.CreateSFXFromVideo(context.Background(), Mirelo, CreateSFXFromVideoRequest{
+		Model:              "mirelo/sfx-2.0",
+		Video:              video,
+		Prompt:             &prompt,
+		DurationSeconds:    &duration,
+		StartOffsetSeconds: &startOffset,
+		PreserveSpeech:     &preserveSpeech,
+		Output:             &output,
+		ResponseFormat:     &format,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, []byte("fake-sfx"), audio)
+}
+
+func TestCreateSFXFromVideo_TooLarge(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+		_, err := w.Write([]byte(`{"error": "The uploaded video exceeds the request body limit."}`))
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	var video openapi_types.File
+	video.InitFromBytes([]byte("fake-video"), "clip.mp4")
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+	audio, err := client.CreateSFXFromVideo(context.Background(), Mirelo, CreateSFXFromVideoRequest{
+		Model: "mirelo/sfx-2.0",
+		Video: video,
+	})
+
+	require.Error(t, err)
+	assert.Nil(t, audio)
+	assert.Contains(t, err.Error(), "The uploaded video exceeds the request body limit.")
+}
+
 func TestCreateMusic_ProviderNotSupported(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v1/audio/music", r.URL.Path)

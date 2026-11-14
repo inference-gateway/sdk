@@ -42,6 +42,7 @@ type Client interface {
 	CreateImageEdit(ctx context.Context, provider Provider, request CreateImageEditMultipartBody) (*ImagesResponse, error)
 	CreateSpeech(ctx context.Context, provider Provider, request CreateSpeechRequest) ([]byte, error)
 	CreateSFX(ctx context.Context, provider Provider, request CreateSFXRequest) ([]byte, error)
+	CreateSFXFromVideo(ctx context.Context, provider Provider, request CreateSFXFromVideoRequest) ([]byte, error)
 	CreateMusic(ctx context.Context, provider Provider, request CreateMusicRequest) ([]byte, error)
 	CreateVideo(ctx context.Context, provider Provider, request CreateVideoRequest) (*VideoJob, error)
 	RetrieveVideo(ctx context.Context, provider Provider, videoID string) (*VideoJob, error)
@@ -1326,6 +1327,53 @@ func (c *clientImpl) CreateSpeech(ctx context.Context, provider Provider, reques
 // return a 400 error.
 func (c *clientImpl) CreateSFX(ctx context.Context, provider Provider, request CreateSFXRequest) ([]byte, error) {
 	return c.rawBytes(ctx, http.MethodPost, "/audio/sfx", provider, request, "sfx")
+}
+
+// CreateSFXFromVideo scores a video with the sound it shows (`/audio/sfx`,
+// multipart/form-data). Returns the raw audio bytes of the requested track in
+// the requested `response_format`. Build the video field with
+// openapi_types.File.InitFromBytes. Providers without video-to-sfx support
+// return a 400 error, and a video over the gateway's body limit a 413.
+//
+// Example:
+//
+//	audio, err := client.CreateSFXFromVideo(ctx, sdk.Mirelo, sdk.CreateSFXFromVideoRequest{
+//	    Model: "mirelo/sfx-2.0",
+//	    Video: openapi_types.File{},
+//	})
+func (c *clientImpl) CreateSFXFromVideo(ctx context.Context, provider Provider, request CreateSFXFromVideoRequest) ([]byte, error) {
+	fields := map[string]string{"model": request.Model}
+	if request.Prompt != nil {
+		fields["prompt"] = *request.Prompt
+	}
+	if request.DurationSeconds != nil {
+		fields["duration_seconds"] = formatSeconds(*request.DurationSeconds)
+	}
+	if request.StartOffsetSeconds != nil {
+		fields["start_offset_seconds"] = formatSeconds(*request.StartOffsetSeconds)
+	}
+	if request.PreserveSpeech != nil {
+		fields["preserve_speech"] = strconv.FormatBool(*request.PreserveSpeech)
+	}
+	if request.Output != nil {
+		fields["output"] = string(*request.Output)
+	}
+	if request.ResponseFormat != nil {
+		fields["response_format"] = string(*request.ResponseFormat)
+	}
+
+	files := map[string][]openapi_types.File{"video": {request.Video}}
+
+	resp, err := c.postMultipart(ctx, provider, "/audio/sfx", fields, files)
+	if err := apiError(resp, err, "sfx"); err != nil {
+		return nil, err
+	}
+
+	return resp.Body(), nil
+}
+
+func formatSeconds(value float32) string {
+	return strconv.FormatFloat(float64(value), 'f', -1, 32)
 }
 
 // CreateMusic composes a music clip from a text prompt (`/audio/music`, a
