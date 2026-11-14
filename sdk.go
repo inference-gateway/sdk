@@ -1323,7 +1323,8 @@ func (c *clientImpl) CreateSpeech(ctx context.Context, provider Provider, reques
 	return c.rawBytes(ctx, http.MethodPost, "/audio/speech", provider, request, "speech")
 }
 
-// CreateSFX generates a sound effect or ambience clip from a text prompt
+// CreateSFX generates a sound effect or ambience clip from a text prompt, or
+// scores a video when `Video` is set to an https URL or a base64 data URI
 // (`/audio/sfx`, a gateway extension shaped like `/audio/speech`). Returns the
 // raw audio bytes in the requested `response_format`. Unsupported providers
 // return a 400 error.
