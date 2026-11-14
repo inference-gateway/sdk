@@ -198,6 +198,27 @@ func (e CreateMusicRequestResponseFormat) Valid() bool {
 	}
 }
 
+// Defines values for CreateSFXRequestOutput.
+const (
+	CreateSFXRequestOutputMix    CreateSFXRequestOutput = "mix"
+	CreateSFXRequestOutputSFX    CreateSFXRequestOutput = "sfx"
+	CreateSFXRequestOutputSpeech CreateSFXRequestOutput = "speech"
+)
+
+// Valid indicates whether the value is a known member of the CreateSFXRequestOutput enum.
+func (e CreateSFXRequestOutput) Valid() bool {
+	switch e {
+	case CreateSFXRequestOutputMix:
+		return true
+	case CreateSFXRequestOutputSFX:
+		return true
+	case CreateSFXRequestOutputSpeech:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreateSFXRequestResponseFormat.
 const (
 	CreateSFXRequestResponseFormatAac  CreateSFXRequestResponseFormat = "aac"
@@ -836,6 +857,7 @@ const (
 	Groq        Provider = "groq"
 	Llamacpp    Provider = "llamacpp"
 	Minimax     Provider = "minimax"
+	Mirelo      Provider = "mirelo"
 	Mistral     Provider = "mistral"
 	Moonshot    Provider = "moonshot"
 	Nvidia      Provider = "nvidia"
@@ -866,6 +888,8 @@ func (e Provider) Valid() bool {
 	case Llamacpp:
 		return true
 	case Minimax:
+		return true
+	case Mirelo:
 		return true
 	case Mistral:
 		return true
@@ -2084,29 +2108,71 @@ type CreateResponseRequest struct {
 }
 
 // CreateSFXRequest Request body for generating a non-speech audio clip - a sound effect
-// or ambience - from a text prompt.
+// or ambience - from a text prompt, or from a video when `video` is
+// set.
 type CreateSFXRequest struct {
-	// DurationSeconds Length of the generated clip in seconds. Omit to let the provider
-	// pick a length that fits the prompt.
+	// DurationSeconds Length of the generated audio in seconds - at least 0.5 for a
+	// text prompt and at least 1 for a video. The ceiling depends on
+	// the model (30 for ElevenLabs text-to-sfx), and a longer value is
+	// rejected with `400 Bad Request`. For a text prompt it is the
+	// length of the generated clip. With a video it is the length of
+	// the scored window, counted from `start_offset_seconds`. Omit to
+	// let the provider pick a length that fits the prompt or the
+	// clip, up to its ceiling.
 	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
 
-	// Loop Whether to generate a clip that loops seamlessly.
+	// Loop Text prompt only. Whether to generate a clip that loops seamlessly.
 	Loop *bool `json:"loop,omitempty"`
 
-	// Model Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`).
+	// Model Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`, `mirelo/sfx-2.0`, or `elevenlabs/music_v2_5` to score a video).
 	Model string `json:"model"`
 
-	// Prompt Description of the sound to generate (e.g. `distant thunder rolling over a valley`).
-	Prompt string `json:"prompt"`
+	// Output Video input only. Which track to return. `mix` is the generated
+	// sound with any preserved speech, `sfx` is the generated sound
+	// alone and `speech` is the clip's own speech separated out. A
+	// clip without speech has no `speech` track.
+	Output *CreateSFXRequestOutput `json:"output,omitempty"`
 
-	// PromptInfluence How closely the generation follows the prompt. Higher values stay
-	// closer to the prompt, lower values allow more variation. Omit to
-	// use the provider default.
+	// PreserveSpeech Video input only. Keep the speech already in the clip under the
+	// generated sound. Omit to use the provider default.
+	PreserveSpeech *bool `json:"preserve_speech,omitempty"`
+
+	// Prompt Description of the sound to generate (e.g. `distant thunder
+	// rolling over a valley`). Required unless `video` is given:
+	// without a video the prompt drives the result, with a video the
+	// clip drives it and the prompt is only optional guidance on the
+	// sound to generate.
+	Prompt string `json:"prompt,omitempty"`
+
+	// PromptInfluence Text prompt only. How closely the generation follows the prompt.
+	// Higher values stay closer to the prompt, lower values allow more
+	// variation. Omit to use the provider default. Only models with
+	// prompt-influence support honor it - a model that cannot honor it
+	// rejects the request with `400 Bad Request`.
 	PromptInfluence *float32 `json:"prompt_influence,omitempty"`
 
 	// ResponseFormat The audio format of the response.
 	ResponseFormat *CreateSFXRequestResponseFormat `json:"response_format,omitempty"`
+
+	// StartOffsetSeconds Video input only. Where in the clip the scored window starts,
+	// in seconds.
+	StartOffsetSeconds *float32 `json:"start_offset_seconds,omitempty"`
+
+	// Video Optional video to score: the provider watches the clip and
+	// generates the sound that fits it. Either an https URL or a
+	// base64 data URI (`data:video/...`). Prefer a URL for large
+	// clips: a data URI is about a third larger than the file and
+	// counts against the gateway's request body limit. A provider
+	// that cannot take the given form answers `400 Bad Request`. The
+	// gateway never downloads the URL itself.
+	Video *string `json:"video,omitempty"`
 }
+
+// CreateSFXRequestOutput Video input only. Which track to return. `mix` is the generated
+// sound with any preserved speech, `sfx` is the generated sound
+// alone and `speech` is the clip's own speech separated out. A
+// clip without speech has no `speech` track.
+type CreateSFXRequestOutput string
 
 // CreateSFXRequestResponseFormat The audio format of the response.
 type CreateSFXRequestResponseFormat string
@@ -2137,6 +2203,9 @@ type CreateSpeechRequest struct {
 	// container. Forwarded to the provider as-is - only providers with
 	// voice-cloning support honor it (e.g. Qwen3-TTS-compatible
 	// backends); others ignore or reject it. Not supported by OpenAI.
+	// ElevenLabs has no per-request sample, so the gateway adds the
+	// sample to the account of the API key as an instant voice clone,
+	// once per sample, and speaks in that voice instead of `voice`.
 	ReferenceAudio *[]byte `json:"reference_audio,omitempty"`
 
 	// ResponseFormat The audio format of the response.
@@ -2156,16 +2225,16 @@ type CreateSpeechRequest struct {
 // CreateSpeechRequestResponseFormat The audio format of the response.
 type CreateSpeechRequestResponseFormat string
 
-// CreateVideoRequest Request body for creating a video generation job via the
-// OpenAI-compatible Videos API. Sent as `multipart/form-data`.
+// CreateVideoRequest Request body for creating a video generation job, shaped like the
+// Videos API OpenAI retired. Sent as `multipart/form-data`.
 type CreateVideoRequest struct {
 	// Audio Non-standard extension (OpenAI's Videos API has no audio field):
 	// an audio clip - `audio/wav` or `audio/mpeg` - that drives the
 	// render. When present, the model lip-syncs `input_reference` to it
 	// and the generated video lasts as long as the clip, so `seconds` is
-	// ignored. Forwarded to the provider as-is; only providers with
-	// talking-avatar support honor it (e.g. ElevenLabs
-	// `creatify-aurora`), others ignore or reject it.
+	// ignored. Only models with talking-avatar support honor it (e.g.
+	// ElevenLabs `creatify-aurora`). A model known to render from a
+	// prompt is refused with `400 Bad Request`.
 	Audio *openapi_types.File `json:"audio,omitempty"`
 
 	// InputReference Optional image used as the first frame or, for avatar models, the
