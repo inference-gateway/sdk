@@ -2,35 +2,14 @@
 
 ## Project Structure & Module Organization
 
-This repository contains the Go SDK (`github.com/inference-gateway/sdk`) for the Inference Gateway, a unified HTTP API in front of many LLM providers. The package is intentionally flat at the repository root:
+The package is intentionally flat at the repository root.
 
-- `sdk.go` contains the `Client` interface, `clientImpl`, `NewClient`, all `WithX` builder methods, the retry engine (`executeWithRetry`), and every public API call, including SSE stream parsing.
-- `types.go` contains hand-written types not in the OpenAPI (`ClientOptions`, `RetryConfig`, `MiddlewareOptions`) and constructor helpers (`NewTextMessage`, `NewImageContentPart`, ...) that hide the generated `oneOf` machinery.
-- `generated_types.go` is generated from `openapi.yaml` - never hand-edit it (marked `linguist-generated` in `.gitattributes`). `openapi.yaml` is a local copy of the upstream schema - do not edit it either. Refresh it via `task oas-download`.
-- `*_test.go` files are all mock-based (`httptest.NewServer`) - there is no separate integration suite.
-- `examples/` contains standalone Go modules (each with its own `go.mod`/`go.sum`). They are not built by `go build ./...` from the root. If SDK changes affect them, update each example and run `task tidy`. Run one with `cd examples/<name> && go run main.go` (set `INFERENCE_GATEWAY_URL`, optionally `LLM_PROVIDER`, `LLM_MODEL`, and gateway API keys).
-
-OpenAPI generation is configured by `oapi-codegen.yaml`. Automation is defined in `Taskfile.yml`, and CI runs `golangci-lint run --timeout 5m`, `go build -v ./...`, and `go test -v ./...`.
+- `generated_types.go` is generated from `openapi.yaml` - never hand-edit it (marked `linguist-generated` in `.gitattributes`). `openapi.yaml` is a local copy of the upstream schema - do not edit it either. To change types, change the upstream schema in `inference-gateway/schemas`, then run `task oas-download && task generate` (pin the schema with `SCHEMAS_REF`).
+- `examples/` contains standalone Go modules (each with its own `go.mod`/`go.sum`). They are not built by `go build ./...` from the root. If SDK changes affect them, update each example and run `task tidy`.
 
 ## Build, Test, and Development Commands
 
-The toolchain (Go, golangci-lint, Task) is pinned in `.flox/env/manifest.toml` - use Flox when available:
-
-```sh
-flox activate
-go mod download
-```
-
-Common commands:
-
-- `task test` runs `go test -v ./...`. Run a single test with `go test -v -run TestListModels ./...`.
-- `task lint` runs `golangci-lint run`.
-- `go build -v ./...` builds all packages, matching CI.
-- `task build-examples` builds every standalone example module.
-- `task tidy` runs `go mod tidy` in each module, including examples.
-- `task oas-download` refreshes `openapi.yaml` from the schemas repository (pin with `SCHEMAS_REF`).
-- `task generate` regenerates `generated_types.go` and rewrites `interface{}` to `any`. `task oas-sync` does both.
-- `task docs` starts local Go documentation on `:6060`.
+The toolchain (Go, golangci-lint, Task) is pinned in `.flox/env/manifest.toml` - use Flox when available (`flox activate`). Tasks are defined in `Taskfile.yml`. Run `task test` locally before opening a PR. Run `task lint` when touching Go code.
 
 ## Key Behaviors and Gotchas
 
@@ -41,11 +20,7 @@ Common commands:
 
 ## Coding Style & Naming Conventions
 
-Follow Go conventions and run `gofmt` before committing. `.editorconfig` requires tabs for Go files and two-space indentation for YAML, JSON, TOML, and most other files. Keep public identifiers clear and documented when exported. Tests use Go's `TestName` naming pattern and `testify/assert` or `testify/require`.
-
-Import order is enforced by the `gci` formatter (see `.golangci.yml`): standard library, `github.com/stretchr/testify`, third-party, `github.com/inference-gateway/*`, then this module. Every non-standard-library import must be named after its last path element (`sdk "github.com/inference-gateway/sdk"`), enforced by `importas`. Pin an alias in `.golangci.yml` only when two packages would collide. Fix locally with `golangci-lint fmt` and `golangci-lint run --fix`.
-
-Do not hand-edit generated OpenAPI types. Change the upstream schema in `inference-gateway/schemas`, then run `task oas-download && task generate`.
+Every non-standard-library import is aliased to its last path element (`sdk "github.com/inference-gateway/sdk"`). Import order and aliases are enforced by `gci` and `importas` in `.golangci.yml`. Pin an alias there only when two packages would collide. Fix locally with `golangci-lint fmt` and `golangci-lint run --fix`.
 
 ### Code Readability
 
@@ -59,17 +34,11 @@ Do not hand-edit generated OpenAPI types. Change the upstream schema in `inferen
 - No semicolons in documentation prose (Markdown files, doc comments): split the sentence or use
   a dash instead.
 
-## Testing Guidelines
-
-Add or update tests for new client behavior, request construction, response parsing, retries, streaming, and error handling. Prefer `httptest` servers for HTTP behavior so tests remain deterministic. Run `task test` locally before opening a PR. Run `task lint` when touching Go code.
-
 ## Commit & Pull Request Guidelines
 
 Conventional Commits are required - release tooling (`.releaserc.yaml`, `semantic-release`) parses them. `feat` is a minor bump, while `fix`, `refactor`, `perf`, `impr`, `ci`, `docs`, `style`, `test`, `build`, and `chore` are patch bumps. `impr` is a project-specific type for small enhancements that are not quite features. `chore(release): ...` is reserved for the release bot. Keep messages specific and accurate.
 
 Releases run via the manual `Release` workflow. Never bump versions by hand or edit `CHANGELOG.md` - it is generated.
-
-Pull requests should include a concise description, tests for behavior changes, and documentation updates for user-facing changes. Confirm that lint, build, and tests pass before requesting review.
 
 Documentation must never reference GitHub issues or tickets - do not include issue numbers, issue URLs, or cross-reference lines such as "Closes" followed by an issue. Describe the behavior, configuration, or rationale directly instead.
 
