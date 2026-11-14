@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -102,12 +103,13 @@ func isRetryableError(err error) bool {
 		}
 	}
 
+	if errors.Is(err, syscall.ECONNREFUSED) || errors.Is(err, syscall.ECONNRESET) {
+		return true
+	}
+
 	if opErr, ok := err.(*net.OpError); ok {
 		if opErr.Op == "dial" || opErr.Op == "read" {
 			return true
-		}
-		if sysErr, ok := opErr.Err.(*syscall.Errno); ok {
-			return *sysErr == syscall.ECONNREFUSED || *sysErr == syscall.ECONNRESET
 		}
 	}
 
