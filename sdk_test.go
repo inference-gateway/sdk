@@ -6,10 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"runtime"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -1690,6 +1693,31 @@ func TestIsRetryableStatusCode(t *testing.T) {
 		t.Run(fmt.Sprintf("status_%d", tt.statusCode), func(t *testing.T) {
 			result := isRetryableStatusCode(tt.statusCode, defaultConfig)
 			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+// opaqueError hides the wrapped error's text so tests exercise errors.Is, not the string fallback.
+type opaqueError struct{ err error }
+
+func (e opaqueError) Error() string { return "opaque" }
+func (e opaqueError) Unwrap() error { return e.err }
+
+func TestIsRetryableErrorWrappedErrno(t *testing.T) {
+	tests := []struct {
+		name     string
+		errno    syscall.Errno
+		expected bool
+	}{
+		{"connection_refused", syscall.ECONNREFUSED, true},
+		{"connection_reset", syscall.ECONNRESET, true},
+		{"permission_denied", syscall.EPERM, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opErr := &net.OpError{Op: "write", Net: "tcp", Err: os.NewSyscallError("write", tt.errno)}
+			assert.Equal(t, tt.expected, isRetryableError(opaqueError{err: opErr}))
 		})
 	}
 }
