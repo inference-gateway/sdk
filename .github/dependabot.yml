@@ -7,6 +7,9 @@ updates:
       - /examples/*
     schedule:
       interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Berlin
     groups:
       gomod:
         patterns:
@@ -16,6 +19,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Berlin
     groups:
       github-actions:
         patterns:
