@@ -137,6 +137,41 @@ func TestCreateVideo_ReferenceImages(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestCreateVideo_VideoInput(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, r.ParseMultipartForm(1<<20))
+		assert.Equal(t, "true", r.FormValue("preserve_speech"))
+		assert.Equal(t, "1.5", r.FormValue("start_offset_seconds"))
+		assert.Equal(t, "4", r.FormValue("seconds"))
+
+		file, header, err := r.FormFile("video")
+		require.NoError(t, err, "the video part must reach the multipart body")
+		defer func() { _ = file.Close() }()
+		assert.Equal(t, "clip.mp4", header.Filename)
+		data, err := io.ReadAll(file)
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("mp4-bytes"), data)
+
+		w.Header().Set("Content-Type", "application/json")
+		assert.NoError(t, json.NewEncoder(w).Encode(VideoJob{ID: "video_123", Status: "queued"}))
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{BaseURL: server.URL + "/v1"})
+
+	var clip openapi_types.File
+	clip.InitFromBytes([]byte("mp4-bytes"), "clip.mp4")
+
+	_, err := client.CreateVideo(context.Background(), Mirelo, CreateVideoRequest{
+		Model:              "sfx-2.0",
+		Seconds:            new("4"),
+		Video:              &clip,
+		PreserveSpeech:     new(true),
+		StartOffsetSeconds: new(float32(1.5)),
+	})
+	require.NoError(t, err)
+}
+
 func TestRetrieveVideo(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v1/videos/video_123", r.URL.Path)

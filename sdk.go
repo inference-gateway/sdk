@@ -1362,6 +1362,9 @@ func (c *clientImpl) CreateVideo(ctx context.Context, provider Provider, request
 	if request.Audio != nil {
 		files["audio"] = []openapi_types.File{*request.Audio}
 	}
+	if request.Video != nil {
+		files["video"] = []openapi_types.File{*request.Video}
+	}
 
 	fields := map[string]string{"model": request.Model}
 	if request.Prompt != nil {
@@ -1372,6 +1375,12 @@ func (c *clientImpl) CreateVideo(ctx context.Context, provider Provider, request
 	}
 	if request.Size != nil {
 		fields["size"] = *request.Size
+	}
+	if request.PreserveSpeech != nil {
+		fields["preserve_speech"] = strconv.FormatBool(*request.PreserveSpeech)
+	}
+	if request.StartOffsetSeconds != nil {
+		fields["start_offset_seconds"] = strconv.FormatFloat(float64(*request.StartOffsetSeconds), 'f', -1, 32)
 	}
 
 	resp, err := c.postMultipart(ctx, provider, "/videos", fields, files)
