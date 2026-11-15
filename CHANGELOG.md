@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.47.0](https://github.com/inference-gateway/sdk/compare/v1.46.0...v1.47.0) (2026-11-15)
+
+### ✨ Features
+
+* sync generated types with schemas v1.14.0 ([#253](https://github.com/inference-gateway/sdk/issues/253)) ([7b363ea](https://github.com/inference-gateway/sdk/commit/7b363eac6de48c4c30a2645ddf324e37f9e4096e))
+
+### 🐛 Bug Fixes
+
+* **video:** forward video, preserve_speech and start_offset_seconds from CreateVideo ([#255](https://github.com/inference-gateway/sdk/issues/255)) ([0e7c8c7](https://github.com/inference-gateway/sdk/commit/0e7c8c7850a45e3f06b6aa365a0eb253dbf4ebe8))
+
 ## [1.46.0](https://github.com/inference-gateway/sdk/compare/v1.45.1...v1.46.0) (2026-11-14)
 
 ### ✨ Features
