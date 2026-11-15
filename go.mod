@@ -3,7 +3,7 @@ module github.com/inference-gateway/sdk
 go 1.27.3
 
 require (
-	github.com/oapi-codegen/runtime v1.8.0
+	github.com/oapi-codegen/runtime v1.9.0
 	github.com/stretchr/testify v1.12.1
 )
 
