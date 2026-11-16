@@ -616,7 +616,7 @@ func TestGenerateContentStream_APIError(t *testing.T) {
 	)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "API stream error")
+	assert.Contains(t, err.Error(), "API error")
 
 	_, open := <-eventCh
 	assert.False(t, open, "Channel should be closed on error")
@@ -719,7 +719,7 @@ func TestHealthCheck_Error(t *testing.T) {
 	err := client.HealthCheck(ctx)
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "health check failed")
+	assert.Contains(t, err.Error(), "health check request failed")
 }
 
 func TestWithOptions(t *testing.T) {
