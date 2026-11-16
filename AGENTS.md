@@ -15,7 +15,7 @@ The toolchain (Go, golangci-lint, Task) is pinned in `.flox/env/manifest.toml` -
 
 - **`WithX` methods mutate the receiver.** `WithAuthToken`, `WithTools`, `WithOptions`, `WithHeaders`, `WithHeader`, and `WithMiddlewareOptions` return `Client` for chaining but do not clone, so they affect every later call on that client. For per-call config, chain inline: `client.WithTools(t).GenerateContent(...)`. `WithMiddlewareOptions` both sets headers (flag true) and deletes them (flag false).
 - **Retry layer.** Every API call goes through `executeWithRetry`. Defaults: 3 attempts, 2s initial backoff, 30s cap, multiplier 2. It retries 408/429/500/502/503/504 and network errors classified by `isRetryableError`. On 429 it honors `Retry-After` (seconds or HTTP-date). Disable with `RetryConfig{Enabled: false}` or `MaxAttempts` below 1. The real fields are on `RetryConfig` (`Enabled`, `MaxAttempts`, `InitialBackoffSec`, `MaxBackoffSec`, `BackoffMultiplier`, `RetryableStatusCodes`, `OnRetry`). Any `RetryOptions`/`MaxRetries`/`MinDelay` naming in docs is stale.
-- **Streaming.** `GenerateContentStream` returns a buffered (100) `<-chan SSEvent`. Callers range over it and switch on `*event.Event`: `ContentDelta` (raw JSON chunk in `event.Data`, a `*[]byte`), `StreamEnd` (after `data: [DONE]`), and `MessageError`. The channel closes when the stream ends or on read error.
+- **Streaming.** `GenerateContentStream` returns a buffered (100) `<-chan SSEvent`. Callers range over it and switch on `*event.Event`: `ContentDelta` (raw JSON chunk in `event.Data`, a `*[]byte`), `StreamEnd` (emitted after `data: [DONE]`), and a nil `Event` whose `event.Data` holds `{"error": "..."}` on a read error. The channel closes when the stream ends or on read error. The `SSEventEvent` values are content-start, content-delta, content-end, message-start, message-end, stream-start and stream-end.
 - **Middleware bypass.** `MiddlewareOptions.SkipMCP` maps to `X-MCP-Bypass: true` and `DirectProvider` to `X-Direct-Provider: true`. Setting the raw headers via `WithHeader` is equivalent.
 
 ## Coding Style & Naming Conventions
@@ -36,7 +36,7 @@ Every non-standard-library import is aliased to its last path element (`sdk "git
 
 ## Commit & Pull Request Guidelines
 
-Conventional Commits are required - release tooling (`.releaserc.yaml`, `semantic-release`) parses them. `feat` is a minor bump, while `fix`, `refactor`, `perf`, `impr`, `ci`, `docs`, `style`, `test`, `build`, and `chore` are patch bumps. `impr` is a project-specific type for small enhancements that are not quite features. `chore(release): ...` is reserved for the release bot. Keep messages specific and accurate.
+Conventional Commits are required - release tooling (`.releaserc.yaml`, `semantic-release`) parses them. `feat` is a minor bump, while `fix`, `refactor`, `perf`, `ci`, `docs`, `style`, `test`, `build`, and `chore` are patch bumps. `chore(release): ...` is reserved for the release bot. Keep messages specific and accurate.
 
 Releases run via the manual `Release` workflow. Never bump versions by hand or edit `CHANGELOG.md` - it is generated.
 
