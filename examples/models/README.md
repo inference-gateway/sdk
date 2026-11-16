@@ -115,5 +115,6 @@ Provider: ollama
 
 -   The example creates a client connected to the Inference Gateway
 -   It calls ListModels() to get all available models across providers
--   It then calls ListProviderModels() for specific providers like OpenAI and Ollama
+-   It then calls ListProviderModels() for Groq, DeepSeek, Google, Ollama and Ollama Cloud
+-   Finally it calls ListModels() again with sdk.ListModelsParamsIncludeContextWindow, sdk.ListModelsParamsIncludePricing and sdk.ListModelsParamsIncludeModalities and prints each model's context window, pricing and modalities
 -   The code processes and displays the model information in a readable format
