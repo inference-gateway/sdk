@@ -84,11 +84,38 @@ func readErrorMessage(resp *response) string {
 		body, _ = io.ReadAll(raw)
 		closeRawBody(resp)
 	}
-	var errorResp Error
-	if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error != nil {
-		return *errorResp.Error
+	if message, ok := errorEnvelopeMessage(body); ok {
+		return message
 	}
 	return strings.TrimSpace(string(body))
+}
+
+// errorEnvelopeMessage returns the message of a gateway `{"error": "..."}`
+// body, and whether the body was such an envelope.
+func errorEnvelopeMessage(body []byte) (string, bool) {
+	var errorResp Error
+	if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error != nil {
+		return *errorResp.Error, true
+	}
+	return "", false
+}
+
+// statusError builds the error for a non-2xx response, preferring the
+// gateway's `{"error": "..."}` message over the raw body.
+func statusError(what string, statusCode int, body []byte) error {
+	if message, ok := errorEnvelopeMessage(body); ok {
+		return fmt.Errorf("API error: %s (status code: %d)", message, statusCode)
+	}
+	return rawBodyError(what, statusCode, body)
+}
+
+// rawBodyError reports a non-2xx response that carries no recognized error envelope.
+func rawBodyError(what string, statusCode int, body []byte) error {
+	errMsg := fmt.Sprintf("%s request failed with status: %d", what, statusCode)
+	if len(body) > 0 {
+		errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(body))
+	}
+	return fmt.Errorf("%s", errMsg)
 }
 
 // isRetryableError determines if an error should trigger a retry
@@ -591,12 +618,8 @@ func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParams
 		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/models", c.baseURL), query, nil, "", false)
 	})
 
-	if err != nil {
+	if err := apiError(resp, err, "models"); err != nil {
 		return &ListModelsResponse{}, err
-	}
-
-	if resp.IsError() {
-		return &ListModelsResponse{}, fmt.Errorf("failed to list models, status code: %d", resp.StatusCode())
 	}
 
 	var result ListModelsResponse
@@ -635,31 +658,7 @@ func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider, 
 		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider), query, nil, "", false)
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errorResp Error
-		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-		}
-
-		errMsg := fmt.Sprintf("failed to list provider models, status code: %d", resp.StatusCode())
-
-		if len(resp.Body()) > 0 {
-			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
-		}
-
-		return nil, fmt.Errorf("%s", errMsg)
-	}
-
-	var result ListModelsResponse
-	if err := decode(resp, &result); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+	return jsonResult[ListModelsResponse](resp, err, "models")
 }
 
 // MCPProtocolVersion is the MCP protocol version spoken by the gateway's
@@ -830,31 +829,7 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 		return c.do(ctx, http.MethodPost, fmt.Sprintf("%s/chat/completions", c.baseURL), queryParams, request, "", false)
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.IsError() {
-		var errorResp Error
-		if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-			return nil, fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-		}
-
-		errMsg := fmt.Sprintf("failed to generate content, status code: %d", resp.StatusCode())
-
-		if len(resp.Body()) > 0 {
-			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
-		}
-
-		return nil, fmt.Errorf("%s", errMsg)
-	}
-
-	var result CreateChatCompletionResponse
-	if err := decode(resp, &result); err != nil {
-		return nil, err
-	}
-
-	return &result, nil
+	return jsonResult[CreateChatCompletionResponse](resp, err, "chat completion")
 }
 
 // GenerateContentStream generates content using streaming mode and returns a channel of events.
@@ -955,18 +930,8 @@ func (c *clientImpl) GenerateContentStream(ctx context.Context, provider Provide
 
 		body, _ := io.ReadAll(resp.RawBody())
 		closeRawBody(resp)
-		var errorResp Error
-		if err := json.Unmarshal(body, &errorResp); err == nil && errorResp.Error != nil {
-			return eventChan, fmt.Errorf("API stream error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-		}
 
-		errMsg := fmt.Sprintf("stream request failed with status: %d", resp.StatusCode())
-
-		if len(body) > 0 {
-			errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(body))
-		}
-
-		return eventChan, fmt.Errorf("%s", errMsg)
+		return eventChan, statusError("stream", resp.StatusCode(), body)
 	}
 
 	rawBody := resp.RawBody()
@@ -1251,18 +1216,7 @@ func apiError(resp *response, err error, what string) error {
 		return nil
 	}
 
-	var errorResp Error
-	if err := json.Unmarshal(resp.Body(), &errorResp); err == nil && errorResp.Error != nil {
-		return fmt.Errorf("API error: %s (status code: %d)", *errorResp.Error, resp.StatusCode())
-	}
-
-	errMsg := fmt.Sprintf("%s request failed with status: %d", what, resp.StatusCode())
-
-	if len(resp.Body()) > 0 {
-		errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(resp.Body()))
-	}
-
-	return fmt.Errorf("%s", errMsg)
+	return statusError(what, resp.StatusCode(), resp.Body())
 }
 
 // jsonResult decodes a successful response body into T.
@@ -1412,13 +1366,7 @@ func messagesAPIError(statusCode int, body []byte) error {
 		return fmt.Errorf("API error: %s (status code: %d)", errorResp.Error.Message, statusCode)
 	}
 
-	errMsg := fmt.Sprintf("messages request failed with status: %d", statusCode)
-
-	if len(body) > 0 {
-		errMsg = fmt.Sprintf("%s, response body: %s", errMsg, string(body))
-	}
-
-	return fmt.Errorf("%s", errMsg)
+	return rawBodyError("messages", statusCode, body)
 }
 
 // closeRawBody closes an unparsed (SetDoNotParseResponse) response body so the
@@ -1463,13 +1411,5 @@ func (c *clientImpl) HealthCheck(ctx context.Context) error {
 		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/health", c.baseURL), nil, nil, "", false)
 	})
 
-	if err != nil {
-		return err
-	}
-
-	if resp.IsError() {
-		return fmt.Errorf("health check failed with status: %d", resp.StatusCode())
-	}
-
-	return nil
+	return apiError(resp, err, "health check")
 }
