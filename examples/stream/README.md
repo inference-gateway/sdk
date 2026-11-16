@@ -29,46 +29,25 @@ go run main.go
 ## Example Output
 
 ```markdown
-Generating content using groq qwen-2.5-coder-32b...
+Streaming content from groq deepseek-r1-distill-llama-70b...
 
-Model: qwen-2.5-coder-32b
-Response: Goroutines and threads are both units of execution in concurrent programming, but they operate in significantly different ways, especially in terms of their implementation and the environment in which they are used.
+💭 Thinking...
+Here I need to write a short story about a programmer who discovers an AI that can predict the future. I'll build the tension around the moment the program realizes the predictions are coming true...
 
-### Threads
+In the quiet hours before dawn, Mara watched her terminal fill with predictions she had never asked it for...
 
-1. **Resource Heavy**: Threads are supported at the system level and thus have a significant overhead in terms of memory and processing power. Each thread typically needs to allocate a stack of a certain size (often in the range of 1-8 MB), which can add up to considerable memory consumption, especially when dealing with a large number of concurrent threads.
-
-2. **Managed by OS**: Threads are managed by the operating system. This means that the OS scheduler handles the execution and switching of threads, which can lead to varying performance depending on the OS and the specific workload.
-
-3. **Slower Context Switch**: Context switching between threads can be relatively slow due to the resources involved; this includes saving and restoring the thread's state, and handling the delicate process of stopping and restarting a thread's execution.
-
-4. **Concurrency Control Complexity**: Threads require careful management to avoid issues like race conditions, deadlocks, and starvation. Programming with threads can therefore become complex, as one must employ synchronization mechanisms provided by the language (e.g., mutexes, semaphores).
-
-### Goroutines
-
-1. **Lightweight**: Goroutines are managed by the Go runtime (also known as the Go Scheduler) and are not directly backed by any OS-level threads. They start off with a small stack (approximately 2 KB) and can grow or shrink dynamically based on the needs of the running program. This makes goroutines very lightweight and efficient, allowing for the concurrent execution of thousands if not millions of goroutines.
-
-2. **Managed by Go Runtime**: Goroutines are scheduled to run on a pool of so-called logical processors (which, in turn, are mapped to OS-level threads). The Go runtime handles the execution and context switching between goroutines, which is more efficient and faster than OS-level context switching.
-
-3. **Faster Context Switch**: Because goroutines are managed by the Go runtime and operate within the user space, the cost of context switching between them is much lower compared to threads. This is one of the main advantages of using goroutines in Go for high concurrency.
-
-4. **Ease of Use**: Goroutines abstract away much of the complexity involved in concurrent programming. There are no locks or mutexes; instead, goroutines use channels to communicate and synchronize, which leads to code that is often simpler and less prone to race conditions. The error handling mechanism provided by Go, such as deferred function calls and panic/recover, further aids in managing complex concurrent programs.
-
-### Summary
-
-In summary, the key differences are in the overhead and control of execution:
-
--   **Efficiency and Scalability**: Goroutines offer better scalability and a higher degree of efficiency due to their lightweight nature.
--   **Control and Management**: Threads are heavier, and their management is more complex, often leading to performance issues with a large number of threads. Goroutines are more straightforward, with Go's runtime handling the complexities of distribution over OS threads.
--   **Concurrency Model**: Goroutines use channels for communication and synchronization, leading to cleaner and less error-prone concurrent programs. Threads rely on locks and other synchronization primitives.
-
-Using goroutines can often result in more efficient and maintainable concurrent applications, especially in Go.
+Stream ended
 
 Usage Statistics:
-Prompt tokens: 34
-Completion tokens: 682
-Total tokens: 716
+  Prompt tokens: 38
+  Completion tokens: 612
+  Total tokens: 650
+
+
+Full content length: 612 characters
 ```
+
+The thinking text and streamed story appear exactly as the model produces them. Reasoning deltas (shown under `💭 Thinking...`) appear only for models that emit reasoning, such as the default `deepseek-r1-distill-llama-70b`.
 
 ## How It Works
 
@@ -78,11 +57,10 @@ Total tokens: 716
 4. It initiates a streaming request using the GenerateContentStream method
 5. It processes the stream events as they arrive:
 
--   StreamStart: Indicates the beginning of the stream
 -   ContentDelta: Contains the incremental content chunks
 -   StreamEnd: Marks the end of the stream
 
-6. It prints content incrementally as it's received
+6. It prints content incrementally as it's received (reasoning deltas arrive inside ContentDelta events and are shown under a `💭 Thinking...` marker with dim gray text)
 7. At the end, it displays the total content length and usage statistics
 
 ## Customization

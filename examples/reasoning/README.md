@@ -33,15 +33,12 @@ go run main.go
 ## Expected Output
 
 ```
->DeepSeek Reasoner - Reasoning Display Example
+🧠 DeepSeek Reasoner - Reasoning Display Example
 Provider: deepseek, Model: deepseek-v4-pro
-
-S Question 1: What's the best way to learn a new programming language?
-
-> Assistant:
-
-= Reasoning Process:
-DeepSeek Reasoner Thinking
+═══════════════════════════════════════════════════════════════════════════════
+❓ Question 1: What's the best way to learn a new programming language? Consider different learning styles and time constraints.
+🤖 Assistant: 
+💭 Reasoning: 
 This is a great question about learning methodologies. I should consider...
 1. Different learning styles (visual, hands-on, theoretical)
 2. Time constraints and available resources
@@ -49,8 +46,16 @@ This is a great question about learning methodologies. I should consider...
 4. Specific goals (hobby, career, specific project)
 ...
 
-=Final Response:
+📝 Response: 
 The best approach to learning a new programming language depends on several factors...
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ DeepSeek Reasoner reasoning demonstration complete!
+💡 Key Features Demonstrated:
+   • Step-by-step reasoning display with visual formatting
+   • Proper handling of both 'reasoning' and 'reasoning_content' fields
+   • Clear separation between thinking process and final response
+   • Streaming reasoning content as it's generated
 ```
 
 ## Code Explanation
@@ -72,7 +77,7 @@ hasReasoning := (choice.Delta.Reasoning != nil && *choice.Delta.Reasoning != "")
 
 If you don't see reasoning content:
 
-1. **Check Model**: Ensure you're using `deepseek-v4-pro`, not `deepseek-v4-flash`
+1. **Check Model**: This example only runs with `LLM_PROVIDER=deepseek` and `LLM_MODEL=deepseek-v4-pro` - for any other provider or model it exits at startup with an error and never produces reasoning or a response
 2. **Verify Backend**: Confirm your inference gateway supports reasoning fields
 3. **Check Prompts**: Use questions that encourage step-by-step thinking
 4. **Debug Fields**: Add logging to see which fields contain reasoning data
