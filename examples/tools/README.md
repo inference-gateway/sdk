@@ -29,6 +29,9 @@ Model is calling a function:
 Function: get_current_weather
 Arguments: {"location":"San Francisco"}
 
+Function result:
+Weather in San Francisco: 14 celsius and Foggy
+
 Sending function result back to the model...
 
 Final response: Based on the current weather data for San Francisco, it's 14°C (celsius) and foggy.
