@@ -101,7 +101,6 @@ git commit -m "feat: add my feature"
 Types:
 
 -   feat: new feature
--   impr: small enhancement that is not quite a feature
 -   fix: bug fix
 -   refactor: code change that neither fixes a bug nor adds a feature
 -   docs: documentation

@@ -36,7 +36,7 @@ Every non-standard-library import is aliased to its last path element (`sdk "git
 
 ## Commit & Pull Request Guidelines
 
-Conventional Commits are required - release tooling (`.releaserc.yaml`, `semantic-release`) parses them. `feat` is a minor bump, while `fix`, `refactor`, `perf`, `impr`, `ci`, `docs`, `style`, `test`, `build`, and `chore` are patch bumps. `impr` is a project-specific type for small enhancements that are not quite features. `chore(release): ...` is reserved for the release bot. Keep messages specific and accurate.
+Conventional Commits are required - release tooling (`.releaserc.yaml`, `semantic-release`) parses them. `feat` is a minor bump, while `fix`, `refactor`, `perf`, `ci`, `docs`, `style`, `test`, `build`, and `chore` are patch bumps. `chore(release): ...` is reserved for the release bot. Keep messages specific and accurate.
 
 Releases run via the manual `Release` workflow. Never bump versions by hand or edit `CHANGELOG.md` - it is generated.
 
