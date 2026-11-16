@@ -461,31 +461,29 @@ func (c *clientImpl) WithAuthToken(token string) Client {
 //	})
 //	tools := []sdk.ChatCompletionTool{
 //		{
-//			Name: "Weather",
-//			Functions: []sdk.FunctionObject{
-//				{
-//					Name: "get_current_weather",
-//					Description: new("Get the current weather in a given location"),
-//					Parameters: &sdk.FunctionParameters{
-//						Type: new("object"),
-//						Properties: &map[string]any{
-//							"location": map[string]any{
-//								"type":        "string",
-//								"description": "The city and state, e.g. San Francisco, CA",
-//							},
-//							"unit": map[string]any{
-//								"type":        "string",
-//								"enum":        []string{"celsius", "fahrenheit"},
-//								"description": "The temperature unit to use",
-//							},
+//			Type:     sdk.Function,
+//			Function: sdk.FunctionObject{
+//				Name:        "get_current_weather",
+//				Description: new("Get the current weather in a given location"),
+//				Parameters: &sdk.FunctionParameters{
+//					"type": "object",
+//					"properties": map[string]any{
+//						"location": map[string]any{
+//							"type":        "string",
+//							"description": "The city and state, e.g. San Francisco, CA",
 //						},
-//						Required: &[]string{"location"},
+//						"unit": map[string]any{
+//							"type":        "string",
+//							"enum":        []string{"celsius", "fahrenheit"},
+//							"description": "The temperature unit to use",
+//						},
 //					},
+//					"required": []string{"location"},
 //				},
 //			},
 //		},
 //	}
-//	resp, err = client.WithTools(tools).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
+//	resp, err = client.WithTools(&tools).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) Client {
 	c.tools = tools
 	return c
@@ -516,7 +514,8 @@ func (c *clientImpl) WithTools(tools *[]ChatCompletionTool) Client {
 // Notes:
 //   - For GenerateContent calls, Stream will always be set to false regardless of options
 //   - For GenerateContentStream calls, Stream will always be set to true regardless of options
-//   - Model and Messages provided in the actual method calls will override options
+//   - Model and Messages set through options take precedence, the values passed to the
+//     actual method calls are only used as a fallback when the option is empty
 //   - Options will persist for all future calls until cleared with WithOptions(nil)
 func (c *clientImpl) WithOptions(options *CreateChatCompletionRequest) Client {
 	c.options = options
@@ -640,9 +639,9 @@ func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParams
 //	ctx := context.Background()
 //	resp, err := client.ListProviderModels(ctx, sdk.Ollama)
 //	if err != nil {
-//	    log.Fatalf("Error listing models: %v", resp)
+//	    log.Fatalf("Error listing models: %v", err)
 //	}
-//	fmt.Printf("Provider: %s", resp.Provider)
+//	fmt.Printf("Provider: %s", *resp.Provider)
 //	fmt.Printf("Available models: %+v\n", resp.Data)
 //
 // Optional include parameters request additional per-model metadata, e.g.
@@ -781,19 +780,20 @@ func (c *clientImpl) GetMCPProtectedResourceMetadata(ctx context.Context) (*OAut
 //	    "llama2",
 //	    []sdk.Message{
 //	        {
-//	            Role:    sdk.MessageRoleSystem,
-//	            Content: "You are a helpful assistant.",
+//	            Role:    sdk.System,
+//	            Content: sdk.NewMessageContent("You are a helpful assistant."),
 //	        },
 //	        {
-//	            Role:    sdk.MessageRoleUser,
-//	            Content: "What is Go?",
+//	            Role:    sdk.User,
+//	            Content: sdk.NewMessageContent("What is Go?"),
 //	        },
 //	    },
 //	)
 //	if err != nil {
 //	    log.Fatalf("Error generating content: %v", err)
 //	}
-//	fmt.Printf("Generated content: %s\n", response.Response.Content)
+//	text, _ := response.Choices[0].Message.Content.AsMessageContent0()
+//	fmt.Printf("Generated content: %s\n", text)
 func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, model string, messages []Message) (*CreateChatCompletionResponse, error) {
 	request := CreateChatCompletionRequest{
 		Model:    model,
@@ -845,8 +845,8 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //		sdk.Ollama,
 //		"llama2",
 //		[]sdk.Message{
-//			{Role: sdk.MessageRoleSystem, Content: "You are a helpful assistant."},
-//			{Role: sdk.MessageRoleUser, Content: "What is Go?"},
+//			{Role: sdk.System, Content: sdk.NewMessageContent("You are a helpful assistant.")},
+//			{Role: sdk.User, Content: sdk.NewMessageContent("What is Go?")},
 //		},
 //	)
 //	if err != nil {
@@ -869,7 +869,7 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //
 //		switch *event.Event {
 //		case sdk.ContentDelta:
-//			var streamResponse CreateChatCompletionStreamResponse
+//			var streamResponse sdk.CreateChatCompletionStreamResponse
 //			if err := json.Unmarshal(*event.Data, &streamResponse); err != nil {
 //				log.Printf("Error parsing stream response: %v", err)
 //				continue
