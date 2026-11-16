@@ -651,11 +651,11 @@ func (c *clientImpl) ListModels(ctx context.Context, include ...ListModelsParams
 //	resp, err := client.ListProviderModels(ctx, sdk.Ollama, sdk.ListModelsParamsIncludeContextWindow)
 func (c *clientImpl) ListProviderModels(ctx context.Context, provider Provider, include ...ListModelsParamsInclude) (*ListModelsResponse, error) {
 	resp, err := c.executeWithRetry(ctx, func() (*response, error) {
-		query := map[string]string{}
+		query := map[string]string{"provider": string(provider)}
 		if include := joinInclude(include); include != "" {
 			query["include"] = include
 		}
-		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/models?provider=%s", c.baseURL, provider), query, nil, "", false)
+		return c.do(ctx, http.MethodGet, fmt.Sprintf("%s/models", c.baseURL), query, nil, "", false)
 	})
 
 	return jsonResult[ListModelsResponse](resp, err, "models")
