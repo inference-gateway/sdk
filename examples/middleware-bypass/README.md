@@ -76,7 +76,7 @@ Consider bypassing middleware when:
 ## Running the Example
 
 ```bash
-cd /workspaces/sdk/examples/middleware-bypass
+cd examples/middleware-bypass
 go run main.go
 ```
 
