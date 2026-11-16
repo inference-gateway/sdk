@@ -70,9 +70,6 @@ func main() {
 	for event := range eventCh {
 		if event.Event != nil {
 			switch *event.Event {
-			case sdk.StreamStart:
-				fmt.Println("Stream started")
-
 			case sdk.ContentDelta:
 				if event.Data != nil {
 					var streamResponse sdk.CreateChatCompletionStreamResponse
