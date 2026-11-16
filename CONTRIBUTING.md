@@ -14,11 +14,11 @@ Thank you for your interest in contributing to the [Inference Gateway Go SDK](sd
 
 ## Development Setup
 
-The project ships a [Flox](https://flox.dev) environment that pins Go and `golangci-lint` to the versions used in CI. Using Flox is the recommended path; a manual setup is also documented below.
+The project ships a [Flox](https://flox.dev) environment that pins Go, `golangci-lint` and Task to the versions used in CI. Using Flox is the recommended path; a manual setup is also documented below.
 
 ### Option A - Flox (recommended)
 
-1. Install [Flox](https://flox.dev/docs/install-flox/) and [Task](https://taskfile.dev).
+1. Install [Flox](https://flox.dev/docs/install-flox/).
 2. Clone and activate the environment:
 
 ```sh
@@ -28,7 +28,7 @@ flox activate
 go mod download
 ```
 
-`flox activate` provides the pinned Go toolchain and `golangci-lint` for the current shell. Re-run it whenever you enter the project in a new shell.
+`flox activate` provides the pinned Go toolchain, `golangci-lint` and `task` for the current shell. Re-run it whenever you enter the project in a new shell.
 
 ### Option B - Manual setup
 
@@ -95,12 +95,13 @@ go fmt ./...
 
 ```sh
 git add .
-git commit -m "Add my feature"
+git commit -m "feat: add my feature"
 ```
 
 Types:
 
 -   feat: new feature
+-   impr: small enhancement that is not quite a feature
 -   fix: bug fix
 -   refactor: code change that neither fixes a bug nor adds a feature
 -   docs: documentation
@@ -109,6 +110,7 @@ Types:
 -   chore: updating build tasks, package manager configs, etc; no production code change
 -   ci: changes to CI configuration files and scripts
 -   perf: code change that improves performance
+-   build: changes to the build system or build dependencies
 
 2. Ensure your PR:
 
