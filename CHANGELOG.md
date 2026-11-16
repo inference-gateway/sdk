@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.47.1](https://github.com/inference-gateway/sdk/compare/v1.47.0...v1.47.1) (2026-11-16)
+
+### ♻️ Improvements
+
+* reuse apiError and jsonResult for error envelopes ([#263](https://github.com/inference-gateway/sdk/issues/263)) ([b48d3ac](https://github.com/inference-gateway/sdk/commit/b48d3acbadb332377cc0ef99da6d7eec38b17003))
+
+### 🐛 Bug Fixes
+
+* url-encode provider in ListProviderModels query ([#262](https://github.com/inference-gateway/sdk/issues/262)) ([2be90bb](https://github.com/inference-gateway/sdk/commit/2be90bb87b1de11998768f936620a936e9f38895))
+
+### 👷 CI
+
+* align Dependabot schedule and grouping ([#258](https://github.com/inference-gateway/sdk/issues/258)) ([70acc43](https://github.com/inference-gateway/sdk/commit/70acc43757ada49deef818daef825f564c703144))
+* **deps:** bump the gomod group across 2 directories with 1 update ([#259](https://github.com/inference-gateway/sdk/issues/259)) ([93d1658](https://github.com/inference-gateway/sdk/commit/93d16584f7c649b9c7cc4fadcbf657e9d9c202a6))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump flox dependencies to latest ([#256](https://github.com/inference-gateway/sdk/issues/256)) ([0078f0b](https://github.com/inference-gateway/sdk/commit/0078f0befbf6e407ec8eed7138e310a6496551d5))
+* **deps:** bump flox dependencies to latest ([#257](https://github.com/inference-gateway/sdk/issues/257)) ([af09e69](https://github.com/inference-gateway/sdk/commit/af09e6922929ca67ace7358ada0e2f58b595d299))
+
 ## [1.47.0](https://github.com/inference-gateway/sdk/compare/v1.46.0...v1.47.0) (2026-11-15)
 
 ### ✨ Features
