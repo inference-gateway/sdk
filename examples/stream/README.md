@@ -23,7 +23,7 @@ export LLM_PROVIDER="groq"
 export LLM_MODEL="qwen-2.5-coder-32b"
 
 # Run the example
-go run [main.go](main.go)
+go run main.go
 ```
 
 ## Example Output

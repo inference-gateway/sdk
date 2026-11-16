@@ -23,7 +23,7 @@ export LLM_PROVIDER="openai"
 export LLM_MODEL="gpt-4o"
 
 # Run the example
-go run [main.go](main.go)
+go run main.go
 ```
 
 ## Example Output

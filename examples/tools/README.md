@@ -16,8 +16,14 @@ This example demonstrates how to use the Inference Gateway SDK to implement Tool
 # Set your API URL (optional)
 export INFERENCE_GATEWAY_URL="http://localhost:8080/v1"
 
+# Set your preferred provider (optional, default: groq)
+export LLM_PROVIDER="openai"
+
+# Set your preferred model (optional, default: deepseek-r1-distill-llama-70b)
+export LLM_MODEL="gpt-4o"
+
 # Run the example
-go run [main.go](main.go)
+go run main.go
 ```
 
 ## Example Output:
