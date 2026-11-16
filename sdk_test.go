@@ -245,6 +245,27 @@ func TestListProviderModelsWithInclude(t *testing.T) {
 	assert.Equal(t, contextWindow.Tokens, models.Data[0].ContextWindow.Tokens)
 }
 
+func TestListProviderModelsEncodesProvider(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query()
+		assert.Equal(t, "/v1/models", r.URL.Path)
+		assert.Equal(t, []string{"a&include=x"}, query["provider"], "Reserved characters should be encoded, not injected")
+		assert.Len(t, query, 1, "No extra query parameters should be injected")
+
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(ListModelsResponse{Object: "list", Data: []Model{}})
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	client := NewClient(&ClientOptions{
+		BaseURL: server.URL + "/v1",
+	})
+
+	_, err := client.ListProviderModels(context.Background(), Provider("a&include=x"))
+	assert.NoError(t, err)
+}
+
 func TestListModelsWithoutIncludeOmitsParam(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, present := r.URL.Query()["include"]
