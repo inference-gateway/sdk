@@ -1301,8 +1301,8 @@ func (c *clientImpl) CreateMusic(ctx context.Context, provider Provider, request
 //
 // Example:
 //
-//	job, err := client.CreateVideo(ctx, sdk.Openai, sdk.CreateVideoRequest{
-//	    Model:  "sora-2",
+//	job, err := client.CreateVideo(ctx, sdk.Elevenlabs, sdk.CreateVideoRequest{
+//	    Model:  "elevenlabs/creatify-aurora",
 //	    Prompt: new("A cat surfing"),
 //	})
 func (c *clientImpl) CreateVideo(ctx context.Context, provider Provider, request CreateVideoRequest) (*VideoJob, error) {

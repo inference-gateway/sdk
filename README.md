@@ -814,6 +814,7 @@ if err != nil {
 
 For more detailed examples and use cases, check out the [examples directory](./examples/). The examples include:
 
+-   **[Decisions Example](./examples/decisions/)** - Structured decisions (predicate, choice, score) over shared evidence with `CreateDecision`
 -   **[Generation Example](./examples/generation/)** - Basic content generation examples
 -   **[Images Example](./examples/images/)** - Image generation and editing with `CreateImage` and `CreateImageEdit`
 -   **[MCP List Tools Example](./examples/mcp-list-tools/)** - How to list available MCP tools over the MCP JSON-RPC endpoint

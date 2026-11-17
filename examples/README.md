@@ -103,4 +103,4 @@ Most examples include their own README with specific instructions, and the rest 
 
 ## Notes
 
--   Each example can be modified to use different providers and models by setting environment variables
+-   The generation, stream, stream-tools, tools, messages and reasoning examples read `LLM_PROVIDER` and `LLM_MODEL` from the environment to pick their provider and model (`reasoning` only runs with `deepseek` and `deepseek-v4-pro`). The other examples use a provider and model hard-coded in their Go sources.
