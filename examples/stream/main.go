@@ -102,15 +102,15 @@ func main() {
 								fmt.Printf("\033[90m%s\033[0m", *choice.Delta.ReasoningContent)
 							}
 
-						} else if choice.Delta.Content != "" {
+						} else if choice.Delta.Content != nil && *choice.Delta.Content != "" {
 							if isThinking {
 								isThinking = false
 								fmt.Printf("\n\n")
 							}
 
 							// Display the content as it arrives
-							fmt.Print(choice.Delta.Content)
-							fullContent += choice.Delta.Content
+							fmt.Print(*choice.Delta.Content)
+							fullContent += *choice.Delta.Content
 						}
 					}
 

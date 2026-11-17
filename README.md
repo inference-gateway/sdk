@@ -762,9 +762,9 @@ for event := range events {
                     fmt.Printf("💭 Reasoning: %s\n", *choice.Delta.ReasoningContent)
                 }
 
-                if choice.Delta.Content != "" {
+                if choice.Delta.Content != nil {
                     // Just print the content as it comes in
-                    fmt.Print(choice.Delta.Content)
+                    fmt.Print(*choice.Delta.Content)
                 }
             }
         }
