@@ -29,6 +29,7 @@ Connect to multiple LLM providers through a unified interface • Stream respons
     - [MCP JSON-RPC Endpoint](#mcp-json-rpc-endpoint)
     - [Generating Content](#generating-content)
     - [Vision Support](#vision-support)
+    - [Video Generation](#video-generation)
     - [Using ReasoningFormat](#using-reasoningformat)
     - [Streaming Content](#streaming-content)
     - [Messages API (Anthropic-compatible)](#messages-api-anthropic-compatible)
@@ -543,6 +544,52 @@ visionMessage, _ := sdk.NewImageMessage(sdk.User, contentParts)
 
 For a complete example, see [examples/vision/main.go](examples/vision/main.go).
 
+### Video Generation
+
+The Videos API is asynchronous: `CreateVideo` posts a multipart request and returns a `VideoJob`. Poll `RetrieveVideo` with the returned job id until its `Status` is `completed`, then fetch the rendered bytes with `DownloadVideoContent`. The gateway must run with `VIDEOS_ENABLED=true` and a provider that serves the Videos API (currently `elevenlabs` and `mirelo`).
+
+```go
+client := sdk.NewClient(&sdk.ClientOptions{
+    BaseURL: os.Getenv("INFERENCE_GATEWAY_URL"),
+})
+ctx := context.Background()
+
+job, err := client.CreateVideo(ctx, sdk.Elevenlabs, sdk.CreateVideoRequest{
+    Model:   "elevenlabs/creatify-aurora",
+    Prompt:  new("A cat surfing a wave"),
+    Seconds: new("4"),
+    Size:    new("720x1280"),
+})
+if err != nil {
+    log.Fatalf("Error creating video job: %v", err)
+}
+
+// Poll the job until it completes
+for {
+    job, err = client.RetrieveVideo(ctx, sdk.Elevenlabs, job.ID)
+    if err != nil {
+        log.Fatalf("Error polling video job: %v", err)
+    }
+    if job.Status == sdk.VideoJobStatusCompleted {
+        break
+    }
+    if job.Status == sdk.VideoJobStatusFailed {
+        log.Fatalf("Video job failed: %s", *job.Error.Message)
+    }
+    time.Sleep(20 * time.Second)
+}
+
+video, err := client.DownloadVideoContent(ctx, sdk.Elevenlabs, job.ID)
+if err != nil {
+    log.Fatalf("Error downloading video: %v", err)
+}
+os.WriteFile("output.mp4", video, 0644)
+```
+
+Optional file fields such as the first-frame `InputReference` image are built with `openapi_types.File` and `InitFromBytes`, the same way as `CreateImageEdit`'s `Image` field.
+
+For a complete example, see [examples/video/main.go](examples/video/main.go).
+
 ### Using ReasoningFormat
 
 You can enable reasoning capabilities by setting the ReasoningFormat parameter in your request:
@@ -824,6 +871,7 @@ For more detailed examples and use cases, check out the [examples directory](./e
 -   **[Stream Example](./examples/stream/)** - Streaming content generation
 -   **[Stream Tools Example](./examples/stream-tools/)** - Advanced streaming with tool usage
 -   **[Tools Example](./examples/tools/)** - Function calling and tool usage
+-   **[Video Example](./examples/video/)** - Asynchronous video generation with `CreateVideo`, `RetrieveVideo` and `DownloadVideoContent`
 -   **[Vision Example](./examples/vision/)** - Multimodal messages with image content parts
 
 Most examples include their own README with specific instructions and explanations; the rest are documented inline in `main.go`.
