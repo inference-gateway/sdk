@@ -74,7 +74,7 @@ Found 50 models
 49. deepseek-v4-flash (owned by deepseek)
 50. deepseek-v4-pro (owned by deepseek)
 
-Listing models from Groq Cloud...
+Listing models from Groq...
 Provider: groq
 1. llama3-8b-8192
 2. llama-guard-3-8b
@@ -110,6 +110,8 @@ Provider: ollama
 3. mistral
 4. llama2
 ```
+
+The sample above is truncated. After the Ollama block the example also lists models from Google and Ollama Cloud, then prints `Listing models with context window, pricing, and modalities metadata...` followed by `Context window:`, `Pricing:` and `Modalities:` lines per model.
 
 ## How It Works
 
