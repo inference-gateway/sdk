@@ -567,9 +567,9 @@ func (c *clientImpl) WithHeader(name, value string) Client {
 //	}
 //	resp, err := client.WithMiddlewareOptions(middlewareOpts).GenerateContent(ctx, provider, model, messages)
 //
-// Note: This functionality requires the Inference Gateway to support the corresponding headers:
-//   - X-MCP-Bypass: Skip MCP middleware processing
-//   - X-Direct-Provider: Route directly to provider
+// Note: The gateway reads X-MCP-Bypass and skips MCP middleware processing.
+// DirectProvider also sets X-Direct-Provider, but the gateway currently
+// ignores that header, so the option has no effect.
 func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) Client {
 	if options == nil {
 		return c

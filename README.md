@@ -230,7 +230,7 @@ response, err := client.GenerateContent(ctx, provider, model, messages)
 
 ### Middleware Options
 
-The Inference Gateway supports various middleware layers (MCP tools) that can be bypassed for direct provider access. The SDK provides `WithMiddlewareOptions` to control middleware behavior:
+The Inference Gateway supports various middleware layers (MCP tools) that can be bypassed. The SDK provides `WithMiddlewareOptions` to control middleware behavior:
 
 ```go
 package main
@@ -260,7 +260,7 @@ func main() {
         log.Fatalf("Error generating content: %v", err)
     }
 
-    // 2. Direct provider access (bypasses all middleware)
+    // 2. Direct provider access (no effect: the gateway ignores X-Direct-Provider)
     if _, err := client.WithMiddlewareOptions(&sdk.MiddlewareOptions{
         DirectProvider: true,
     }).GenerateContent(ctx, sdk.Openai, "gpt-4o", messages); err != nil {
@@ -272,7 +272,7 @@ func main() {
 **Middleware Options:**
 
 -   **`SkipMCP`** - Bypasses MCP (Model Context Protocol) middleware processing
--   **`DirectProvider`** - Routes directly to the provider without any middleware
+-   **`DirectProvider`** - Sets the `X-Direct-Provider: true` request header, but the gateway currently ignores it, so the option has no effect
 
 **Method Chaining:**
 
@@ -289,16 +289,15 @@ response, err := client.
 
 **Alternative Header Approach:**
 
-You can also control middleware using custom headers directly:
+You can also bypass MCP middleware using its header directly:
 
 ```go
 response, err := client.
     WithHeader("X-MCP-Bypass", "true").
-    WithHeader("X-Direct-Provider", "true").
     GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
 ```
 
-> **Note:** Middleware options apply to all subsequent API calls until overridden with a new `WithMiddlewareOptions` call. The gateway must support the corresponding headers for this functionality to work properly.
+> **Note:** Middleware options apply to all subsequent API calls until overridden with a new `WithMiddlewareOptions` call. The gateway currently honors only the `X-MCP-Bypass` header.
 
 ### Listing Models
 

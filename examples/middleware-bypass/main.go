@@ -4,15 +4,25 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	sdk "github.com/inference-gateway/sdk"
 )
 
 func main() {
+	// Get API URL from environment or use default
+	apiURL := os.Getenv("INFERENCE_GATEWAY_URL")
+	if apiURL == "" {
+		apiURL = "http://localhost:8080/v1"
+	}
+
+	// Get API key from environment (optional)
+	apiKey := os.Getenv("INFERENCE_GATEWAY_API_KEY")
+
 	// Create a new client
 	client := sdk.NewClient(&sdk.ClientOptions{
-		BaseURL: "http://localhost:8080/v1",
-		APIKey:  "your-api-key",
+		BaseURL: apiURL,
+		APIKey:  apiKey,
 	})
 
 	ctx := context.Background()
@@ -56,34 +66,14 @@ func main() {
 		fmt.Printf("Response: %s\n", text)
 	}
 
-	// Example 3: Bypass both MCP middleware
-	fmt.Println("\n=== Bypass Both MCP Middleware ===")
-	middlewareOpts = &sdk.MiddlewareOptions{
-		SkipMCP: true,
-	}
-	response3, err := client.
-		WithMiddlewareOptions(middlewareOpts).
-		GenerateContent(
-			ctx,
-			sdk.Openai,
-			"gpt-4o",
-			[]sdk.Message{
-				{Role: sdk.User, Content: sdk.NewMessageContent("Hello, how are you?")},
-			},
-		)
-	if err != nil {
-		log.Printf("Error bypassing middleware: %v", err)
-	} else {
-		text, _ := response3.Choices[0].Message.Content.AsMessageContent0()
-		fmt.Printf("Response: %s\n", text)
-	}
-
-	// Example 4: Direct provider access
+	// Example 3: Direct provider access
+	// DirectProvider sets X-Direct-Provider, but the gateway currently ignores
+	// that header and only reads X-MCP-Bypass, so the option has no effect.
 	fmt.Println("\n=== Direct Provider Access ===")
 	middlewareOpts = &sdk.MiddlewareOptions{
 		DirectProvider: true,
 	}
-	response4, err := client.
+	response3, err := client.
 		WithMiddlewareOptions(middlewareOpts).
 		GenerateContent(
 			ctx,
@@ -96,13 +86,15 @@ func main() {
 	if err != nil {
 		log.Printf("Error with direct provider: %v", err)
 	} else {
-		text, _ := response4.Choices[0].Message.Content.AsMessageContent0()
+		text, _ := response3.Choices[0].Message.Content.AsMessageContent0()
 		fmt.Printf("Response: %s\n", text)
 	}
 
-	// Example 5: Using custom headers directly (alternative approach)
+	// Example 4: Using a custom header directly. Reset the middleware options
+	// first so headers set by earlier examples are not left on the client.
 	fmt.Println("\n=== Custom Headers Approach ===")
-	response5, err := client.
+	response4, err := client.
+		WithMiddlewareOptions(&sdk.MiddlewareOptions{}).
 		WithHeader("X-MCP-Bypass", "true").
 		GenerateContent(
 			ctx,
@@ -115,7 +107,7 @@ func main() {
 	if err != nil {
 		log.Printf("Error with custom headers: %v", err)
 	} else {
-		text, _ := response5.Choices[0].Message.Content.AsMessageContent0()
+		text, _ := response4.Choices[0].Message.Content.AsMessageContent0()
 		fmt.Printf("Response: %s\n", text)
 	}
 }
