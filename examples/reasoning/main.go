@@ -139,13 +139,13 @@ Consider multiple approaches and explain your reasoning process clearly.`),
 					}
 
 					// Handle content (the final response)
-					if choice.Delta.Content != "" {
+					if choice.Delta.Content != nil && *choice.Delta.Content != "" {
 						if isThinking {
 							isThinking = false
 							fmt.Printf("\n\n📝 Response: ")
 						}
-						fmt.Print(choice.Delta.Content)
-						assistantContent.WriteString(choice.Delta.Content)
+						fmt.Print(*choice.Delta.Content)
+						assistantContent.WriteString(*choice.Delta.Content)
 					}
 				}
 			}

@@ -876,8 +876,8 @@ func (c *clientImpl) GenerateContent(ctx context.Context, provider Provider, mod
 //			}
 //
 //			for _, choice := range streamResponse.Choices {
-//				if choice.Delta.Content != "" {
-//					log.Printf("Content: %s", choice.Delta.Content)
+//				if choice.Delta.Content != nil {
+//					log.Printf("Content: %s", *choice.Delta.Content)
 //				}
 //			}
 //		case sdk.StreamEnd:

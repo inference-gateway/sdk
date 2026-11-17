@@ -510,8 +510,8 @@ func TestGenerateContentStream(t *testing.T) {
 			}
 
 			for _, choice := range streamResponse.Choices {
-				if choice.Delta.Content != "" {
-					content += choice.Delta.Content
+				if choice.Delta.Content != nil {
+					content += *choice.Delta.Content
 				}
 			}
 		}
@@ -597,7 +597,9 @@ func TestGenerateContentStreamBodyCloseError(t *testing.T) {
 				continue
 			}
 			for _, choice := range streamResponse.Choices {
-				content += choice.Delta.Content
+				if choice.Delta.Content != nil {
+					content += *choice.Delta.Content
+				}
 			}
 		case StreamEnd:
 			streamEndReceived = true
@@ -957,7 +959,9 @@ func TestWithOptions(t *testing.T) {
 						}
 
 						for _, choice := range streamResponse.Choices {
-							content += choice.Delta.Content
+							if choice.Delta.Content != nil {
+								content += *choice.Delta.Content
+							}
 						}
 					}
 				}

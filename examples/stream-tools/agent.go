@@ -247,13 +247,13 @@ func main() {
 						}
 
 						// Handle content
-						if choice.Delta.Content != "" {
+						if choice.Delta.Content != nil && *choice.Delta.Content != "" {
 							if isThinking {
 								isThinking = false
 								fmt.Printf("\n\n")
 							}
-							fmt.Print(choice.Delta.Content)
-							assistantContent.WriteString(choice.Delta.Content)
+							fmt.Print(*choice.Delta.Content)
+							assistantContent.WriteString(*choice.Delta.Content)
 						}
 
 						// Handle tool calls - accumulate across chunks, execute once the JSON args close.
