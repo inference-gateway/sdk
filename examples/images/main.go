@@ -1,5 +1,6 @@
 // Usage:
 //
+//	# requires the gateway started with IMAGES_ENABLED=true, otherwise CreateImage and CreateImageEdit return 404
 //	# Image generation (existing):
 //	INFERENCE_GATEWAY_URL=http://localhost:8080/v1 go run main.go
 //
