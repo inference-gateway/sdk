@@ -52,6 +52,10 @@ Streams reasoning output alongside the final response using `GenerateContentStre
 
 Sends multimodal messages with image content parts to vision-capable models.
 
+### [Video](video/)
+
+Runs the asynchronous video workflow with `CreateVideo`, `RetrieveVideo` and `DownloadVideoContent`: create the job, poll its status until completed, then save the rendered bytes. Needs a gateway with `VIDEOS_ENABLED=true` and a provider that serves the Videos API (currently elevenlabs and mirelo).
+
 ### [Speech](speech/)
 
 Generates speech audio from text with `CreateSpeech` and writes the returned bytes to a file. Requires the gateway to run with `AUDIO_ENABLED=true` and an OpenAI key.
@@ -93,7 +97,7 @@ First you need to have an Inference Gateway instance running. You can use the [I
     export INFERENCE_GATEWAY_API_KEY="your-api-key"
     ```
 
-Most examples include their own README with specific instructions, and the rest (`decisions`, `images`, `messages`, `music`, `sfx`, `speech` and `vision`) are documented inline in their `main.go`. The general pattern is:
+Most examples include their own README with specific instructions, and the rest (`decisions`, `images`, `messages`, `music`, `sfx`, `speech`, `video` and `vision`) are documented inline in their `main.go`. The general pattern is:
 
 1. Navigate to the example directory:
 
