@@ -39,6 +39,17 @@ tasks:
     cmds:
       - go test -v ./...
 
+  precommit:install:
+    desc: Install the git pre-commit hook (.githooks)
+    cmds:
+      - git config core.hooksPath .githooks
+      - chmod +x .githooks/pre-commit
+
+  precommit:run:
+    desc: Run the pre-commit hook directly
+    cmds:
+      - ./.githooks/pre-commit
+
   docs:
     desc: Run http server on port :6060 with documentation
     cmds:

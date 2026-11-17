@@ -9,7 +9,7 @@ The package is intentionally flat at the repository root.
 
 ## Build, Test, and Development Commands
 
-The toolchain (Go, golangci-lint, Task) is pinned in `.flox/env/manifest.toml` - use Flox when available (`flox activate`). Tasks are defined in `Taskfile.yml`. Run `task test` locally before opening a PR. Run `task lint` when touching Go code.
+The toolchain (Go, golangci-lint, Task) is pinned in `.flox/env/manifest.toml` - use Flox when available (`flox activate`). Tasks are defined in `Taskfile.yml`. Run `task test` locally before opening a PR. Run `task lint` when touching Go code. `task precommit:install` points git at `.githooks/` - the pre-commit hook blocks commits whose staged text files lack a final newline (it appends the newline, then you `git add` and commit again). `.flox/` is skipped.
 
 ## Key Behaviors and Gotchas
 

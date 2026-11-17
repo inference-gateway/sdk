@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+tab="$(printf '\t')"
+
+fixed="$(git diff --cached --numstat --diff-filter=ACM -- . ':(exclude).flox' |
+  while IFS="$tab" read -r added _ file; do
+    [ "$added" = "-" ] && continue
+    [ -n "$(git cat-file blob ":$file" | tail -c 1)" ] || continue
+    if [ -f "$file" ] && [ -n "$(tail -c 1 "$file")" ]; then
+      printf '\n' >>"$file"
+    fi
+    echo "  $file"
+  done)"
+
+[ -z "$fixed" ] && exit 0
+
+echo "pre-commit: added the missing final newline to:" >&2
+echo "$fixed" >&2
+echo "pre-commit: review the changes, 'git add' them, then commit again." >&2
+exit 1
