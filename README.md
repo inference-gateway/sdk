@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/github/release/inference-gateway/sdk.svg)](https://github.com/inference-gateway/sdk/releases)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/inference-gateway/sdk)](https://golang.org/)
 
-Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • Vision support • MCP tools support • Middleware control
+Connect to multiple LLM providers through a unified interface • Stream responses • Function calling • Vision support • Audio support • MCP tools support • Middleware control
 
 [Installation](#installation) • [Quick Start](#usage) • [Examples](#examples) • [Documentation](#documentation)
 
@@ -29,6 +29,7 @@ Connect to multiple LLM providers through a unified interface • Stream respons
     - [MCP JSON-RPC Endpoint](#mcp-json-rpc-endpoint)
     - [Generating Content](#generating-content)
     - [Vision Support](#vision-support)
+    - [Audio Support](#audio-support)
     - [Using ReasoningFormat](#using-reasoningformat)
     - [Streaming Content](#streaming-content)
     - [Messages API (Anthropic-compatible)](#messages-api-anthropic-compatible)
@@ -543,6 +544,61 @@ visionMessage, _ := sdk.NewImageMessage(sdk.User, contentParts)
 
 For a complete example, see [examples/vision/main.go](examples/vision/main.go).
 
+### Audio Support
+
+The gateway exposes an OpenAI-compatible Audio API for speech, sound effects and music. Run the gateway with `AUDIO_ENABLED=true` plus the API key of the provider you call - openai, elevenlabs and mirelo serve the Audio API. All three methods return the raw audio bytes, which you can write straight to a file.
+
+#### Speech
+
+```go
+audio, err := client.CreateSpeech(ctx, sdk.Openai, sdk.CreateSpeechRequest{
+    Model:          "gpt-4o-mini-tts",
+    Input:          "What is Go?",
+    Voice:          "alloy",
+    ResponseFormat: new(sdk.CreateSpeechRequestResponseFormatMp3),
+})
+if err != nil {
+    log.Fatalf("Error: %v", err)
+}
+_ = os.WriteFile("output.mp3", audio, 0644)
+```
+
+#### Sound Effects
+
+Without a video, `CreateSFX` generates a sound from a text prompt:
+
+```go
+audio, err := client.CreateSFX(ctx, sdk.Elevenlabs, sdk.CreateSFXRequest{
+    Model:           "elevenlabs/eleven_text_to_sound_v2",
+    Prompt:          "distant thunder rolling over a valley",
+    DurationSeconds: new(float32(2)),
+})
+```
+
+With a video you score the clip instead: set `Video` to an https URL or a base64 data URI and `Output` to the track to return (`mix`, `sfx` or `speech`):
+
+```go
+videoURL := "https://example.com/clip.mp4"
+audio, err := client.CreateSFX(ctx, sdk.Elevenlabs, sdk.CreateSFXRequest{
+    Model:  "elevenlabs/music_v2_5",
+    Video:  &videoURL,
+    Output: new(sdk.CreateSFXRequestOutputMix),
+})
+```
+
+#### Music
+
+```go
+audio, err := client.CreateMusic(ctx, sdk.Elevenlabs, sdk.CreateMusicRequest{
+    Model:           "elevenlabs/music_v2_5",
+    Prompt:          "Upbeat jazz trio with brushed drums and piano",
+    DurationSeconds: new(float32(10)),
+    Instrumental:    new(true),
+})
+```
+
+For complete examples, see [examples/speech/main.go](examples/speech/main.go), [examples/sfx/main.go](examples/sfx/main.go) and [examples/music/main.go](examples/music/main.go).
+
 ### Using ReasoningFormat
 
 You can enable reasoning capabilities by setting the ReasoningFormat parameter in your request:
@@ -820,7 +876,10 @@ For more detailed examples and use cases, check out the [examples directory](./e
 -   **[Messages Example](./examples/messages/)** - Anthropic-compatible Messages API (sync + streaming)
 -   **[Middleware Bypass Example](./examples/middleware-bypass/)** - How to bypass middleware layers for direct provider access
 -   **[Models Example](./examples/models/)** - How to list and work with different models
+-   **[Music Example](./examples/music/)** - Composing music clips with `CreateMusic`
 -   **[Reasoning Example](./examples/reasoning/)** - Streamed reasoning output via `GenerateContentStream`
+-   **[SFX Example](./examples/sfx/)** - Sound effects and video scoring with `CreateSFX`
+-   **[Speech Example](./examples/speech/)** - Text-to-speech with `CreateSpeech`
 -   **[Stream Example](./examples/stream/)** - Streaming content generation
 -   **[Stream Tools Example](./examples/stream-tools/)** - Advanced streaming with tool usage
 -   **[Tools Example](./examples/tools/)** - Function calling and tool usage
