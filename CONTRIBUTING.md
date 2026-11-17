@@ -47,6 +47,16 @@ cd sdk
 go mod download
 ```
 
+### Git hooks
+
+Install the pre-commit hook once per clone:
+
+```sh
+task precommit:install
+```
+
+The hook blocks a commit when a staged text file has no final newline (the `insert_final_newline` rule in `.editorconfig`). It adds the newline for you, so review the change, `git add` it and commit again. Files under `.flox/` are skipped because Flox generates them.
+
 ### Regenerating types (optional)
 
 If the upstream OpenAPI spec has changed:

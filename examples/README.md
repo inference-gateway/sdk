@@ -30,11 +30,11 @@ Shows how to implement function calling and use tools with compatible models.
 
 ### [Decisions](decisions/)
 
-Asks structured questions (predicate, choice, score) over shared evidence through the OpenAI Decisions API relay (`POST /v1/decisions`).
+Asks structured questions (predicate, choice, score) over shared evidence through the OpenAI Decisions API relay (`POST /v1/decisions`), when the server has `DECISIONS_ENABLED=true` configured.
 
 ### [Images](images/)
 
-Generates and edits images with `CreateImage` and `CreateImageEdit`.
+Generates and edits images with `CreateImage` and `CreateImageEdit`, when the server has `IMAGES_ENABLED=true` configured.
 
 ### [Messages](messages/)
 

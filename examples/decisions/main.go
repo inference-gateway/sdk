@@ -1,5 +1,6 @@
 // Usage:
 //
+//	# requires the gateway started with DECISIONS_ENABLED=true, otherwise CreateDecision returns 404
 //	INFERENCE_GATEWAY_URL=http://localhost:8080/v1 go run main.go
 package main
 
