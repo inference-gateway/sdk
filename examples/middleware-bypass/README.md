@@ -28,18 +28,7 @@ response, err := client.
 ```
 
 ```go
-// Bypass both MCP middleware
-middlewareOpts := &sdk.MiddlewareOptions{
-    SkipMCP: true,
-}
-
-response, err := client.
-    WithMiddlewareOptions(middlewareOpts).
-    GenerateContent(ctx, sdk.Openai, "gpt-4o", messages)
-```
-
-```go
-// Direct provider access (bypasses all middleware)
+// Direct provider access (no effect: the gateway ignores X-Direct-Provider)
 middlewareOpts := &sdk.MiddlewareOptions{
     DirectProvider: true,
 }
@@ -51,7 +40,7 @@ response, err := client.
 
 ### 2. Using Custom Headers
 
-Alternatively, you can use custom headers directly:
+Alternatively, you can use the MCP bypass header directly:
 
 ```go
 response, err := client.
@@ -62,7 +51,7 @@ response, err := client.
 ## Supported Headers
 
 -   `X-MCP-Bypass: true` - Bypasses MCP middleware processing
--   `X-Direct-Provider: true` - Routes directly to provider without any middleware
+-   `X-Direct-Provider: true` - Intended to route directly to the provider without middleware, but the gateway currently ignores it, so it has no effect
 
 ## When to Use Middleware Bypass
 
@@ -80,4 +69,4 @@ cd examples/middleware-bypass
 go run main.go
 ```
 
-Note: Make sure the Inference Gateway is running on `http://localhost:8080` with your desired configuration.
+Note: Set `INFERENCE_GATEWAY_URL` to point the example at your gateway (defaults to `http://localhost:8080/v1`) and `INFERENCE_GATEWAY_API_KEY` if your gateway requires a key.

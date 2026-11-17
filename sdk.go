@@ -567,9 +567,9 @@ func (c *clientImpl) WithHeader(name, value string) Client {
 //	}
 //	resp, err := client.WithMiddlewareOptions(middlewareOpts).GenerateContent(ctx, provider, model, messages)
 //
-// Note: This functionality requires the Inference Gateway to support the corresponding headers:
-//   - X-MCP-Bypass: Skip MCP middleware processing
-//   - X-Direct-Provider: Route directly to provider
+// Note: The gateway reads X-MCP-Bypass and skips MCP middleware processing.
+// DirectProvider also sets X-Direct-Provider, but the gateway currently
+// ignores that header, so the option has no effect.
 func (c *clientImpl) WithMiddlewareOptions(options *MiddlewareOptions) Client {
 	if options == nil {
 		return c
@@ -1301,8 +1301,8 @@ func (c *clientImpl) CreateMusic(ctx context.Context, provider Provider, request
 //
 // Example:
 //
-//	job, err := client.CreateVideo(ctx, sdk.Openai, sdk.CreateVideoRequest{
-//	    Model:  "sora-2",
+//	job, err := client.CreateVideo(ctx, sdk.Elevenlabs, sdk.CreateVideoRequest{
+//	    Model:  "elevenlabs/creatify-aurora",
 //	    Prompt: new("A cat surfing"),
 //	})
 func (c *clientImpl) CreateVideo(ctx context.Context, provider Provider, request CreateVideoRequest) (*VideoJob, error) {
