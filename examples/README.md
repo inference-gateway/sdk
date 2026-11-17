@@ -52,6 +52,18 @@ Streams reasoning output alongside the final response using `GenerateContentStre
 
 Sends multimodal messages with image content parts to vision-capable models.
 
+### [Speech](speech/)
+
+Generates speech audio from text with `CreateSpeech` and writes the returned bytes to a file. Requires the gateway to run with `AUDIO_ENABLED=true` and an OpenAI key.
+
+### [SFX](sfx/)
+
+Generates a sound effect from a text prompt with `CreateSFX`, or scores a video through the `Video` and `Output` fields when `SFX_VIDEO_URL` is set. Requires the gateway to run with `AUDIO_ENABLED=true` and an ElevenLabs key.
+
+### [Music](music/)
+
+Composes a music clip with `CreateMusic` and writes the returned bytes to a file. Requires the gateway to run with `AUDIO_ENABLED=true` and an ElevenLabs key.
+
 ## Running the Examples
 
 First you need to have an Inference Gateway instance running. You can use the [Inference Gateway Docker image](ghcr.io/inference-gateway/inference-gateway) to run a local instance.
@@ -81,7 +93,7 @@ First you need to have an Inference Gateway instance running. You can use the [I
     export INFERENCE_GATEWAY_API_KEY="your-api-key"
     ```
 
-Most examples include their own README with specific instructions, and the rest (`decisions`, `images`, `messages` and `vision`) are documented inline in their `main.go`. The general pattern is:
+Most examples include their own README with specific instructions, and the rest (`decisions`, `images`, `messages`, `music`, `sfx`, `speech` and `vision`) are documented inline in their `main.go`. The general pattern is:
 
 1. Navigate to the example directory:
 

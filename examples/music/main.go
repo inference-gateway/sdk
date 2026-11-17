@@ -1,0 +1,43 @@
+// Usage:
+//
+//	INFERENCE_GATEWAY_URL=http://localhost:8080/v1 go run main.go
+//
+// Requires a gateway running with AUDIO_ENABLED=true and an ElevenLabs
+// key (ELEVENLABS_API_KEY). The Audio API is also served by openai and
+// mirelo.
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	sdk "github.com/inference-gateway/sdk"
+)
+
+func main() {
+	client := sdk.NewClient(&sdk.ClientOptions{
+		BaseURL: os.Getenv("INFERENCE_GATEWAY_URL"),
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	audio, err := client.CreateMusic(ctx, sdk.Elevenlabs, sdk.CreateMusicRequest{
+		Model:           "elevenlabs/music_v2_5",
+		Prompt:          "Upbeat jazz trio, brushed drums, upright bass and piano, rainy evening",
+		DurationSeconds: new(float32(10)),
+		Instrumental:    new(true),
+		ResponseFormat:  new(sdk.CreateMusicRequestResponseFormatMp3),
+	})
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
+	if err := os.WriteFile("output.mp3", audio, 0644); err != nil {
+		log.Fatalf("Error writing audio: %v", err)
+	}
+	fmt.Printf("Saved %d bytes to output.mp3\n", len(audio))
+}
