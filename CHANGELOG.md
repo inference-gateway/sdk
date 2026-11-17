@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.48.0](https://github.com/inference-gateway/sdk/compare/v1.47.1...v1.48.0) (2026-11-17)
+
+### ✨ Features
+
+* **examples:** add speech, sfx and music examples ([#282](https://github.com/inference-gateway/sdk/issues/282)) ([ba01650](https://github.com/inference-gateway/sdk/commit/ba01650043a948177f0345ba9e96cab3fca02316))
+* sync types with schemas v1.14.1 - nullable stream delta fields ([#283](https://github.com/inference-gateway/sdk/issues/283)) ([ff2c8e7](https://github.com/inference-gateway/sdk/commit/ff2c8e7b6fa1747debde2748ae189e446ff378a1))
+
+### 👷 CI
+
+* set up orchestrators from repos.yaml ([#272](https://github.com/inference-gateway/sdk/issues/272)) ([bf388ea](https://github.com/inference-gateway/sdk/commit/bf388ea54c196b9712ee3c1e9956585930e75b43))
+
+### 📚 Documentation
+
+* **examples:** add video example for CreateVideo, RetrieveVideo and DownloadVideoContent ([#280](https://github.com/inference-gateway/sdk/issues/280)) ([996dcd6](https://github.com/inference-gateway/sdk/commit/996dcd614cd96ff4199eaede2a6609f3b75962e1))
+* **examples:** align .env.example with current gateway settings and document feature flags ([#278](https://github.com/inference-gateway/sdk/issues/278)) ([59f77da](https://github.com/inference-gateway/sdk/commit/59f77da218ec7835e628432f8943e63cc5e13d17))
+* **examples:** align run instructions with the example modules ([#269](https://github.com/inference-gateway/sdk/issues/269)) ([a0bcd73](https://github.com/inference-gateway/sdk/commit/a0bcd731a69b641d4dd6b0200d83a14c10037d44))
+* **examples:** correct example READMEs to match actual output and stream events ([#270](https://github.com/inference-gateway/sdk/issues/270)) ([5d067ab](https://github.com/inference-gateway/sdk/commit/5d067ab0a28ac9e4db278e14ff42c9586fefa67d))
+* fix CreateVideo godoc provider, README examples list and models example output ([#279](https://github.com/inference-gateway/sdk/issues/279)) ([a29638a](https://github.com/inference-gateway/sdk/commit/a29638a1b3b1294616120e2778580bdd5215cec6))
+* fix streaming event names in AGENTS.md and align CONTRIBUTING.md with release config ([#268](https://github.com/inference-gateway/sdk/issues/268)) ([b1603e3](https://github.com/inference-gateway/sdk/commit/b1603e30afa3d71af81d7eb71193cb2be5042153))
+* **sdk:** fix godoc examples and WithOptions precedence note ([#271](https://github.com/inference-gateway/sdk/issues/271)) ([704def2](https://github.com/inference-gateway/sdk/commit/704def29ba1c129b1e508b428a2039bc07cb03d0))
+* state DirectProvider has no gateway effect and fix middleware-bypass example ([#281](https://github.com/inference-gateway/sdk/issues/281)) ([67b38e0](https://github.com/inference-gateway/sdk/commit/67b38e0650a7d5a38ca9b5dbd0006cb83a9058db))
+
 ## [1.47.1](https://github.com/inference-gateway/sdk/compare/v1.47.0...v1.47.1) (2026-11-16)
 
 ### ♻️ Improvements
